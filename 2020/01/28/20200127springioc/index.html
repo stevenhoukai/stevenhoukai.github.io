@@ -1,0 +1,1180 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next muse use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="spring,框架原理解析,">
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="如何自己实现一个IOC容器……这里我并不想多做关于spring的相关介绍，大家可自行去官网了解相关内容，我们直接进入正题，假如让你自己去做开发，并且spring开始收取高额的费用了，这里只是假设，你该如何去开发？思考一分钟……稍微有点框架基础的人应该都会说自己开发一个IOC框架进行容器管理不就得了，确实，容器管理是本文的重点，今天就来讲解一下第一种方式，通过xml文件的方式来实现IOC容器。 代码">
+<meta name="keywords" content="spring,框架原理解析">
+<meta property="og:type" content="article">
+<meta property="og:title" content="springIOC---1、手工简单实现基于xml的IOC框架">
+<meta property="og:url" content="http://stevenhoukai.github.io/2020/01/28/20200127springioc/index.html">
+<meta property="og:site_name" content="迷途小书童">
+<meta property="og:description" content="如何自己实现一个IOC容器……这里我并不想多做关于spring的相关介绍，大家可自行去官网了解相关内容，我们直接进入正题，假如让你自己去做开发，并且spring开始收取高额的费用了，这里只是假设，你该如何去开发？思考一分钟……稍微有点框架基础的人应该都会说自己开发一个IOC框架进行容器管理不就得了，确实，容器管理是本文的重点，今天就来讲解一下第一种方式，通过xml文件的方式来实现IOC容器。 代码">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://stevenhoukai.github.io/2020/01/28/20200127springioc/1.png">
+<meta property="og:image" content="http://stevenhoukai.github.io/2020/01/28/20200127springioc/2.png">
+<meta property="og:updated_time" content="2020-11-23T08:23:19.462Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="springIOC---1、手工简单实现基于xml的IOC框架">
+<meta name="twitter:description" content="如何自己实现一个IOC容器……这里我并不想多做关于spring的相关介绍，大家可自行去官网了解相关内容，我们直接进入正题，假如让你自己去做开发，并且spring开始收取高额的费用了，这里只是假设，你该如何去开发？思考一分钟……稍微有点框架基础的人应该都会说自己开发一个IOC框架进行容器管理不就得了，确实，容器管理是本文的重点，今天就来讲解一下第一种方式，通过xml文件的方式来实现IOC容器。 代码">
+<meta name="twitter:image" content="http://stevenhoukai.github.io/2020/01/28/20200127springioc/1.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Muse',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://stevenhoukai.github.io/2020/01/28/20200127springioc/">
+
+
+
+
+
+  <title>springIOC---1、手工简单实现基于xml的IOC框架 | 迷途小书童</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">迷途小书童</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">读过几年书，尘世间一枚不起眼的小书童</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br>
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br>
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br>
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off" placeholder="搜索..." spellcheck="false" type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://stevenhoukai.github.io/2020/01/28/20200127springioc/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="steven Hou">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/upload/images/avatar.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="迷途小书童">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">springIOC---1、手工简单实现基于xml的IOC框架</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2020-01-28T00:00:01+08:00">
+                2020-01-28
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/spring相关框架原理/" itemprop="url" rel="index">
+                    <span itemprop="name">spring相关框架原理</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+            <span class="post-meta-divider">|</span>
+            <span class="page-pv"><i class="fa fa-file-o">阅读次数</i>
+            <span class="busuanzi-value" id="busuanzi_value_page_pv"></span>次
+            </span>
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h1 id="如何自己实现一个IOC容器"><a href="#如何自己实现一个IOC容器" class="headerlink" title="如何自己实现一个IOC容器"></a>如何自己实现一个IOC容器</h1><p>……这里我并不想多做关于spring的相关介绍，大家可自行去官网了解相关内容，我们直接进入正题，假如让你自己去做开发，并且spring开始收取高额的费用了，这里只是假设，你该如何去开发？思考一分钟……稍微有点框架基础的人应该都会说自己开发一个IOC框架进行容器管理不就得了，确实，容器管理是本文的重点，今天就来讲解一下第一种方式，通过xml文件的方式来实现IOC容器。</p>
+<h2 id="代码结构"><a href="#代码结构" class="headerlink" title="代码结构"></a>代码结构</h2><p>……整体的代码结构如下图，下面就逐一解析<br><img src="/2020/01/28/20200127springioc/1.png" alt="图p1"></p>
+<center>**代码结构**</center>
+
+<h3 id="入口类TestMain"><a href="#入口类TestMain" class="headerlink" title="入口类TestMain"></a>入口类TestMain</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">package com.hk.springioc;</span><br><span class="line"></span><br><span class="line">public class TestMain &#123;</span><br><span class="line">	public static void main(String[] args) &#123;</span><br><span class="line">		MyXmlClassPathApplicationContext fac = new MyXmlClassPathApplicationContext(&quot;myspring.xml&quot;);</span><br><span class="line">		Person bean1 = (Person) fac.getBean(&quot;person&quot;);</span><br><span class="line">		Person bean2 = (Person) fac.getBean(&quot;person&quot;);</span><br><span class="line">		bean1.printAll();</span><br><span class="line">		bean2.printAll();</span><br><span class="line">		System.out.print(bean1 == bean2 ? &quot;同一个对象&quot; : &quot;非同一个对象&quot;);</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>整个程序的main方法中我们new了一个MyXmlClassPathApplicationContext这样的一个对象，这也是整个稍后IOC构建过程中的核心类，介绍该类之前，先说明两个接口<br>ApplicationContext用于IOC容器构建  </p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">package com.hk.springioc;</span><br><span class="line"></span><br><span class="line">public interface ApplicationContext &#123;</span><br><span class="line">	public void springIOC();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>BeanFactory用于对象实例管理与获取</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">package com.hk.springioc;</span><br><span class="line"></span><br><span class="line">public interface BeanFactory &#123;</span><br><span class="line">	public Object getBean(String name);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="MyXmlClassPathApplicationContext"><a href="#MyXmlClassPathApplicationContext" class="headerlink" title="MyXmlClassPathApplicationContext"></a>MyXmlClassPathApplicationContext</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br></pre></td><td class="code"><pre><span class="line">package com.hk.springioc;</span><br><span class="line"></span><br><span class="line">import java.lang.reflect.Field;</span><br><span class="line">import java.util.HashMap;</span><br><span class="line">import java.util.List;</span><br><span class="line">import java.util.Map;</span><br><span class="line">import java.util.Map.Entry;</span><br><span class="line">import java.util.Set;</span><br><span class="line"></span><br><span class="line">public class MyXmlClassPathApplicationContext implements BeanFactory,ApplicationContext &#123;</span><br><span class="line"></span><br><span class="line">	private ConfigManager configManager;</span><br><span class="line">	</span><br><span class="line">	private Map&lt;String,Bean&gt; beanContainer;</span><br><span class="line">	</span><br><span class="line">	private Map&lt;String,Object&gt; instanceContainer ;</span><br><span class="line">	</span><br><span class="line">	public MyXmlClassPathApplicationContext(String path)&#123;</span><br><span class="line">		configManager = new ConfigManager();</span><br><span class="line">		instanceContainer = new HashMap&lt;String,Object&gt;();</span><br><span class="line">		beanContainer = configManager.parseXML(path);</span><br><span class="line">		springIOC();</span><br><span class="line">	&#125;</span><br><span class="line">	</span><br><span class="line">	</span><br><span class="line">	</span><br><span class="line">	//依賴注入的關鍵</span><br><span class="line">	@Override</span><br><span class="line">	public void springIOC() &#123;</span><br><span class="line">		Set&lt;Entry&lt;String, Bean&gt;&gt; entrySet = beanContainer.entrySet();</span><br><span class="line">		for(Entry&lt;String, Bean&gt; entry : entrySet)&#123;</span><br><span class="line">//			String name = entry.getKey();</span><br><span class="line">			Bean bean = entry.getValue();</span><br><span class="line">			Object instance = createBean(bean);</span><br><span class="line">//			instanceContainer.put(name, instance);</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	private Object createBean(Bean bean) &#123;</span><br><span class="line">		if(instanceContainer.get(bean.getName())!=null)&#123;</span><br><span class="line">			return instanceContainer.get(bean.getName());</span><br><span class="line">		&#125;</span><br><span class="line">		String className = bean.getClassName();</span><br><span class="line">		List&lt;Property&gt; props = bean.getProps();</span><br><span class="line">		Object newInstance = null;</span><br><span class="line">		try &#123;</span><br><span class="line">			Class&lt;?&gt; forName = Class.forName(className);</span><br><span class="line">			newInstance = forName.newInstance();</span><br><span class="line">			for(Property pro : props)&#123;</span><br><span class="line">				String name = pro.getName();</span><br><span class="line">				Field field = forName.getDeclaredField(name);</span><br><span class="line">				field.setAccessible(true);</span><br><span class="line">				if(pro.getRef()!=null)&#123;</span><br><span class="line">					String ref = pro.getRef();</span><br><span class="line">					Object existBean = getBean(ref);</span><br><span class="line">					if(existBean==null)&#123;</span><br><span class="line">						Object createBean = createBean(beanContainer.get(ref));</span><br><span class="line">						field.set(newInstance,createBean);</span><br><span class="line">					&#125;else&#123;</span><br><span class="line">						field.set(newInstance,existBean);</span><br><span class="line">					&#125;</span><br><span class="line">				&#125;else&#123;</span><br><span class="line">					Class&lt;?&gt; type = field.getType();</span><br><span class="line">					if(type==int.class)&#123;</span><br><span class="line">						field.set(newInstance,Integer.parseInt(pro.getValue()));</span><br><span class="line">					&#125;else&#123;</span><br><span class="line">						field.set(newInstance,pro.getValue());</span><br><span class="line">					&#125;</span><br><span class="line">					</span><br><span class="line">				&#125;</span><br><span class="line">			&#125;</span><br><span class="line">			if(bean.getSingleton().equals(&quot;1&quot;))&#123;</span><br><span class="line">				instanceContainer.put(bean.getName(), newInstance);</span><br><span class="line">			&#125;</span><br><span class="line">			</span><br><span class="line">		&#125; catch (ClassNotFoundException e) &#123;</span><br><span class="line">			e.printStackTrace();</span><br><span class="line">		&#125; catch (InstantiationException e) &#123;</span><br><span class="line">			e.printStackTrace();</span><br><span class="line">		&#125; catch (IllegalAccessException e) &#123;</span><br><span class="line">			e.printStackTrace();</span><br><span class="line">		&#125; catch (NoSuchFieldException e) &#123;</span><br><span class="line">			e.printStackTrace();</span><br><span class="line">		&#125; catch (SecurityException e) &#123;</span><br><span class="line">			e.printStackTrace();</span><br><span class="line">		&#125;</span><br><span class="line">		return newInstance;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"></span><br><span class="line">	@Override</span><br><span class="line">	public Object getBean(String name) &#123;</span><br><span class="line">		return instanceContainer.get(name);</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>解释一下这个类主要做了什么：<br>1、new了一个ConfigManager对象<br>2、构建了一个HashMap类型的实例化容器instanceContainer<br>3、用第一步的ConfigManager对象解析XML文件，获取一个Bean容器，这里的Bean就是XML文件中配置的相关bean信息，后面会有一个类进行封装<br>4、对Bean容器进行解析，构建最终的IOC实例容器，也就是第二步中的instanceContainer<br>下面就是xml文件以及对应封装类Bean</p>
+<h3 id="myspring-xml"><a href="#myspring-xml" class="headerlink" title="myspring.xml"></a>myspring.xml</h3><p>配置文件结构如下</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br><span class="line">146</span><br><span class="line">147</span><br><span class="line">148</span><br><span class="line">149</span><br><span class="line">150</span><br><span class="line">151</span><br><span class="line">152</span><br><span class="line">153</span><br><span class="line">154</span><br><span class="line">155</span><br><span class="line">156</span><br><span class="line">157</span><br><span class="line">158</span><br><span class="line">159</span><br><span class="line">160</span><br><span class="line">161</span><br><span class="line">162</span><br><span class="line">163</span><br><span class="line">164</span><br><span class="line">165</span><br><span class="line">166</span><br><span class="line">167</span><br><span class="line">168</span><br><span class="line">169</span><br><span class="line">170</span><br><span class="line">171</span><br><span class="line">172</span><br><span class="line">173</span><br><span class="line">174</span><br><span class="line">175</span><br><span class="line">176</span><br><span class="line">177</span><br><span class="line">178</span><br><span class="line">179</span><br></pre></td><td class="code"><pre><span class="line">&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;</span><br><span class="line">&lt;beans&gt;</span><br><span class="line">&lt;bean name=&quot;person&quot; class=&quot;com.hk.springioc.Person&quot;&gt;</span><br><span class="line">&lt;property name=&quot;boy&quot; ref=&quot;boy&quot; /&gt;</span><br><span class="line">&lt;property name=&quot;girl&quot; ref=&quot;girl&quot; /&gt;</span><br><span class="line">&lt;/bean&gt;</span><br><span class="line"></span><br><span class="line">&lt;bean name=&quot;boy&quot; class=&quot;com.hk.springioc.Boy&quot;&gt;</span><br><span class="line">&lt;property name=&quot;age&quot; value=&quot;2&quot; /&gt;</span><br><span class="line">&lt;property name=&quot;name&quot; value=&quot;lilei&quot; /&gt;</span><br><span class="line">&lt;/bean&gt;</span><br><span class="line"></span><br><span class="line">&lt;bean name=&quot;girl&quot; class=&quot;com.hk.springioc.Girl&quot;&gt;</span><br><span class="line">&lt;property name=&quot;age&quot; value=&quot;1&quot; /&gt;</span><br><span class="line">&lt;property name=&quot;name&quot; value=&quot;lily&quot; /&gt;</span><br><span class="line">&lt;/bean&gt;</span><br><span class="line">&lt;/beans&gt;</span><br><span class="line"></span><br><span class="line">封装Person信息，依赖注入Boy和Girl</span><br><span class="line">package com.hk.springioc;</span><br><span class="line"></span><br><span class="line">public class Person &#123;</span><br><span class="line">	private Boy boy;</span><br><span class="line">	private Girl girl;</span><br><span class="line">	public Boy getBoy() &#123;</span><br><span class="line">		return boy;</span><br><span class="line">	&#125;</span><br><span class="line">	public void setBoy(Boy boy) &#123;</span><br><span class="line">		this.boy = boy;</span><br><span class="line">	&#125;</span><br><span class="line">	public Girl getGirl() &#123;</span><br><span class="line">		return girl;</span><br><span class="line">	&#125;</span><br><span class="line">	public void setGirl(Girl girl) &#123;</span><br><span class="line">		this.girl = girl;</span><br><span class="line">	&#125;</span><br><span class="line">	</span><br><span class="line">	public Person()&#123;</span><br><span class="line">		</span><br><span class="line">	&#125;</span><br><span class="line">	public void printAll()&#123;</span><br><span class="line">		System.out.println(boy.getName()+&quot;:&quot;+boy.getAge());</span><br><span class="line">		System.out.println(girl.getName()+&quot;:&quot;+girl.getAge());</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">类封装girl信息  </span><br><span class="line">package com.hk.springioc;</span><br><span class="line"></span><br><span class="line">public class Girl &#123;</span><br><span class="line">	private String name;</span><br><span class="line">	private int age;</span><br><span class="line"></span><br><span class="line">	public String getName() &#123;</span><br><span class="line">		return name;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	public void setName(String name) &#123;</span><br><span class="line">		this.name = name;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	public int getAge() &#123;</span><br><span class="line">		return age;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	public void setAge(int age) &#123;</span><br><span class="line">		this.age = age;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	public Girl()&#123;</span><br><span class="line">		</span><br><span class="line">	&#125;</span><br><span class="line">	public void printAll()&#123;</span><br><span class="line">		System.out.println(name+&quot;:&quot;+age);</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">封装boy的信息  </span><br><span class="line">package com.hk.springioc;</span><br><span class="line"></span><br><span class="line">public class Boy &#123;</span><br><span class="line"></span><br><span class="line">	private String name;</span><br><span class="line">	private int age;</span><br><span class="line"></span><br><span class="line">	public String getName() &#123;</span><br><span class="line">		return name;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	public void setName(String name) &#123;</span><br><span class="line">		this.name = name;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	public int getAge() &#123;</span><br><span class="line">		return age;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	public void setAge(int age) &#123;</span><br><span class="line">		this.age = age;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	public Boy()&#123;</span><br><span class="line">		</span><br><span class="line">	&#125;</span><br><span class="line">	public void printAll()&#123;</span><br><span class="line">		System.out.println(name+&quot;:&quot;+age);</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">类封装xml中的bean标签信息  </span><br><span class="line">package com.hk.springioc;</span><br><span class="line"></span><br><span class="line">import java.util.List;</span><br><span class="line"></span><br><span class="line">public class Bean &#123;</span><br><span class="line">	private String name;</span><br><span class="line">	private String className;</span><br><span class="line">	public String getName() &#123;</span><br><span class="line">		return name;</span><br><span class="line">	&#125;</span><br><span class="line">	public void setName(String name) &#123;</span><br><span class="line">		this.name = name;</span><br><span class="line">	&#125;</span><br><span class="line">	public String getClassName() &#123;</span><br><span class="line">		return className;</span><br><span class="line">	&#125;</span><br><span class="line">	public void setClassName(String className) &#123;</span><br><span class="line">		this.className = className;</span><br><span class="line">	&#125;</span><br><span class="line">	public String getSingleton() &#123;</span><br><span class="line">		return singleton;</span><br><span class="line">	&#125;</span><br><span class="line">	public void setSingleton(String singleton) &#123;</span><br><span class="line">		this.singleton = singleton;</span><br><span class="line">	&#125;</span><br><span class="line">	public List&lt;Property&gt; getProps() &#123;</span><br><span class="line">		return props;</span><br><span class="line">	&#125;</span><br><span class="line">	public void setProps(List&lt;Property&gt; props) &#123;</span><br><span class="line">		this.props = props;</span><br><span class="line">	&#125;</span><br><span class="line">	private String singleton = &quot;1&quot;;</span><br><span class="line">	private List&lt;Property&gt; props;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">类封装xml文件中的property信息  </span><br><span class="line"></span><br><span class="line">package com.hk.springioc;</span><br><span class="line"></span><br><span class="line">public class Property &#123;</span><br><span class="line">	private String name;</span><br><span class="line">	private String value;</span><br><span class="line">	private String ref;</span><br><span class="line"></span><br><span class="line">	public String getName() &#123;</span><br><span class="line">		return name;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	public void setName(String name) &#123;</span><br><span class="line">		this.name = name;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	public String getValue() &#123;</span><br><span class="line">		return value;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	public void setValue(String value) &#123;</span><br><span class="line">		this.value = value;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	public String getRef() &#123;</span><br><span class="line">		return ref;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	public void setRef(String ref) &#123;</span><br><span class="line">		this.ref = ref;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="ConfigManager"><a href="#ConfigManager" class="headerlink" title="ConfigManager"></a>ConfigManager</h3><p>我们可以使用dom4j或者SAXReader对xml文件进行解析，构建需要的Bean容器，这里需要重点说明一点！！！我们的xml配置文件中没有特殊说明的bean都是singleton，也只有单例的对象才需要IOC容器进行管理，非单例的对象IOC容器是不会管理的  </p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br></pre></td><td class="code"><pre><span class="line">package com.hk.springioc;</span><br><span class="line"></span><br><span class="line">import java.io.InputStream;</span><br><span class="line">import java.util.ArrayList;</span><br><span class="line">import java.util.HashMap;</span><br><span class="line">import java.util.List;</span><br><span class="line">import java.util.Map;</span><br><span class="line"></span><br><span class="line">import org.dom4j.Document;</span><br><span class="line">import org.dom4j.DocumentException;</span><br><span class="line">import org.dom4j.Element;</span><br><span class="line">import org.dom4j.io.SAXReader;</span><br><span class="line"></span><br><span class="line">/**</span><br><span class="line"> * </span><br><span class="line"> * @ClassName: ConfigManager </span><br><span class="line"> * @Description: TODO(这里用一句话描述这个类的作用) </span><br><span class="line"> * @author A18ccms a18ccms_gmail_com </span><br><span class="line"> * @date 2019年4月9日 下午5:33:23 </span><br><span class="line"> * 解析xml組裝Bean容器</span><br><span class="line"> *</span><br><span class="line"> */</span><br><span class="line">public class ConfigManager &#123;</span><br><span class="line">	</span><br><span class="line">	public  Map&lt;String,Bean&gt; parseXML(String path)&#123;</span><br><span class="line">		Map&lt;String,Bean&gt; map = new HashMap&lt;String,Bean&gt;();</span><br><span class="line">		InputStream is = this.getClass().getResourceAsStream(path);</span><br><span class="line">		SAXReader reader = new SAXReader();</span><br><span class="line">		try &#123;</span><br><span class="line">			Document doc = reader.read(is);</span><br><span class="line">			List&lt;Element&gt; selectNodes = doc.selectNodes(&quot;//bean&quot;);</span><br><span class="line">			for(Element ele : selectNodes)&#123;</span><br><span class="line">				String nameValue = ele.attributeValue(&quot;name&quot;);</span><br><span class="line">				String classValue = ele.attributeValue(&quot;class&quot;);</span><br><span class="line">				String singtonValue = ele.attributeValue(&quot;singleton&quot;);</span><br><span class="line">				Bean bean = new Bean();</span><br><span class="line">				bean.setName(nameValue);</span><br><span class="line">				bean.setClassName(classValue);</span><br><span class="line">				if(singtonValue!=null)&#123;</span><br><span class="line">					bean.setSingleton(singtonValue);</span><br><span class="line">				&#125;</span><br><span class="line">				List&lt;Property&gt; list = new ArrayList&lt;Property&gt;();</span><br><span class="line">				List&lt;Element&gt; pros = ele.elements(&quot;property&quot;);</span><br><span class="line">				for(Element pro : pros)&#123;</span><br><span class="line">					Property prop = new Property();</span><br><span class="line">					prop.setName(pro.attributeValue(&quot;name&quot;));</span><br><span class="line">					prop.setValue(pro.attributeValue(&quot;value&quot;));</span><br><span class="line">					prop.setRef(pro.attributeValue(&quot;ref&quot;));</span><br><span class="line">					list.add(prop);</span><br><span class="line">				&#125;</span><br><span class="line">				bean.setProps(list);</span><br><span class="line">				map.put(bean.getName(), bean);</span><br><span class="line">			&#125;</span><br><span class="line">		&#125; catch (DocumentException e) &#123;</span><br><span class="line">			e.printStackTrace();</span><br><span class="line">		&#125;</span><br><span class="line">		</span><br><span class="line"></span><br><span class="line">		return map;</span><br><span class="line">	&#125;</span><br><span class="line">	</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="最后运行TestMain"><a href="#最后运行TestMain" class="headerlink" title="最后运行TestMain"></a>最后运行TestMain</h3><p>查看最终运行结果:<br><img src="/2020/01/28/20200127springioc/2.png" alt="图p2"></p>
+<center>**运行结果**</center>
+
+<h1 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h1><p>……好了，写到这里我们就简单的实现了一个基于xml配置文件方式的IOC容器，原理其实很简单，只需要你了解reflect以及java基础，难的在于实现，spring框架通过各种设计模式实现了方便大家使用的最终发版，这里我不多做讲解，因为本人也在研究和学习当中，设计模式也是本人的缺陷，本篇文章重点只是向大家介绍一个最基本的实现原理，理解这个原理对于以后的开发会有很大的帮助，下一篇文章中我们再来讨论一下基于annotation的IOC容器构建…谢谢</p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/spring/" rel="tag"># spring</a>
+          
+            <a href="/tags/框架原理解析/" rel="tag"># 框架原理解析</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2019/11/25/20191125-springboot-actuator/" rel="next" title="springboot添加actuator">
+                <i class="fa fa-chevron-left"></i> springboot添加actuator
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2020/01/29/springioc-anno/" rel="prev" title="springIOC---2、手工简单实现基于annotation的IOC框架">
+                springIOC---2、手工简单实现基于annotation的IOC框架 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+    <div class="comments" id="comments">
+      <div id="lv-container" data-id="city" data-uid="MTAyMC81MjAzNC8yODUxNQ=="></div>
+    </div>
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image" src="/upload/images/avatar.jpg" alt="steven Hou">
+            
+              <p class="site-author-name" itemprop="name">steven Hou</p>
+              <p class="site-description motion-element" itemprop="description">dora is my precious</p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">26</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">17</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">27</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+
+          
+            <div class="links-of-author motion-element">
+                
+                  <span class="links-of-author-item">
+                    <a href="https://github.com/stevenhoukai" target="_blank" title="GitHub">
+                      
+                        <i class="fa fa-fw fa-github"></i>GitHub</a>
+                  </span>
+                
+            </div>
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#如何自己实现一个IOC容器"><span class="nav-number">1.</span> <span class="nav-text">如何自己实现一个IOC容器</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#代码结构"><span class="nav-number">1.1.</span> <span class="nav-text">代码结构</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#入口类TestMain"><span class="nav-number">1.1.1.</span> <span class="nav-text">入口类TestMain</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#MyXmlClassPathApplicationContext"><span class="nav-number">1.1.2.</span> <span class="nav-text">MyXmlClassPathApplicationContext</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#myspring-xml"><span class="nav-number">1.1.3.</span> <span class="nav-text">myspring.xml</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#ConfigManager"><span class="nav-number">1.1.4.</span> <span class="nav-text">ConfigManager</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#最后运行TestMain"><span class="nav-number">1.1.5.</span> <span class="nav-text">最后运行TestMain</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#总结"><span class="nav-number">2.</span> <span class="nav-text">总结</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">steven Hou</span>
+
+  
+</div>
+
+
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Muse</a> v5.1.4</div>
+
+
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="site-uv">
+      <i class="fa fa-user">访客数</i>
+      <span class="busuanzi-value" id="busuanzi_value_site_uv"></span>
+      人
+    </span>
+  
+
+  
+    <span class="site-pv">
+      <i class="fa fa-eye">总访问量</i>
+      <span class="busuanzi-value" id="busuanzi_value_site_pv"></span>
+      次
+    </span>
+  
+</div>
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+  
+  
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/three/three.min.js"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/three/canvas_sphere.min.js"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+    <script type="text/javascript">
+      (function(d, s) {
+        var j, e = d.getElementsByTagName(s)[0];
+        if (typeof LivereTower === 'function') { return; }
+        j = d.createElement(s);
+        j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+        j.async = true;
+        e.parentNode.insertBefore(j, e);
+      })(document, 'script');
+    </script>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>
