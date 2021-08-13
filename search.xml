@@ -1,6 +1,47 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
+    <title>count(1)、count(*)、count(列)有什么区别？</title>
+    <url>/2021/08/12/20210812-explainCount/</url>
+    <content><![CDATA[<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a><strong>前言</strong></h2><p>不知不觉入职tencent已经半年了，期间一直都在忙着适应golang还有新的业务新的微服务框架，从java转到golang有所适有所不适吧，但总体来说问题不大，所以就很久没有更新了，但是没关系，工作中遇到的问题小弟我都有一一记录，后面全部补上。今天主要来对sql统计中的count进行一下总结。</p>
+<h2 id="count-1-and-count"><a href="#count-1-and-count" class="headerlink" title="count(1) and count(*)"></a><strong>count(1) and count(*)</strong></h2><p>当表的数据量大些时，对表作分析之后，使用count(1)还要比使用count(*)用时多了！ </p>
+<p>从执行计划来看，count(1)和count(<em>)的效果是一样的。但是在表做过分析之后，count(1)会比count(</em>)的用时少些（1w以内数据量），不过差不了多少。 </p>
+<p>如果count(1)是聚索引,id,那肯定是count(1)快。但是差的很小的。 </p>
+<p>因为count(<em>),自动会优化指定到那一个字段。所以没必要去count(1)，用count(</em>)，sql会帮你完成优化的 因此：count(1)和count(*)基本没有差别！</p>
+<h2 id="count-1-and-count-字段"><a href="#count-1-and-count-字段" class="headerlink" title="count(1) and count(字段)"></a><strong>count(1) and count(字段)</strong></h2><p>两者的主要区别是</p>
+<ol>
+<li>count(1) 会统计表中的所有的记录数，包含字段为null 的记录。</li>
+<li>count(字段) 会统计该字段在表中出现的次数，忽略字段为null 的情况。即不统计字段为null 的记录。 </li>
+</ol>
+<p><strong>count(*) 和 count(1)和count(列名)区别</strong> </p>
+<p>执行效果上： </p>
+<ul>
+<li>count(<em>)包括了所有的列，相当于行数，在统计结果的时候，*</em>不会忽略列值为NULL** </li>
+<li>count(1)包括了忽略所有列，用1代表代码行，在统计结果的时候，<strong>不会忽略列值为NULL</strong> </li>
+<li>count(列名)只包括列名那一列，在统计结果的时候，会忽略列值为空（这里的空不是只空字符串或者0，而是表示null）的计数，<strong>即某个字段值为NULL时，不统计</strong>。</li>
+</ul>
+<p>执行效率上： </p>
+<ul>
+<li>列名为主键，count(列名)会比count(1)快 </li>
+<li>列名不为主键，count(1)会比count(列名)快 </li>
+<li>如果表多个列并且没有主键，则 count（1） 的执行效率优于 count（*） </li>
+<li>如果有主键，则 select count（主键）的执行效率是最优的 </li>
+<li>如果表只有一个字段，则 select count（*）最优。</li>
+</ul>
+<h3 id="实例查看效果"><a href="#实例查看效果" class="headerlink" title="实例查看效果"></a>实例查看效果</h3><p>下面来看看一个列子吧</p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line">mysql&gt; create table counttest(name char(<span class="number">1</span>), age char(<span class="number">2</span>));</span><br><span class="line">Query OK, <span class="number">0</span> rows affected (<span class="number">0.03</span> sec)</span><br><span class="line"> </span><br><span class="line">mysql&gt; insert into counttest values -&gt; (<span class="string">'a'</span>, <span class="string">'14'</span>),(<span class="string">'a'</span>, <span class="string">'15'</span>), (<span class="string">'a'</span>, <span class="string">'15'</span>), -&gt; (<span class="string">'b'</span>, NULL), (<span class="string">'b'</span>, <span class="string">'16'</span>), -&gt; (<span class="string">'c'</span>, <span class="string">'17'</span>), -&gt; (<span class="string">'d'</span>, null), -&gt;(<span class="string">'e'</span>, <span class="string">'');</span></span><br><span class="line"><span class="string">Query OK, 8 rows affected (0.01 sec)</span></span><br><span class="line"><span class="string">Records: 8  Duplicates: 0  Warnings: 0</span></span><br><span class="line"><span class="string"> </span></span><br><span class="line"><span class="string">mysql&gt; select * from counttest;</span></span><br><span class="line"><span class="string">+------+------+</span></span><br><span class="line"><span class="string">| name | age  |</span></span><br><span class="line"><span class="string">+------+------+</span></span><br><span class="line"><span class="string">| a | 14   |</span></span><br><span class="line"><span class="string">| a | 15   |</span></span><br><span class="line"><span class="string">| a | 15   |</span></span><br><span class="line"><span class="string">| b | NULL |</span></span><br><span class="line"><span class="string">| b | 16   |</span></span><br><span class="line"><span class="string">| c | 17   |</span></span><br><span class="line"><span class="string">| d | NULL |</span></span><br><span class="line"><span class="string">| e | |</span></span><br><span class="line"><span class="string">+------+------+</span></span><br><span class="line"><span class="string">8 rows in set (0.00 sec)</span></span><br><span class="line"><span class="string">mysql&gt; select name, count(name), count(1), count(*), count(age), count(distinct(age)) -&gt; from counttest -&gt; group by name;</span></span><br><span class="line"><span class="string">+------+-------------+----------+----------+------------+----------------------+</span></span><br><span class="line"><span class="string">| name | count(name) | count(1) | count(*) | count(age) | count(distinct(age)) |</span></span><br><span class="line"><span class="string">+------+-------------+----------+----------+------------+----------------------+</span></span><br><span class="line"><span class="string">| a | 3 | 3 | 3 | 3 | 2 |</span></span><br><span class="line"><span class="string">| b | 2 | 2 | 2 | 1 | 1 |</span></span><br><span class="line"><span class="string">| c | 1 | 1 | 1 | 1 | 1 |</span></span><br><span class="line"><span class="string">| d | 1 | 1 | 1 | 0 | 0 |</span></span><br><span class="line"><span class="string">| e | 1 | 1 | 1 | 1 | 1 |</span></span><br><span class="line"><span class="string">+------+-------------+----------+----------+------------+----------------------+</span></span><br><span class="line"><span class="string">5 rows in set (0.00 sec)</span></span><br></pre></td></tr></table></figure>
+
+<p>好记性不如烂笔头哈～</p>
+<p><img src="/2021/08/12/20210812-explainCount/6.jpg" alt></p>
+]]></content>
+      <categories>
+        <category>数据库</category>
+      </categories>
+      <tags>
+        <tag>mysql</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>goroutine与线程的关系</title>
     <url>/2020/12/29/20201229-goroutine2/</url>
     <content><![CDATA[<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a><strong>前言</strong></h2><p>学到这里，我们需要了解一下OS线程一般都是有属于自己的线程栈内存（通常为2MB）。一个goroutine栈在刚启动的时候确实很小的（通常是2KB），所以一次性创建10w个goroutine也是没有问题的，随着运行goroutine栈最大可达到1GB。goroutine属于用户态线程，go语言在runtime层面通过实现了一个GPM机制来对goroutine进行调度。</p>
