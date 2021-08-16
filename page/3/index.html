@@ -295,6 +295,175 @@
   
   
   <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://stevenhoukai.github.io/2019/11/06/20191106-vsftpd/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="steven Hou">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/upload/images/avatar.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="迷途小书童">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+                
+                <a class="post-title-link" href="/2019/11/06/20191106-vsftpd/" itemprop="url">笔记篇---快速搭建vsftpd文件服务器</a></h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2019-11-06T00:00:01+08:00">
+                2019-11-06
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/环境笔记篇/" itemprop="url" rel="index">
+                    <span itemprop="name">环境笔记篇</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          
+            <h2 id="vsftpd搭建文件服务器"><a href="#vsftpd搭建文件服务器" class="headerlink" title="vsftpd搭建文件服务器"></a>vsftpd搭建文件服务器</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">yum remove vsftpd</span><br><span class="line">yum -y install vsftpd</span><br></pre></td></tr></table></figure>
+
+<p>先删除已安装的软件，再重新安装完整的vsftpd;<br>然后添加一个ftp用户和密码</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">useradd ftpuser</span><br><span class="line">passwd ftpuser</span><br></pre></td></tr></table></figure>
+
+<p>防火墙开21端口  </p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">vim /etc/sysconfig/iptables</span><br></pre></td></tr></table></figure>
+
+<p>(在有 22 -j ACCEPT 的下面复制一行，端口改成21，wq保存并退出)<br>重启 iptables</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">service iptables restart</span><br></pre></td></tr></table></figure>
+
+<p>修改 selinux（外网可以访问，但无法返回目录，因为selinux）</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">getsebool -a | grep ftp（查看状态）</span><br><span class="line">setsebool -P allow_ftpd_full_access on （设置为 on）</span><br><span class="line">setsebool -P ftp_home_dir on（设置为 on）</span><br></pre></td></tr></table></figure>
+
+<p>关闭匿名访问</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">vim /etc/vsftpd/vsftpd.conf（anonymous_enable=NO）</span><br><span class="line">service vsftpd restart</span><br></pre></td></tr></table></figure>
+
+<p>开机启动 vsftpd 服务</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">chkconfig vsftpd on</span><br></pre></td></tr></table></figure>
+
+<p>接下来就可以通过filezilla使用ftp协议访问了如图：</p>
+<p><img src="/2019/11/06/20191106-vsftpd/1.jpg" alt="图p1"></p>
+<center>**图p1**</center>
+
+<p>另外这里附上FtpUtil.java工具类，首先如果你是gradle项目需要引入如下依赖包</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">compile &apos;commons-fileupload:commons-fileupload:1.3.1&apos;</span><br><span class="line">compile &apos;commons-net:commons-net:3.3&apos;</span><br></pre></td></tr></table></figure>
+
+<p>代码如下，自行调试即可:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br></pre></td><td class="code"><pre><span class="line">package com.yyicbc.utils;</span><br><span class="line"></span><br><span class="line">import java.io.File;</span><br><span class="line">import java.io.FileInputStream;</span><br><span class="line">import java.io.FileNotFoundException;</span><br><span class="line">import java.io.FileOutputStream;</span><br><span class="line">import java.io.IOException;</span><br><span class="line">import java.io.InputStream;</span><br><span class="line">import java.io.OutputStream;</span><br><span class="line"></span><br><span class="line">import org.apache.commons.net.ftp.FTP;</span><br><span class="line">import org.apache.commons.net.ftp.FTPClient;</span><br><span class="line">import org.apache.commons.net.ftp.FTPFile;</span><br><span class="line">import org.apache.commons.net.ftp.FTPReply;</span><br><span class="line"></span><br><span class="line">public class FtpUtil &#123;</span><br><span class="line"></span><br><span class="line">	/**</span><br><span class="line">	 * Description: 向FTP服务器上传文件</span><br><span class="line">	 * @param host FTP服务器hostname</span><br><span class="line">	 * @param port FTP服务器端口</span><br><span class="line">	 * @param username FTP登录账号</span><br><span class="line">	 * @param password FTP登录密码</span><br><span class="line">	 * @param basePath FTP服务器基础目录</span><br><span class="line">	 * @param filePath FTP服务器文件存放路径。例如分日期存放：/2019/01/01。文件的路径为basePath+filePath</span><br><span class="line">	 * @param filename 上传到FTP服务器上的文件名</span><br><span class="line">	 * @param input 输入流</span><br><span class="line">	 * @return 成功返回true，否则返回false</span><br><span class="line">	 */</span><br><span class="line">	public static boolean uploadFile(String host, int port, String username, String password, String basePath,</span><br><span class="line">			String filePath, String filename, InputStream input) &#123;</span><br><span class="line">		boolean result = false;</span><br><span class="line">		FTPClient ftp = new FTPClient();</span><br><span class="line">		try &#123;</span><br><span class="line">			int reply;</span><br><span class="line">			ftp.connect(host, port);// 连接FTP服务器</span><br><span class="line">			// 如果采用默认端口，可以使用ftp.connect(host)的方式直接连接FTP服务器</span><br><span class="line">			ftp.login(username, password);// 登录</span><br><span class="line">			reply = ftp.getReplyCode();</span><br><span class="line">			if (!FTPReply.isPositiveCompletion(reply)) &#123;</span><br><span class="line">				ftp.disconnect();</span><br><span class="line">				return result;</span><br><span class="line">			&#125;</span><br><span class="line">			//切换到上传目录</span><br><span class="line">			if (!ftp.changeWorkingDirectory(basePath+filePath)) &#123;</span><br><span class="line">				//如果目录不存在创建目录</span><br><span class="line">				String[] dirs = filePath.split(&quot;/&quot;);</span><br><span class="line">				String tempPath = basePath;</span><br><span class="line">				for (String dir : dirs) &#123;</span><br><span class="line">					if (null == dir || &quot;&quot;.equals(dir)) continue;</span><br><span class="line">					tempPath += &quot;/&quot; + dir;</span><br><span class="line">					if (!ftp.changeWorkingDirectory(tempPath)) &#123;</span><br><span class="line">						if (!ftp.makeDirectory(tempPath)) &#123;</span><br><span class="line">							return result;</span><br><span class="line">						&#125; else &#123;</span><br><span class="line">							ftp.changeWorkingDirectory(tempPath);</span><br><span class="line">						&#125;</span><br><span class="line">					&#125;</span><br><span class="line">				&#125;</span><br><span class="line">			&#125;</span><br><span class="line">			//设置上传文件的类型为二进制类型</span><br><span class="line">			ftp.setFileType(FTP.BINARY_FILE_TYPE);</span><br><span class="line">			//上传文件</span><br><span class="line">			if (!ftp.storeFile(filename, input)) &#123;</span><br><span class="line">				return result;</span><br><span class="line">			&#125;</span><br><span class="line">			input.close();</span><br><span class="line">			ftp.logout();</span><br><span class="line">			result = true;</span><br><span class="line">		&#125; catch (IOException e) &#123;</span><br><span class="line">			e.printStackTrace();</span><br><span class="line">		&#125; finally &#123;</span><br><span class="line">			if (ftp.isConnected()) &#123;</span><br><span class="line">				try &#123;</span><br><span class="line">					ftp.disconnect();</span><br><span class="line">				&#125; catch (IOException ioe) &#123;</span><br><span class="line">				&#125;</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line">		return result;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	/**</span><br><span class="line">	 * Description: 从FTP服务器下载文件</span><br><span class="line">	 * @param host FTP服务器hostname</span><br><span class="line">	 * @param port FTP服务器端口</span><br><span class="line">	 * @param username FTP登录账号</span><br><span class="line">	 * @param password FTP登录密码</span><br><span class="line">	 * @param remotePath FTP服务器上的相对路径</span><br><span class="line">	 * @param fileName 要下载的文件名</span><br><span class="line">	 * @param localPath 下载后保存到本地的路径</span><br><span class="line">	 * @return</span><br><span class="line">	 */</span><br><span class="line">	public static boolean downloadFile(String host, int port, String username, String password, String remotePath,</span><br><span class="line">			String fileName, String localPath) &#123;</span><br><span class="line">		boolean result = false;</span><br><span class="line">		FTPClient ftp = new FTPClient();</span><br><span class="line">		try &#123;</span><br><span class="line">			int reply;</span><br><span class="line">			ftp.connect(host, port);</span><br><span class="line">			// 如果采用默认端口，可以使用ftp.connect(host)的方式直接连接FTP服务器</span><br><span class="line">			ftp.login(username, password);// 登录</span><br><span class="line">			reply = ftp.getReplyCode();</span><br><span class="line">			if (!FTPReply.isPositiveCompletion(reply)) &#123;</span><br><span class="line">				ftp.disconnect();</span><br><span class="line">				return result;</span><br><span class="line">			&#125;</span><br><span class="line">			ftp.changeWorkingDirectory(remotePath);// 转移到FTP服务器目录</span><br><span class="line">			FTPFile[] fs = ftp.listFiles();</span><br><span class="line">			for (FTPFile ff : fs) &#123;</span><br><span class="line">				if (ff.getName().equals(fileName)) &#123;</span><br><span class="line">					File localFile = new File(localPath + &quot;/&quot; + ff.getName());</span><br><span class="line"></span><br><span class="line">					OutputStream is = new FileOutputStream(localFile);</span><br><span class="line">					ftp.retrieveFile(ff.getName(), is);</span><br><span class="line">					is.close();</span><br><span class="line">				&#125;</span><br><span class="line">			&#125;</span><br><span class="line"></span><br><span class="line">			ftp.logout();</span><br><span class="line">			result = true;</span><br><span class="line">		&#125; catch (IOException e) &#123;</span><br><span class="line">			e.printStackTrace();</span><br><span class="line">		&#125; finally &#123;</span><br><span class="line">			if (ftp.isConnected()) &#123;</span><br><span class="line">				try &#123;</span><br><span class="line">					ftp.disconnect();</span><br><span class="line">				&#125; catch (IOException ioe) &#123;</span><br><span class="line">				&#125;</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line">		return result;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	public static void main(String[] args) &#123;</span><br><span class="line">		try &#123;</span><br><span class="line">	        FileInputStream in=new FileInputStream(new File(&quot;E:\\ftptest\\test.jpg&quot;));</span><br><span class="line">	        boolean flag = uploadFile(&quot;xxxx&quot;, 21, &quot;xxxx&quot;, &quot;xxxx&quot;, &quot;/home/xxxx/files&quot;,&quot;/2019/11/06&quot;, &quot;test.jpg&quot;, in);</span><br><span class="line">	        System.out.println(flag);</span><br><span class="line">	    &#125; catch (FileNotFoundException e) &#123;</span><br><span class="line">	        e.printStackTrace();</span><br><span class="line">	    &#125;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+          
+        
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+    
+      
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
     <link itemprop="mainEntityOfPage" href="http://stevenhoukai.github.io/2019/11/05/hello-world/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -1562,7 +1731,7 @@
               
                 <a href="/archives/">
               
-                  <span class="site-state-item-count">27</span>
+                  <span class="site-state-item-count">28</span>
                   <span class="site-state-item-name">日志</span>
                 </a>
               </div>
@@ -1573,7 +1742,7 @@
               
               <div class="site-state-item site-state-categories">
                 <a href="/categories/index.html">
-                  <span class="site-state-item-count">18</span>
+                  <span class="site-state-item-count">19</span>
                   <span class="site-state-item-name">分类</span>
                 </a>
               </div>
@@ -1584,7 +1753,7 @@
               
               <div class="site-state-item site-state-tags">
                 <a href="/tags/index.html">
-                  <span class="site-state-item-count">28</span>
+                  <span class="site-state-item-count">29</span>
                   <span class="site-state-item-name">标签</span>
                 </a>
               </div>

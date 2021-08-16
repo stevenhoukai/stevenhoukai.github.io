@@ -1,6 +1,26 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
+    <title>Golang的for循环踩坑</title>
+    <url>/2021/08/16/20210816-gapGolangFor/</url>
+    <content><![CDATA[<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a><strong>前言</strong></h2><p>最近写项目用了太多的for循环，殊不知这么简单的一个操作竟然踩出大坑，记录一波！</p>
+<h2 id="for循环使用"><a href="#for循环使用" class="headerlink" title="for循环使用"></a>for循环使用</h2><p>下面来看一下项目中的一些用法</p>
+<h3 id="实例踩坑效果"><a href="#实例踩坑效果" class="headerlink" title="实例踩坑效果"></a>实例踩坑效果</h3><figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">main</span><span class="params">()</span></span> &#123;</span><br><span class="line">	arr := []<span class="keyword">int</span>&#123;<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>&#125;</span><br><span class="line">	newArr := []*<span class="keyword">int</span>&#123;&#125;</span><br><span class="line">	<span class="keyword">for</span> _, v := <span class="keyword">range</span> arr &#123;</span><br><span class="line">		newArr = <span class="built_in">append</span>(newArr, &amp;v)</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">for</span> _, v := <span class="keyword">range</span> newArr &#123;</span><br><span class="line">		fmt.Println(*v)</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line">$ <span class="keyword">go</span> run main.<span class="keyword">go</span></span><br><span class="line"><span class="number">3</span> <span class="number">3</span> <span class="number">3</span></span><br></pre></td></tr></table></figure>
+
+<p>看到这个结果的时候我其实是一脸懵逼的，这个问题起初我一个java程序员真是无法理解，后来直到我运行了如下的代码：</p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">main</span><span class="params">()</span></span> &#123;</span><br><span class="line">	arr := []<span class="keyword">int</span>&#123;<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>&#125;</span><br><span class="line">	newArr := []*<span class="keyword">int</span>&#123;&#125;</span><br><span class="line">	<span class="keyword">for</span> _, v := <span class="keyword">range</span> arr &#123;</span><br><span class="line">		fmt.Println(<span class="string">""</span>)</span><br><span class="line">		fmt.Printf(<span class="string">"origin addr: %p value: %v"</span>, &amp;v, v)</span><br><span class="line">		newArr = <span class="built_in">append</span>(newArr, &amp;v)</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">for</span> _, s := <span class="keyword">range</span> newArr &#123;</span><br><span class="line">		fmt.Println(<span class="string">""</span>)</span><br><span class="line">		fmt.Printf(<span class="string">"addr: %p  value: %v"</span>, s, *s)</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line">输出结果：</span><br><span class="line">origin addr: <span class="number">0xc0000a67a8</span> value: <span class="number">1</span></span><br><span class="line">origin addr: <span class="number">0xc0000a67a8</span> value: <span class="number">2</span></span><br><span class="line">origin addr: <span class="number">0xc0000a67a8</span> value: <span class="number">3</span></span><br><span class="line">addr: <span class="number">0xc0000a67a8</span>  value: <span class="number">3</span></span><br><span class="line">addr: <span class="number">0xc0000a67a8</span>  value: <span class="number">3</span></span><br><span class="line">addr: <span class="number">0xc0000a67a8</span>  value: <span class="number">3</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a><strong>总结</strong></h2><p>总结就是golang的for循环是通过同一个地址槽来反复接值的！！！</p>
+<p><img src="/2021/08/16/20210816-gapGolangFor/6.jpg" alt></p>
+]]></content>
+      <categories>
+        <category>golang踩坑记录</category>
+      </categories>
+      <tags>
+        <tag>Golang</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>count(1)、count(*)、count(列)有什么区别？</title>
     <url>/2021/08/12/20210812-explainCount/</url>
     <content><![CDATA[<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a><strong>前言</strong></h2><p>不知不觉入职tencent已经半年了，期间一直都在忙着适应golang还有新的业务新的微服务框架，从java转到golang有所适有所不适吧，但总体来说问题不大，所以就很久没有更新了，但是没关系，工作中遇到的问题小弟我都有一一记录，后面全部补上。今天主要来对sql统计中的count进行一下总结。</p>
