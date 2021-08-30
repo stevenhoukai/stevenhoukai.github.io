@@ -295,6 +295,595 @@
   
   
   <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://stevenhoukai.github.io/2020/11/26/20201126-blbinarytree/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="steven Hou">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/upload/images/avatar.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="迷途小书童">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+                
+                <a class="post-title-link" href="/2020/11/26/20201126-blbinarytree/" itemprop="url">二叉树的遍历</a></h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2020-11-26T00:00:01+08:00">
+                2020-11-26
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/数据结构与算法/" itemprop="url" rel="index">
+                    <span itemprop="name">数据结构与算法</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          
+            <p>本文主要就二叉树的遍历方式进行总结和记录，从而了解递归、栈以及队列的应用，通常对于一个二叉树的遍历方式大致分为：</p>
+<ol>
+<li>前序遍历（中 -&gt; 左 -&gt; 右）</li>
+<li>中序遍历（左 -&gt; 中 -&gt; 右）</li>
+<li>后续遍历（左 -&gt; 右 -&gt; 中）</li>
+<li>层次遍历</li>
+</ol>
+<ul>
+<li><h3 id="前序遍历"><a href="#前序遍历" class="headerlink" title="前序遍历"></a><strong>前序遍历</strong></h3><p>   <img src="/2020/11/26/20201126-blbinarytree/beforebl.png" alt></p>
+<ul>
+<li><h4 id="递归实现"><a href="#递归实现" class="headerlink" title="递归实现"></a><strong>递归实现</strong></h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">/*</span><br><span class="line"> * 思路：若二叉树非空：</span><br><span class="line"> * 1、访问根节点</span><br><span class="line"> * 2、遍历左子树</span><br><span class="line"> * 3、遍历右子数</span><br><span class="line"> */</span><br><span class="line"> public void PreOrder(Btree T)&#123;</span><br><span class="line">     if(T != null)&#123;</span><br><span class="line">         show(T)</span><br><span class="line">         PreOrder(T.left)</span><br><span class="line">         PreOrder(T.right)</span><br><span class="line">     &#125;</span><br><span class="line"> &#125;</span><br></pre></td></tr></table></figure>
+
+
+
+
+</li>
+</ul>
+</li>
+</ul>
+<ul>
+<li><h4 id="栈实现"><a href="#栈实现" class="headerlink" title="栈实现"></a><strong>栈实现</strong></h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line">/*</span><br><span class="line"> * 思路：若二叉树非空</span><br><span class="line"> * 1、根遍历，拿到一个节点的指针，先判断是否为空，不为空就先访问该结点，然后直接进栈，</span><br><span class="line"> * 2、接着遍历左子树；为空则要从栈中弹出一个节点来，这个时候弹出的结点就是其父亲</span><br><span class="line"> * 3、然后访问其父亲的右子树，直到当前节点为空且栈为空时，算法结束.</span><br><span class="line"> *</span><br><span class="line"> */</span><br><span class="line"> public void PreOrder1(Btree T) &#123;</span><br><span class="line">        stack&lt;Btree&gt; st;</span><br><span class="line">        if (T == NULL)&#123;</span><br><span class="line">            return null;</span><br><span class="line">        &#125;</span><br><span class="line">        st.push(T);</span><br><span class="line">        while (!st.empty())&#123;</span><br><span class="line">            Btree T =st.pop();</span><br><span class="line">            show(T)</span><br><span class="line">            if (T.right!=NULL)</span><br><span class="line">                st.push(p.right);</span><br><span class="line">            if (p.left!=NULL)</span><br><span class="line">                st.push(p.left);</span><br><span class="line">        &#125;</span><br><span class="line">        return null;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+
+
+</li>
+</ul>
+<ul>
+<li><h3 id="中序遍历"><a href="#中序遍历" class="headerlink" title="中序遍历"></a><strong>中序遍历</strong></h3><p>   <img src="/2020/11/26/20201126-blbinarytree/middlebl.png" alt></p>
+<ul>
+<li><h4 id="递归实现-1"><a href="#递归实现-1" class="headerlink" title="递归实现"></a><strong>递归实现</strong></h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">/*</span><br><span class="line"> * 思路：若二叉树非空：</span><br><span class="line"> * 1、遍历左子树</span><br><span class="line"> * 2、访问根节点</span><br><span class="line"> * 3、遍历右子数</span><br><span class="line"> */</span><br><span class="line"> public void MidOrder(Btree T)&#123;</span><br><span class="line">     if(T != null)&#123;</span><br><span class="line">         MidOrder(T.left)</span><br><span class="line">         show(T)</span><br><span class="line">         MidOrder(T.right)</span><br><span class="line">     &#125;</span><br><span class="line"> &#125;</span><br></pre></td></tr></table></figure>
+
+
+
+
+</li>
+</ul>
+</li>
+</ul>
+<ul>
+<li><h4 id="栈实现-1"><a href="#栈实现-1" class="headerlink" title="栈实现"></a><strong>栈实现</strong></h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line">/*</span><br><span class="line"> * 思路：借助栈</span><br><span class="line"> * 1、初始时依次扫描根节点的所在左侧节点并将它们一一进栈；</span><br><span class="line"> * 2、出栈一个节点，访问它</span><br><span class="line"> * 3、扫描该节点的右孩子节点并将其出栈</span><br><span class="line"> * 4、依次扫描右孩子节点的所有左侧节点并一一进栈</span><br><span class="line"> * 5、反复 2 - 4 步骤</span><br><span class="line"> */</span><br><span class="line">public void MidOrder2(Btree T)&#123;</span><br><span class="line">    Stack s = new Stack();</span><br><span class="line">    BTree p = T;</span><br><span class="line">    while(p||!s.IsEmpty())&#123;</span><br><span class="line">        if(p)&#123;</span><br><span class="line">            s.push(p);</span><br><span class="line">            p = p.left;</span><br><span class="line">        &#125;else&#123;</span><br><span class="line">            p = s.pop();</span><br><span class="line">            show(p);</span><br><span class="line">            p = p.right;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+
+
+</li>
+</ul>
+<ul>
+<li><h3 id="后序遍历"><a href="#后序遍历" class="headerlink" title="后序遍历"></a><strong>后序遍历</strong></h3><p>​    <img src="/2020/11/26/20201126-blbinarytree/afterbl.png" alt></p>
+<ul>
+<li><h4 id="递归实现-2"><a href="#递归实现-2" class="headerlink" title="递归实现"></a><strong>递归实现</strong></h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">/*</span><br><span class="line"> * 思路：若二叉树非空：</span><br><span class="line"> * 1、遍历左子树</span><br><span class="line"> * 2、遍历右子数</span><br><span class="line"> * 3、访问根节点</span><br><span class="line"> */</span><br><span class="line"> public void PostOrder(Btree T)&#123;</span><br><span class="line">     if(T != null)&#123;</span><br><span class="line">         PostOrder(T.left)</span><br><span class="line">         PostOrder(T.right)</span><br><span class="line">         show(T)</span><br><span class="line">     &#125;</span><br><span class="line"> &#125;</span><br></pre></td></tr></table></figure>
+
+
+
+
+</li>
+</ul>
+</li>
+</ul>
+<ul>
+<li><h4 id="栈实现-2"><a href="#栈实现-2" class="headerlink" title="栈实现"></a><strong>栈实现</strong></h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><span class="line">/*</span><br><span class="line"> * 思路：借助栈</span><br><span class="line"> */</span><br><span class="line">public void AfterOrder2(Btree root)&#123;</span><br><span class="line">    if (root == NULL)&#123;</span><br><span class="line">       return;</span><br><span class="line">    &#125;</span><br><span class="line">    Stack&lt;BTree&gt; s = new Stack();</span><br><span class="line">	s.push(root);//根指针入栈</span><br><span class="line">	while (!s.empty())</span><br><span class="line">	&#123;</span><br><span class="line">		//重复将栈顶指针指向结点的左子树压栈,直到栈顶指针指向结点的左子树为空</span><br><span class="line">		while (s.top().left != NULL)&#123;</span><br><span class="line">			s.push(s.top().left);</span><br><span class="line">		&#125;</span><br><span class="line">		Btree last = NULL;//上一次遍历过的指针</span><br><span class="line">		//重复检查</span><br><span class="line">		while (!s.empty())&#123;</span><br><span class="line">			if (s.top().right==NULL||last==s.top().right) &#123;</span><br><span class="line">			//如果栈顶指针指向结点的右子树为空或者遍历过</span><br><span class="line">				show(s.top())</span><br><span class="line">				last = s.top();//更新指针last</span><br><span class="line">				s.pop();//栈顶指针出栈</span><br><span class="line">			&#125;</span><br><span class="line">			//如果栈顶指针指向的结点的右子树不为空</span><br><span class="line">			else if(s.top()-&gt;R!=NULL)&#123;</span><br><span class="line">					s.push(s.top()-&gt;R);//将右子树入栈</span><br><span class="line">					break;//退出检查</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+
+
+</li>
+</ul>
+<ul>
+<li><h3 id="层次遍历"><a href="#层次遍历" class="headerlink" title="层次遍历"></a><strong>层次遍历</strong></h3></li>
+</ul>
+<ul>
+<li><h4 id="队列实现"><a href="#队列实现" class="headerlink" title="队列实现"></a><strong>队列实现</strong></h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line">/*</span><br><span class="line"> * 思路：借助队列 队列的就是FIFO</span><br><span class="line"> * 1、初始将根节点入队并访问根节点，然后出队</span><br><span class="line"> * 2、如果有左子树，将左子树的根入队</span><br><span class="line"> * 3、如果有右子树，将右子树的根入队</span><br><span class="line"> * 4、然后出队，访问该节点</span><br><span class="line"> * 5、反复出队访问直到队列为空</span><br><span class="line"> * 伪代码</span><br><span class="line"> */</span><br><span class="line">public void levelOrder(Btree T)&#123;</span><br><span class="line">    InitQueue(Q)</span><br><span class="line">    BTree p;</span><br><span class="line">    EnQueue(Q,T)</span><br><span class="line">    while(!IsEmpty(Q))&#123;</span><br><span class="line">        Dequeue(Q,p);</span><br><span class="line">        show(p);</span><br><span class="line">        if(p.left != null)&#123;</span><br><span class="line">            EnQueue(Q,p.left);</span><br><span class="line">        &#125;</span><br><span class="line">        if(p.right != null)&#123;</span><br><span class="line">            Enqueue(Q,p.right);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+
+</li>
+</ul>
+<ul>
+<li><h3 id="总结"><a href="#总结" class="headerlink" title="总结"></a><strong>总结</strong></h3><p>二叉树是数据结构中非常重要的一环，弄懂其相关操作对于后续的学习也是十分重要，Java中的Treemap以及Hashmap中都有红黑树的引入，红黑树就是二叉树的一种特殊存在，通常我们也叫它黑高平衡树，后面再详细描述~</p>
+<p><img src="/2020/11/26/20201126-blbinarytree/1.jpeg" alt></p>
+</li>
+</ul>
+
+          
+        
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+    
+      
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://stevenhoukai.github.io/2020/11/25/20201125-selfcomputer/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="steven Hou">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/upload/images/avatar.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="迷途小书童">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+                
+                <a class="post-title-link" href="/2020/11/25/20201125-selfcomputer/" itemprop="url">如何实现一个带括号的四则混合运算表达式求值</a></h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2020-11-25T00:00:01+08:00">
+                2020-11-25
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/数据结构与算法/" itemprop="url" rel="index">
+                    <span itemprop="name">数据结构与算法</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          
+            <p>本题其实相对比较简单，只要了解如何利用stack将中缀表达式转为后缀表达式(去括号的过程)，然后对后缀表达式进行求值即可！这里不对stack的结构和原理进行讲解，可自行查阅相关数据，也比较简单。</p>
+<ul>
+<li><h6 id="代码"><a href="#代码" class="headerlink" title="代码"></a><strong>代码</strong></h6><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">//实现 (1+2)*4*(5+1)/2+3 求值</span><br><span class="line">public class ComputerReview &#123;</span><br><span class="line">	public static void main(String[] args)&#123;</span><br><span class="line">		Scanner sc = new Scanner(System.in);</span><br><span class="line">		String s = sc.nextLine();</span><br><span class="line">		//1去括号，中缀转后缀</span><br><span class="line">		ArrayList&lt;String&gt; backExpList = tansToBackExp(s);</span><br><span class="line">		//2后缀计算</span><br><span class="line">		int result = compute(backExpList);</span><br><span class="line">		System.out.println(result);</span><br><span class="line">	&#125;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br></pre></td><td class="code"><pre><span class="line">//这一步就是利用stack的特性将中缀表达式转换为后缀表达式同时去除掉括号的过程</span><br><span class="line">//实现方式有很多种，这里只是我的思路</span><br><span class="line">private static ArrayList tansToBackExp(String s) &#123;</span><br><span class="line">		ArrayList&lt;String&gt; al = new ArrayList();</span><br><span class="line">		Stack&lt;String&gt; stack = new Stack&lt;&gt;();</span><br><span class="line">		for(int i = 0 ; i &lt; s.length() ; i++)&#123;</span><br><span class="line">			String c = s.charAt(i)+&quot;&quot;;</span><br><span class="line">			if(c.matches(&quot;\\d&quot;))&#123;</span><br><span class="line">				al.add(c);</span><br><span class="line">			&#125;else &#123;</span><br><span class="line">				if(c.equals(&quot;(&quot;))&#123;</span><br><span class="line">					stack.push(c);</span><br><span class="line">				&#125;else if(c.equals(&quot;+&quot;)||c.equals(&quot;-&quot;))&#123;</span><br><span class="line">					while(!stack.isEmpty())&#123;</span><br><span class="line">						if(stack.peek().equals(&quot;(&quot;))&#123;</span><br><span class="line">							break;</span><br><span class="line">						&#125;</span><br><span class="line">						al.add(stack.pop());</span><br><span class="line">					&#125;</span><br><span class="line">					stack.push(c);</span><br><span class="line">				&#125;else if(c.equals(&quot;*&quot;)||c.equals(&quot;/&quot;))&#123;</span><br><span class="line"></span><br><span class="line">					while(!stack.isEmpty())&#123;</span><br><span class="line">						if(stack.peek().equals(&quot; (&quot;)||stack.peek().equals(&quot;+&quot;)||stack.peek().equals(&quot;-&quot;))&#123;</span><br><span class="line">							break;</span><br><span class="line">						&#125;</span><br><span class="line">						if(c.equals(&quot;*&quot;)||c.equals(&quot;/&quot;))&#123;</span><br><span class="line">							al.add(stack.pop());</span><br><span class="line">						&#125;</span><br><span class="line">					&#125;</span><br><span class="line">					stack.push(c);</span><br><span class="line">				&#125;else &#123;</span><br><span class="line">					while(!stack.isEmpty())&#123;</span><br><span class="line">						if(!stack.peek().equals(&quot;(&quot;))&#123;</span><br><span class="line">							al.add(stack.pop());</span><br><span class="line">						&#125;else&#123;</span><br><span class="line">							//这一步很关键</span><br><span class="line">							stack.pop();</span><br><span class="line">							break;</span><br><span class="line">						&#125;</span><br><span class="line">					&#125;</span><br><span class="line">				&#125;</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line">		while(!stack.isEmpty())&#123;</span><br><span class="line">			al.add(stack.pop());</span><br><span class="line">		&#125;</span><br><span class="line">		return al;</span><br><span class="line">	&#125;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line">//这一步相对来说就比较简单了，直接对转换后的后缀表达式求值，还是利用栈的特性</span><br><span class="line">//遍历后缀表达式，遇到数字就压栈处理，遇到表达式就出栈计算结果然后将结果再压栈，</span><br><span class="line">//最后栈中剩下的数字就是最终的结果</span><br><span class="line">private static Integer compute(ArrayList&lt;String&gt; al) &#123;</span><br><span class="line">		Stack&lt;String&gt; stack = new Stack&lt;String&gt;();</span><br><span class="line">		for(int i = 0 ; i &lt; al.size(); i++)&#123;</span><br><span class="line">			String s = al.get(i);</span><br><span class="line">			if(s.matches(&quot;\\d&quot;))&#123;</span><br><span class="line">				stack.push(s);</span><br><span class="line">				continue;</span><br><span class="line">			&#125;</span><br><span class="line">			String str2 = stack.pop();</span><br><span class="line">			String str1 = stack.pop();</span><br><span class="line">			if(&quot;+&quot;.equals(s))&#123;</span><br><span class="line">				stack.push(Integer.parseInt(str1)+Integer.parseInt(str2)+&quot;&quot;);</span><br><span class="line">			&#125;else if(&quot;-&quot;.equals(s))&#123;</span><br><span class="line">				stack.push(Integer.parseInt(str1)-Integer.parseInt(str2)+&quot;&quot;);</span><br><span class="line">			&#125;else if(&quot;*&quot;.equals(s))&#123;</span><br><span class="line">				stack.push(Integer.parseInt(str1)*Integer.parseInt(str2)+&quot;&quot;);</span><br><span class="line">			&#125;else if(&quot;/&quot;.equals(s))&#123;</span><br><span class="line">				stack.push(Integer.parseInt(str1)/Integer.parseInt(str2)+&quot;&quot;);</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line">		return Integer.parseInt(stack.peek());</span><br><span class="line">	&#125;</span><br></pre></td></tr></table></figure>
+</li>
+<li><h6 id="总结"><a href="#总结" class="headerlink" title="总结"></a><strong>总结</strong></h6><p>栈是一个很重要的数据结构，FILO、LIFO的策略值得我们好好理解学习，jvm中的栈以及本地方法栈也都是采用了这样的数据结构</p>
+<p><img src="/2020/11/25/20201125-selfcomputer/1.jpg" alt></p>
+<p><img src="/2020/11/25/20201125-selfcomputer/5.jpeg" alt></p>
+</li>
+</ul>
+
+          
+        
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+    
+      
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://stevenhoukai.github.io/2020/11/21/20201121-ms1/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="steven Hou">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/upload/images/avatar.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="迷途小书童">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+                
+                <a class="post-title-link" href="/2020/11/21/20201121-ms1/" itemprop="url">xx后台开发面试总结</a></h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2020-11-21T00:00:01+08:00">
+                2020-11-21
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/面试/" itemprop="url" rel="index">
+                    <span itemprop="name">面试</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          
+            <h2 id="XX-后台开发工程师-接受Java转Go"><a href="#XX-后台开发工程师-接受Java转Go" class="headerlink" title="XX 后台开发工程师(接受Java转Go)"></a><strong>XX 后台开发工程师(接受Java转Go)</strong></h2><p>以下经历来源自个人好友谢晓峰</p>
+<ul>
+<li><h3 id="一面-技术leader面-50分钟（20201019）"><a href="#一面-技术leader面-50分钟（20201019）" class="headerlink" title="一面  技术leader面  50分钟（20201019）"></a>一面  技术leader面  50分钟（20201019）</h3></li>
+</ul>
+<ol>
+<li><p>都是项目介绍，工作做了些啥 ？ </p>
+</li>
+<li><p>索引的实现原理，为什么要用b树实现索引 ？</p>
+</li>
+<li><p>数据库相关原理 bufferpool redolog undolog changebuffer等等执行一条insert语句，数据库擎层面是怎么做的 ？  </p>
+</li>
+<li><p>数据库主从原理 ？</p>
+</li>
+<li><p>redis集群原理 rediscluster  </p>
+</li>
+<li><p>redis主从原理 sentinel机制 ？</p>
+</li>
+<li><p>https原理是什么 ？</p>
+</li>
+<li><p>情景: 敏感词过滤  14w的敏感词要做么做 ？</p>
+</li>
+<li><p>网络安全相关 xss csrf sql注入等 ？</p>
+</li>
+<li><p>linux命令 wc如何使用问题 ？</p>
+</li>
+<li><p>消息队列的选型对比kafka rabbitmq rocketmq ？</p>
+<p>只记得这么多问题了……</p>
+</li>
+</ol>
+<p>​       面完后十分钟立刻通知二面，三少爷感觉回答问题都是游刃有余除了两个细节不太好， linux命令这块确实不熟悉，只是在知道命令层面，具体的参数写法都是需要baidu的那种，一般的top free df du iostat vmstat都是会的，也知道日志查看相关的命令，再细致点怎么统计就得靠度娘了。本次面试是xx会议语音面试</p>
+<ul>
+<li><h3 id="二面-总监面-50分钟-20201022"><a href="#二面-总监面-50分钟-20201022" class="headerlink" title="二面 总监面  50分钟(20201022)"></a>二面 总监面  50分钟(20201022)</h3></li>
+</ul>
+<ol>
+<li>平时工作内容 最大挑战  ？</li>
+<li>所在公司的职级  ？</li>
+<li>年薪多少 ？</li>
+<li>怎么学习，为什么要学习springcloud，讲讲springcloud的组件和核心原理  ？</li>
+<li>这里工作强度等问题  ？</li>
+<li>然后就是工作内容的询问等  ？</li>
+</ol>
+<p>​       本次面试是xx会议视频（我单方的视频是看不到面试官的）面试，这一点三少爷觉得并不太好，因为只有三少爷开了视频，嘿嘿，尽人事听天命吧，学习每天还是得继续的。</p>
+<ul>
+<li><h3 id="三面-HR经理面试-60分钟-20201027"><a href="#三面-HR经理面试-60分钟-20201027" class="headerlink" title="三面 HR经理面试 60分钟(20201027)"></a>三面 HR经理面试 60分钟(20201027)</h3></li>
+</ul>
+<p>​       最难的一个面试，大概就是谈价和谈职级吧，所以说大厂经验才是谈资，像三少爷这种传统企业去互联网的真真儿没有什么话语权，怎么说呢，其实就是行业的问题，技术本身并不矛盾，缺乏的是行业经验，比如你ERP经验对于互联网来说并无任何光环加成，反过来也一样，每一个行业都有很多精英，多向身边比你优秀的人多多学习吧。</p>
+<ul>
+<li><h3 id="四面-HR经理复面-20分钟-20201102"><a href="#四面-HR经理复面-20分钟-20201102" class="headerlink" title="四面 HR经理复面 20分钟(20201102)"></a>四面 HR经理复面 20分钟(20201102)</h3></li>
+</ul>
+<p>​       其实就是确定薪资和职级以及公司福利的介绍等等，基本就是确定offer走审批流程阶段了，其实这个阶段并不安全，没有邮件的offer都是会存在未知因素的，最终被顶掉的例子也是比比皆是，希望三少爷努力了这么久不会中彩吧！</p>
+<ul>
+<li><h3 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h3></li>
+</ul>
+<p>​       感受：历时一个多月，终于拿到offer，三少爷还是满怀喜悦的，毕竟努力得到了认可。整体面试下来总体感受还是不错的，面试进度也推进的很快，虽然最后offer在薪酬审批过程中被卡了很久，但总算是有惊无险。技术方面问的东西偏底层，需要平时大量的积累，关键是跟面试官聊的来很重要，业务方面考察平时解决问题的思路以及学习方法和学习深度等。后面可能就从Java转向Golang了，于少爷而言具有挑战但难度不大，毕竟少爷可是看了大量jdk源码的人呐，加油吧！</p>
+<ul>
+<li><h3 id="复习学习计划"><a href="#复习学习计划" class="headerlink" title="复习学习计划"></a>复习学习计划</h3></li>
+</ul>
+<ol>
+<li><p>操作系统  </p>
+</li>
+<li><p>计算机组成原理  </p>
+</li>
+<li><p>计算机网络  </p>
+</li>
+<li><p>数据结构与算法  </p>
+</li>
+<li><p>linux</p>
+</li>
+<li><p>golang</p>
+<p>最后来一波鸡血吧，学习走起~</p>
+</li>
+</ol>
+<p><img src="/2020/11/21/20201121-ms1/timg.jpg" alt="图p1"></p>
+
+          
+        
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+    
+      
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
     <link itemprop="mainEntityOfPage" href="http://stevenhoukai.github.io/2020/10/16/20201016-summarytobacktowrite/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -1450,534 +2039,11 @@ ok搭建完成。
 
 
     
-      
-
-  
-
-  
-  
-  
-
-  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
-  
-  
-  
-  <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="http://stevenhoukai.github.io/2019/11/15/20191115-quartz/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="name" content="steven Hou">
-      <meta itemprop="description" content>
-      <meta itemprop="image" content="/upload/images/avatar.jpg">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="迷途小书童">
-    </span>
-
-    
-      <header class="post-header">
-
-        
-        
-          <h1 class="post-title" itemprop="name headline">
-                
-                <a class="post-title-link" href="/2019/11/15/20191115-quartz/" itemprop="url">Quartz---1、Cron表达式</a></h1>
-        
-
-        <div class="post-meta">
-          <span class="post-time">
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">发表于</span>
-              
-              <time title="创建于" itemprop="dateCreated datePublished" datetime="2019-11-15T00:00:01+08:00">
-                2019-11-15
-              </time>
-            
-
-            
-
-            
-          </span>
-
-          
-            <span class="post-category">
-            
-              <span class="post-meta-divider">|</span>
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-folder-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">分类于</span>
-              
-              
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/Quartz/" itemprop="url" rel="index">
-                    <span itemprop="name">Quartz</span>
-                  </a>
-                </span>
-
-                
-                
-              
-            </span>
-          
-
-          
-            
-          
-
-          
-          
-
-          
-
-          
-
-          
-
-        </div>
-      </header>
-    
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-      
-
-      
-        
-          
-            <h2 id="CronTrigger"><a href="#CronTrigger" class="headerlink" title="CronTrigger"></a>CronTrigger</h2><p>借用网上的一篇Cron表达式说明<br>CronTriggers往往比SimpleTrigger更有用，如果您需要基于日历的概念，而非SimpleTrigger完全指定的时间间隔，复发的发射工作的时间表。<br>CronTrigger，你可以指定触发的时间表如“每星期五中午”，或“每个工作日9:30时”，甚至“每5分钟一班9:00和10:00逢星期一上午，星期三星期五“。<br>即便如此，SimpleTrigger一样，CronTrigger拥有的startTime指定的时间表时生效，指定的时间表时，应停止（可选）结束时间。</p>
-<p>Cron Expressions<br>cron的表达式被用来配置CronTrigger实例。 cron的表达式是字符串，实际上是由七子表达式，描述个别细节的时间表。这些子表达式是分开的空白，代表：</p>
-<ol>
-<li>Seconds</li>
-<li>Minutes</li>
-<li>Hours</li>
-<li>Day-of-Month</li>
-<li>Month</li>
-<li>Day-of-Week</li>
-<li>Year (可选字段)<br>例  “0 0 12 ? * WED” 在每星期三下午12:00 执行,<br>个别子表达式可以包含范围, 例如，在前面的例子里(“WED”)可以替换成 “MON-FRI”, “MON, WED, FRI”甚至”MON-WED,SAT”.</li>
-</ol>
-<p>“*” 代表整个时间段.</p>
-<p>每一个字段都有一套可以指定有效值，如</p>
-<p>Seconds (秒)         ：可以用数字0－59 表示，</p>
-<p>Minutes(分)          ：可以用数字0－59 表示，</p>
-<p>Hours(时)             ：可以用数字0-23表示,</p>
-<p>Day-of-Month(天) ：可以用数字1-31 中的任一一个值，但要注意一些特别的月份</p>
-<p>Month(月)            ：可以用0-11 或用字符串  “JAN, FEB, MAR, APR, MAY, JUN, JUL, AUG, SEP, OCT, NOV and DEC” 表示</p>
-<p>Day-of-Week(每周)：可以用数字1-7表示（1 ＝ 星期日）或用字符口串“SUN, MON, TUE, WED, THU, FRI and SAT”表示</p>
-<p>“/”：为特别单位，表示为“每”如“0/15”表示每隔15分钟执行一次,“0”表示为从“0”分开始, “3/20”表示表示每隔20分钟执行一次，“3”表示从第3分钟开始执行</p>
-<p>“?”：表示每月的某一天，或第周的某一天</p>
-<p>“L”：用于每月，或每周，表示为每月的最后一天，或每个月的最后星期几如“6L”表示“每月的最后一个星期五”</p>
-<p>“W”：表示为最近工作日，如“15W”放在每月（day-of-month）字段上表示为“到本月15日最近的工作日”</p>
-<p>““#”：是用来指定“的”每月第n个工作日,例 在每周（day-of-week）这个字段中内容为”6#3” or “FRI#3” 则表示“每月第三个星期五”</p>
-<p>1）Cron表达式的格式：秒 分 时 日 月 周 年(可选)。</p>
-<pre><code>字段名                 允许的值                        允许的特殊字符  
-秒                      0-59                       , - * /  
-分                      0-59                       , - * /  
-小时                    0-23                        , - * /  
-日                      1-31                       , - * ? / L W C  
-月                      1-12 or JAN-DEC           , - * /  
-周几                    1-7 or SUN-SAT           , - * ? / L C #  
-年 (可选字段)         empty, 1970-2099                 , - * /
-
-
-
- “?”字符：表示不确定的值
-
- “,”字符：指定数个值
-
- “-”字符：指定一个值的范围
-
- “/”字符：指定一个值的增加幅度。n/m表示从n开始，每次增加m
-
- “L”字符：用在日表示一个月中的最后一天，用在周表示该月最后一个星期X
-
- “W”字符：指定离给定日期最近的工作日(周一到周五)
-
- “#”字符：表示该月第几个周X。6#3表示该月第3个周五</code></pre><p>   2）Cron表达式范例：</p>
-<pre><code>每隔5秒执行一次：*/5 * * * * ?
-
-每隔1分钟执行一次：0 */1 * * * ?
-
-每天23点执行一次：0 0 23 * * ?
-
-每天凌晨1点执行一次：0 0 1 * * ?
-
-每月1号凌晨1点执行一次：0 0 1 1 * ?
-
-每月最后一天23点执行一次：0 0 23 L * ?
-
-每周星期天凌晨1点实行一次：0 0 1 ? * L
-
-在26分、29分、33分执行一次：0 26,29,33 * * * ?
-
-每天的0点、13点、18点、21点都执行一次：0 0 0,13,18,21 * * ?</code></pre>
-          
-        
-      
-    </div>
-    
-    
-    
-
-    
-
-    
-
-    
-
-    <footer class="post-footer">
-      
-
-      
-
-      
-
-      
-      
-        <div class="post-eof"></div>
-      
-    </footer>
-  </div>
-  
-  
-  
-  </article>
-
-
-    
-      
-
-  
-
-  
-  
-  
-
-  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
-  
-  
-  
-  <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="http://stevenhoukai.github.io/2019/11/15/20191116-quartz-use/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="name" content="steven Hou">
-      <meta itemprop="description" content>
-      <meta itemprop="image" content="/upload/images/avatar.jpg">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="迷途小书童">
-    </span>
-
-    
-      <header class="post-header">
-
-        
-        
-          <h1 class="post-title" itemprop="name headline">
-                
-                <a class="post-title-link" href="/2019/11/15/20191116-quartz-use/" itemprop="url">Quartz---2、项目Quartz定时任务使用</a></h1>
-        
-
-        <div class="post-meta">
-          <span class="post-time">
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">发表于</span>
-              
-              <time title="创建于" itemprop="dateCreated datePublished" datetime="2019-11-15T00:00:01+08:00">
-                2019-11-15
-              </time>
-            
-
-            
-
-            
-          </span>
-
-          
-            <span class="post-category">
-            
-              <span class="post-meta-divider">|</span>
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-folder-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">分类于</span>
-              
-              
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/Quartz/" itemprop="url" rel="index">
-                    <span itemprop="name">Quartz</span>
-                  </a>
-                </span>
-
-                
-                
-              
-            </span>
-          
-
-          
-            
-          
-
-          
-          
-
-          
-
-          
-
-          
-
-        </div>
-      </header>
-    
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-      
-
-      
-        
-          
-            <h1 id="界面说明"><a href="#界面说明" class="headerlink" title="界面说明"></a>界面说明</h1><p>注意如果项目启动报错:<br>需要执行以下语句安装必须包</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">npm install --save react-cron-builder</span><br></pre></td></tr></table></figure>
-
-<p>项目目前只采用一个任务组：ICBC  </p>
-<h3 id="1、界面展示"><a href="#1、界面展示" class="headerlink" title="1、界面展示"></a>1、界面展示</h3><p><img src="/2019/11/15/20191116-quartz-use/1.jpg" alt="图p1"></p>
-<center>**图p1**</center>
-后台任务管理界面在系统设置里面，界面上能监控任务的实时状态
-
-<h1 id="功能说明"><a href="#功能说明" class="headerlink" title="功能说明"></a>功能说明</h1><p>目前后台任务节点包含以下功能</p>
-<h3 id="1、查询全部任务"><a href="#1、查询全部任务" class="headerlink" title="1、查询全部任务"></a>1、查询全部任务</h3><p><img src="/2019/11/15/20191116-quartz-use/3.jpg" alt="图p3"></p>
-<center>**图p2**</center>  
-
-<h3 id="2、查询运行中任务"><a href="#2、查询运行中任务" class="headerlink" title="2、查询运行中任务"></a>2、查询运行中任务</h3><p>可以查询正在处于运行的任务   </p>
-<h3 id="3、新建Simple任务"><a href="#3、新建Simple任务" class="headerlink" title="3、新建Simple任务"></a>3、新建Simple任务</h3><p><img src="/2019/11/15/20191116-quartz-use/2.jpg" alt="图p3"></p>
-<center>**图p3**</center>  
-
-<h3 id="4、新建Cron任务"><a href="#4、新建Cron任务" class="headerlink" title="4、新建Cron任务"></a>4、新建Cron任务</h3><p>同上，只是jobtime换成的Cron表达式,关于Cron表达式,可以参考上一篇<br><a href="https://stevenhoukai.github.io/2019/11/15/20191115-quartz/">Cron表达式介绍</a>! </p>
-<h3 id="5、修改任务"><a href="#5、修改任务" class="headerlink" title="5、修改任务"></a>5、修改任务</h3><p>可以动态的修改任务的执行计划等</p>
-<h3 id="6、暂停任务"><a href="#6、暂停任务" class="headerlink" title="6、暂停任务"></a>6、暂停任务</h3><p>可以停止正在运行中的任务</p>
-<h3 id="7、继续任务"><a href="#7、继续任务" class="headerlink" title="7、继续任务"></a>7、继续任务</h3><p>可以重启启动已经暂停的任务  </p>
-<h3 id="8、立即运行一次任务"><a href="#8、立即运行一次任务" class="headerlink" title="8、立即运行一次任务"></a>8、立即运行一次任务</h3><p>内存copy一份job进行独立运行</p>
-<h3 id="9、删除任务"><a href="#9、删除任务" class="headerlink" title="9、删除任务"></a>9、删除任务</h3><p>手动删除不需要的job</p>
-<h1 id="开发说明"><a href="#开发说明" class="headerlink" title="开发说明"></a>开发说明</h1><p>目前整个台任务采取独立jar包的方式，支持集群部署(集群服务器时间必须保持一致)，随机负载均衡策略。<br>开发具体的自定job如下图:</p>
-<p><img src="/2019/11/15/20191116-quartz-use/5.jpg" alt="图p4"></p>
-<center>**图p4**</center>
-
-<p><img src="/2019/11/15/20191116-quartz-use/4.jpg" alt="图p5"></p>
-<center>**图p5**</center>
-
-<p>自定义job类按照如图方式必须继承QuartzJobBean,并且重写executeInternal方法，在方法中添加业务代码即可，注意自定义job类上的注解要保留，目前业务代码的事务还在测试中，非数据库交互定时任务可以正常使用</p>
-
-          
-        
-      
-    </div>
-    
-    
-    
-
-    
-
-    
-
-    
-
-    <footer class="post-footer">
-      
-
-      
-
-      
-
-      
-      
-        <div class="post-eof"></div>
-      
-    </footer>
-  </div>
-  
-  
-  
-  </article>
-
-
-    
-      
-
-  
-
-  
-  
-  
-
-  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
-  
-  
-  
-  <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="http://stevenhoukai.github.io/2019/11/07/20191107-react-01/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="name" content="steven Hou">
-      <meta itemprop="description" content>
-      <meta itemprop="image" content="/upload/images/avatar.jpg">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="迷途小书童">
-    </span>
-
-    
-      <header class="post-header">
-
-        
-        
-          <h1 class="post-title" itemprop="name headline">
-                
-                <a class="post-title-link" href="/2019/11/07/20191107-react-01/" itemprop="url">React实战笔记---如何动态加载查询条件</a></h1>
-        
-
-        <div class="post-meta">
-          <span class="post-time">
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">发表于</span>
-              
-              <time title="创建于" itemprop="dateCreated datePublished" datetime="2019-11-07T00:00:01+08:00">
-                2019-11-07
-              </time>
-            
-
-            
-
-            
-          </span>
-
-          
-            <span class="post-category">
-            
-              <span class="post-meta-divider">|</span>
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-folder-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">分类于</span>
-              
-              
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/React实战笔记/" itemprop="url" rel="index">
-                    <span itemprop="name">React实战笔记</span>
-                  </a>
-                </span>
-
-                
-                
-              
-            </span>
-          
-
-          
-            
-          
-
-          
-          
-
-          
-
-          
-
-          
-
-        </div>
-      </header>
-    
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-      
-
-      
-        
-          
-            <h2 id="React实战笔记—如何动态加载查询条件"><a href="#React实战笔记—如何动态加载查询条件" class="headerlink" title="React实战笔记—如何动态加载查询条件"></a>React实战笔记—如何动态加载查询条件</h2><p>如图需要动态加载第五个查询条件<br><img src="/2019/11/07/20191107-react-01/1.png" alt="图p1"></p>
-<p>由于框架原因，没法使用父组件直接调用子组件的方式。<br>下面给我这边的解决方案–&gt;通过页面加载完成之后再根据最新数据强制渲染一次的方式,<br>代码如下:</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br></pre></td><td class="code"><pre><span class="line">//页面渲染之前加载数据</span><br><span class="line">componentWillMount() &#123;</span><br><span class="line">    this.getCCYType();</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">//页面渲染完成之后再根据加载的数据强制渲染一次</span><br><span class="line">//时间间隔为0.001ms</span><br><span class="line">componentDidMount() &#123;</span><br><span class="line">    setInterval(() =&gt; &#123;</span><br><span class="line">                   this.setState(() =&gt; &#123;</span><br><span class="line">                        return &#123; unseen: &quot;does not display&quot; &#125;</span><br><span class="line">&#125;);&#125;, 0.001);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">//获取数据方法</span><br><span class="line">getCCYType = async () =&gt; &#123;</span><br><span class="line">        const retdata = await getCCYType();</span><br><span class="line">        var data = [];</span><br><span class="line">        if (retdata.code === 20000) &#123;</span><br><span class="line">            let ccylist = retdata.result.item_list;</span><br><span class="line">            for (var i = 0; i &lt; ccylist.length; i++) &#123;</span><br><span class="line">                data.push(&#123;id: ccylist[i].currencyCode, name: ccylist[i].currencyName&#125;)</span><br><span class="line">            &#125;</span><br><span class="line">            this.formList.push( &#123;</span><br><span class="line">                type: &apos;SELECT&apos;,</span><br><span class="line">                label: &apos;币种&apos;,</span><br><span class="line">                field: &apos;currencyType&apos;,</span><br><span class="line">                placeholder: &apos;请输入导入日期&apos;,</span><br><span class="line">                list: data,</span><br><span class="line">                width: 100,</span><br><span class="line">            &#125;);</span><br><span class="line">        &#125; else &#123;</span><br><span class="line">            message.error(&quot;获取币种类型异常！ error=&quot; + retdata.msg)</span><br><span class="line">        &#125;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
-
-<p>这样就可以以动态方式加载查询条件了，如下<br><img src="/2019/11/07/20191107-react-01/2.jpg" alt="图p2"></p>
-
-          
-        
-      
-    </div>
-    
-    
-    
-
-    
-
-    
-
-    
-
-    <footer class="post-footer">
-      
-
-      
-
-      
-
-      
-      
-        <div class="post-eof"></div>
-      
-    </footer>
-  </div>
-  
-  
-  
-  </article>
-
-
-    
   </section>
 
   
   <nav class="pagination">
-    <a class="extend prev" rel="prev" href="/"><i class="fa fa-angle-left"></i></a><a class="page-number" href="/">1</a><span class="page-number current">2</span><a class="page-number" href="/page/3/">3</a><a class="extend next" rel="next" href="/page/3/"><i class="fa fa-angle-right"></i></a>
+    <a class="extend prev" rel="prev" href="/"><i class="fa fa-angle-left"></i></a><a class="page-number" href="/">1</a><span class="page-number current">2</span><a class="page-number" href="/page/3/">3</a><a class="page-number" href="/page/4/">4</a><a class="extend next" rel="next" href="/page/3/"><i class="fa fa-angle-right"></i></a>
   </nav>
 
 
@@ -2025,7 +2091,7 @@ ok搭建完成。
               
                 <a href="/archives/">
               
-                  <span class="site-state-item-count">28</span>
+                  <span class="site-state-item-count">31</span>
                   <span class="site-state-item-name">日志</span>
                 </a>
               </div>
@@ -2036,7 +2102,7 @@ ok搭建完成。
               
               <div class="site-state-item site-state-categories">
                 <a href="/categories/index.html">
-                  <span class="site-state-item-count">19</span>
+                  <span class="site-state-item-count">20</span>
                   <span class="site-state-item-name">分类</span>
                 </a>
               </div>
@@ -2047,7 +2113,7 @@ ok搭建完成。
               
               <div class="site-state-item site-state-tags">
                 <a href="/tags/index.html">
-                  <span class="site-state-item-count">29</span>
+                  <span class="site-state-item-count">30</span>
                   <span class="site-state-item-name">标签</span>
                 </a>
               </div>
