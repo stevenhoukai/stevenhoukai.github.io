@@ -1,0 +1,1219 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next muse use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="系统设计,">
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="前言最近遇到一个需求，需要短时间内将大量的长链转换成短链然后再转成二维码，由于我们的短链服务是通过接口外部进行调用的，而且不能批量转换，所以这里就会出现一个情况就是短时间的大量请求接口会以失败告终，如果能自己设计一个短链系统，这个问题就能解决了。那么今天就来谈谈如何设计一个高性能短链系统。 本文将会从以下几个方面来进行探讨   为啥要用短链 长链存在哪些问题 短链是如何实现跳转的 如何生成短链以及">
+<meta name="keywords" content="系统设计">
+<meta property="og:type" content="article">
+<meta property="og:title" content="高性能短链系统的一些设计思考">
+<meta property="og:url" content="http://stevenhoukai.github.io/2021/09/27/20210927-shorturl/index.html">
+<meta property="og:site_name" content="迷途小书童">
+<meta property="og:description" content="前言最近遇到一个需求，需要短时间内将大量的长链转换成短链然后再转成二维码，由于我们的短链服务是通过接口外部进行调用的，而且不能批量转换，所以这里就会出现一个情况就是短时间的大量请求接口会以失败告终，如果能自己设计一个短链系统，这个问题就能解决了。那么今天就来谈谈如何设计一个高性能短链系统。 本文将会从以下几个方面来进行探讨   为啥要用短链 长链存在哪些问题 短链是如何实现跳转的 如何生成短链以及">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://stevenhoukai.github.io/2021/09/27/20210927-shorturl/1.png">
+<meta property="og:image" content="http://stevenhoukai.github.io/2021/09/27/20210927-shorturl/2.jpeg">
+<meta property="og:image" content="http://stevenhoukai.github.io/2021/09/27/20210927-shorturl/3.png">
+<meta property="og:image" content="http://stevenhoukai.github.io/2021/09/27/20210927-shorturl/10.png">
+<meta property="og:image" content="http://stevenhoukai.github.io/2021/09/27/20210927-shorturl/11.png">
+<meta property="og:image" content="http://stevenhoukai.github.io/2021/09/27/20210927-shorturl/7.png">
+<meta property="og:image" content="http://stevenhoukai.github.io/2021/09/27/20210927-shorturl/5.png">
+<meta property="og:image" content="http://stevenhoukai.github.io/2021/09/27/20210927-shorturl/6.png">
+<meta property="og:image" content="http://stevenhoukai.github.io/2021/09/27/20210927-shorturl/6.jpg">
+<meta property="og:updated_time" content="2021-09-29T03:24:08.696Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="高性能短链系统的一些设计思考">
+<meta name="twitter:description" content="前言最近遇到一个需求，需要短时间内将大量的长链转换成短链然后再转成二维码，由于我们的短链服务是通过接口外部进行调用的，而且不能批量转换，所以这里就会出现一个情况就是短时间的大量请求接口会以失败告终，如果能自己设计一个短链系统，这个问题就能解决了。那么今天就来谈谈如何设计一个高性能短链系统。 本文将会从以下几个方面来进行探讨   为啥要用短链 长链存在哪些问题 短链是如何实现跳转的 如何生成短链以及">
+<meta name="twitter:image" content="http://stevenhoukai.github.io/2021/09/27/20210927-shorturl/1.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Muse',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://stevenhoukai.github.io/2021/09/27/20210927-shorturl/">
+
+
+
+
+
+  <title>高性能短链系统的一些设计思考 | 迷途小书童</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">迷途小书童</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">读过几年书，尘世间一枚不起眼的小书童</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br>
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br>
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br>
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off" placeholder="搜索..." spellcheck="false" type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://stevenhoukai.github.io/2021/09/27/20210927-shorturl/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="steven Hou">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/upload/images/avatar.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="迷途小书童">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">高性能短链系统的一些设计思考</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2021-09-27T00:00:01+08:00">
+                2021-09-27
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/工作沉淀/" itemprop="url" rel="index">
+                    <span itemprop="name">工作沉淀</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+            <span class="post-meta-divider">|</span>
+            <span class="page-pv"><i class="fa fa-file-o">阅读次数</i>
+            <span class="busuanzi-value" id="busuanzi_value_page_pv"></span>次
+            </span>
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>最近遇到一个需求，需要短时间内将大量的长链转换成短链然后再转成二维码，由于我们的短链服务是通过接口外部进行调用的，而且不能批量转换，所以这里就会出现一个情况就是短时间的大量请求接口会以失败告终，如果能自己设计一个短链系统，这个问题就能解决了。那么今天就来谈谈如何设计一个高性能短链系统。</p>
+<p>本文将会从以下几个方面来进行探讨 </p>
+<ul>
+<li>为啥要用短链 长链存在哪些问题</li>
+<li>短链是如何实现跳转的</li>
+<li>如何生成短链以及如何存储</li>
+<li>如何保证高性能高可用</li>
+</ul>
+<h2 id="短链的优势-长链的缺点"><a href="#短链的优势-长链的缺点" class="headerlink" title="短链的优势 长链的缺点"></a>短链的优势 长链的缺点</h2><p>下面是自如给我发的推送短信，点击下方蓝色的链接（短链）</p>
+<p><img src="/2021/09/27/20210927-shorturl/1.png" alt="img"></p>
+<p>浏览器接着会跳转到一个确认跳转页面。</p>
+<p><img src="/2021/09/27/20210927-shorturl/2.jpeg" alt="img"></p>
+<p>那么为啥要用短链表示，直接用长链不行吗，用短链的话有如下好外</p>
+<p>1、链接变短，在对内容长度有限制的平台发文，可编辑的文字就变多了</p>
+<p>最典型的就是微博，限定了只能发 140 个字，如果一串长链直接怼上去，其他可编辑的内容就所剩无几了，用短链的话，链接长度大大减少，自然可编辑的文字多了不少。</p>
+<p>再比如上面的短信如果一个长链直接怼上去满屏都是一个链接，非常不美观。</p>
+<p>2、像我前言中的需求需要将链接转成二维码，如果是长链的话二维码非常密集而且很难识别，短链的话就会清爽很多,如下图所示</p>
+<p><img src="/2021/09/27/20210927-shorturl/3.png" alt="img"></p>
+<p>3、链接太长在有些平台上无法自动识别为超链接</p>
+<h2 id="短链是如何实现跳转的"><a href="#短链是如何实现跳转的" class="headerlink" title="短链是如何实现跳转的"></a>短链是如何实现跳转的</h2><p>从上文可知，短链好处多多，那么它是如何工作的呢。我们在浏览器抓下包看看</p>
+<p><img src="/2021/09/27/20210927-shorturl/10.png" alt="img"></p>
+<p>可以看到请求后，返回了状态码 302（重定向）与 location 值为长链的响应，然后浏览器会再请求这个长链以得到最终的响应,整个交互流程图如下</p>
+<p><img src="/2021/09/27/20210927-shorturl/11.png" alt="img"></p>
+<p>主要步骤就是访问短网址后重定向访问 B，那么问题来了，301 和 302 都是重定向，到底该用哪个，这里需要注意一下 301 和 302 的区别</p>
+<ul>
+<li>301，代表 <strong>永久重定向</strong>，也就是说第一次请求拿到长链接后，下次浏览器再去请求短链的话，不会向短网址服务器请求了，而是直接从浏览器的缓存里拿，这样在 server 层面就无法获取到短网址的点击数了，如果这个链接刚好是某个活动的链接，也就无法分析此活动的效果。所以我们一般不采用 301。</li>
+<li><strong>302</strong>，代表 <strong>临时重定向</strong>，也就是说每次去请求短链都会去请求短网址服务器（除非响应中用 Cache-Control 或 Expired 暗示浏览器缓存）,这样就便于 server 统计点击数，所以虽然用 302 会给 server 增加一点压力，但在数据异常重要的今天，这点代码是值得的，所以推荐使用 302！</li>
+</ul>
+<h2 id="如何生成短链以及如何存储"><a href="#如何生成短链以及如何存储" class="headerlink" title="如何生成短链以及如何存储"></a>如何生成短链以及如何存储</h2><h3 id="1、Hash"><a href="#1、Hash" class="headerlink" title="1、Hash"></a>1、Hash</h3><p>短链怎么生成，我的第一反应,这不就是以不定长输入(长链)转换成定长输出(短链)【哈希的定义】，观察上面的短链很明显可以看到短链是由固定短链域名 + 长链映射成的一串字母组成(不定长输入–&gt;定长输出)，那么这个哈希函数该怎么取呢，相信肯定有很多人说用 MD5，SHA 等算法，网上确实有很多是用md5先生成32位串，然后均分4段做hash处理，最后再随机取其中之一作为最后结果，只是我在想这个md5先生成32位串是否一定有必要，而且既然是加密就意味着性能上会有损失，其实我觉得这里的重点应该是hash并不是加解密，如何提升哈希的运算速度和减少冲突概率才是重点。以下属于借鉴内容了这里推荐 Google 出品的 <strong>MurmurHash 算法</strong>，MurmurHash 是一种<strong>非加密型</strong>哈希函数，适用于一般的哈希检索操作。与其它流行的哈希函数相比，对于规律性较强的 key，MurmurHash 的随机分布特征表现更良好。非加密意味着着相比 MD5，SHA 这些函数它的性能肯定更高（实际上性能是 MD5 等加密算法的十倍以上），也正是由于它的这些优点，所以虽然它出现于 2008，但目前已经广泛应用到 Redis、MemCache、Cassandra、HBase、Lucene 等众多著名的软件中。</p>
+<p>MurmurHash 提供了两种长度的哈希值，32 bit，128 bit，为了让网址尽可通地短，我们选择 32 bit 的哈希值，<strong>32 bit 能表示的最大值近 43 亿</strong>，对于中小型公司的业务而言绰绰有余。对上文提到的极客长链做 MurmurHash 计算，得到的哈希值为 3002604296，于是我们现在得到的短链为 固定短链域名+哈希值 = <a href="http://xxx.com/a/3002604296" target="_blank" rel="noopener">http://xxx.com/a/3002604296</a></p>
+<p><strong>上述结果还是有点长？</strong></p>
+<p>觉得10位的短链还是有点长怎么办？首先3002604296 这个结果是10进制数字，有一种方案就是将它转为 62 进制就可以缩短它的长度，10 进制转 62 进制如下，也就是按62取模，对应的余数在下面的字符串中取对应值：</p>
+<p>62进制思路 : 0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ</p>
+<p><img src="/2021/09/27/20210927-shorturl/7.png" alt="img"></p>
+<p>经过上面的取模运算然后取映射值，就可以将(3002604296)10进制数字转换成 (3hcCxy)62进制，立马又缩短了4位，因此最终的短链为 <a href="http://xxx.com/a/3hcCxy，6" target="_blank" rel="noopener">http://xxx.com/a/3hcCxy，6</a> 位 62 进制数可表示 568 亿的数，应付长链转换绰绰有余，如果需要更短一点也是可以的，根据实际需求进行取舍吧，我们公司目前用的是8位<a href="https://xxx.com/r8CpSjCN" target="_blank" rel="noopener">https://xxx.com/r8CpSjCN</a></p>
+<p><strong>hash冲突了怎么办？</strong></p>
+<p>既然是哈希函数，那么很有可能两个不同的长链经过hash之后生成的短链是一样的，那么这个问题要怎么解决？这里给出的思路就是在长链的基础上添加随机字符串然后重试生成短链。</p>
+<p>由上文知道访问短链能跳转到长链，那么长短链的关系一定是有一个地方存储的， <strong>Redis 或 Mysql</strong> ？，一般来说 Mysql 存储首选，redis缓存首选。表结构如下所示</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TABLE</span> <span class="string">`long_short_url_map`</span> (</span><br><span class="line">  <span class="string">`id`</span> <span class="built_in">int</span>(<span class="number">11</span>) <span class="keyword">unsigned</span> <span class="keyword">NOT</span> <span class="literal">NULL</span> AUTO_INCREMENT,</span><br><span class="line">  <span class="string">`long_url`</span> <span class="built_in">varchar</span>(<span class="number">160</span>) <span class="keyword">DEFAULT</span> <span class="literal">NULL</span> <span class="keyword">COMMENT</span> <span class="string">'长链'</span>,</span><br><span class="line">  <span class="string">`short_url`</span> <span class="built_in">varchar</span>(<span class="number">10</span>) <span class="keyword">DEFAULT</span> <span class="literal">NULL</span> <span class="keyword">COMMENT</span> <span class="string">'短链'</span>,</span><br><span class="line">  <span class="string">`created_at`</span> datetime <span class="keyword">NOT</span> <span class="literal">NULL</span> <span class="keyword">DEFAULT</span> <span class="keyword">CURRENT_TIMESTAMP</span> <span class="keyword">COMMENT</span> <span class="string">'创建时间'</span></span><br><span class="line">  PRIMARY <span class="keyword">KEY</span> (<span class="string">`id`</span>)</span><br><span class="line">) <span class="keyword">ENGINE</span>=<span class="keyword">InnoDB</span> <span class="keyword">DEFAULT</span> <span class="keyword">CHARSET</span>=utf8;</span><br></pre></td></tr></table></figure>
+
+<p>基于上面的组件可以做出如下的设计。</p>
+<ol>
+<li>长链（longurl）经过 MurmurHash 后取模62得到最终短链。</li>
+<li>再根据短链去 long_short_url_map 表中查找看是否存在相关记录，如果不存在，将长链与短链对应关系插入数据库中，存储。</li>
+<li><strong>如果存在，说明已经有相关记录了，此时在长串上拼接一个自定义好的字段，比如「duplicate+RandomNum」，「longurl + duplicate+RandomNum」去重试第一步操作，如果最后还是重复就继续重拾，如果没有重复了就把原longurl和短链的关系存储即可</strong>。</li>
+</ol>
+<p>上面的步骤是没有加入缓存的，插入一条记录是需要经过两次(甚至三次(概率微乎其微)) sql 查询（1.根据短链查记录是否存在 2.将长短链对应关系插入数据库中），像我前言中的需求在高并发下，明显还是会有瓶颈出现的。一般数据库和应用服务（只做计算不做存储）会部署在两台不同的 server 上，执行两条 sql 就需要两次网络通信，<strong>这两次网络通信与两次 sql 执行是整个短链系统的性能瓶颈所在</strong>！</p>
+<p>引入缓存减少第一次的sql查询？</p>
+<p>很显然插入数据那一次的sql肯定没跑了，无论怎样那一次的sql都是要执行的</p>
+<ol>
+<li>方案一 : 给短链字段 short_url 加上<strong>唯一索引</strong>，把唯一性校验直接交给数据库去做，可行但是数据库压力很大（唯一索引懂的都懂）</li>
+<li>方案二 : 数据量很大的情况下，冲突的概率会增大，此时我们可以使用加<strong>Bloomfilter</strong>(缓存)来进行优化。</li>
+</ol>
+<p><strong>用所有生成的短网址构建布隆过滤器</strong>，当一个新的长链生成短链后，先将此短链在Bloomfilter中进行查找，如果不存在，说明 db 里不存在此短网址，可以插入，插入db之前先将短链放入Bloomfilter。Bloomfilter是一种非常省内存的数据结构，长度为 10 亿的布隆过滤器，只需要 125 M 的内存空间。</p>
+<p>综上，如果用哈希函数来设计，总体的设计思路如下</p>
+<p><img src="/2021/09/27/20210927-shorturl/5.png" alt="img"></p>
+<p>用哈希算法生成的短链其实已经能满足我们的业务需求，本人目前工作中遇到的短链就是用hash生成的只不过保留的是8位。其实还有另外一种是通过自增序列</p>
+<h3 id="2、Sequence"><a href="#2、Sequence" class="headerlink" title="2、Sequence"></a>2、Sequence</h3><p>待完善</p>
+<h2 id="高性能短链的架构设计"><a href="#高性能短链的架构设计" class="headerlink" title="高性能短链的架构设计"></a>高性能短链的架构设计</h2><p>在电商公司，经常有很多活动，秒杀，抢红包等等，在某个时间点的 QPS 会很高，考虑到这种情况，可以引入了 <strong>openResty</strong>，它是一个基于 Nginx 与 Lua 的高性能 Web 平台，由于 Nginx 的非阻塞 IO 模型，使用 openResty 可以轻松支持 100 w + 的并发数，一般情况下你只要部署一台即可，不过为了避免单点故障，两台为宜，同时 openResty 也自带了缓存机制，集成了 redis 这些缓存模块，也可以直接连 mysql。不需要再通过业务层连这些中间件，性能自然会高不少</p>
+<p><img src="/2021/09/27/20210927-shorturl/6.png" alt="img"></p>
+<p>上图所示，使用 openResty 可以直接跳过了业务层这一步，直达缓存层与数据库层，对性能也有大量提升。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>本文对短链设计方案作了一点总结，文中涉及到像Bloomfilter，openResty 等技术，后续再去详细讨论。值得说明的是Bloomfilter的确是一个强大的缓存层有必要好好学习一番。</p>
+<p><img src="/2021/09/27/20210927-shorturl/6.jpg" alt></p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/系统设计/" rel="tag"># 系统设计</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2021/09/14/20210914-goroutinepoolcpubug/" rel="next" title="自定义简易协程池踩坑记录">
+                <i class="fa fa-chevron-left"></i> 自定义简易协程池踩坑记录
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+    <div class="comments" id="comments">
+      <div id="lv-container" data-id="city" data-uid="MTAyMC81MjAzNC8yODUxNQ=="></div>
+    </div>
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image" src="/upload/images/avatar.jpg" alt="steven Hou">
+            
+              <p class="site-author-name" itemprop="name">steven Hou</p>
+              <p class="site-description motion-element" itemprop="description">dora is my precious</p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">35</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">21</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">32</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+
+          
+            <div class="links-of-author motion-element">
+                
+                  <span class="links-of-author-item">
+                    <a href="https://github.com/stevenhoukai" target="_blank" title="GitHub">
+                      
+                        <i class="fa fa-fw fa-github"></i>GitHub</a>
+                  </span>
+                
+            </div>
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#前言"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#短链的优势-长链的缺点"><span class="nav-number">2.</span> <span class="nav-text">短链的优势 长链的缺点</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#短链是如何实现跳转的"><span class="nav-number">3.</span> <span class="nav-text">短链是如何实现跳转的</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#如何生成短链以及如何存储"><span class="nav-number">4.</span> <span class="nav-text">如何生成短链以及如何存储</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1、Hash"><span class="nav-number">4.1.</span> <span class="nav-text">1、Hash</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2、Sequence"><span class="nav-number">4.2.</span> <span class="nav-text">2、Sequence</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#高性能短链的架构设计"><span class="nav-number">5.</span> <span class="nav-text">高性能短链的架构设计</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#总结"><span class="nav-number">6.</span> <span class="nav-text">总结</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">steven Hou</span>
+
+  
+</div>
+
+
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Muse</a> v5.1.4</div>
+
+
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="site-uv">
+      <i class="fa fa-user">访客数</i>
+      <span class="busuanzi-value" id="busuanzi_value_site_uv"></span>
+      人
+    </span>
+  
+
+  
+    <span class="site-pv">
+      <i class="fa fa-eye">总访问量</i>
+      <span class="busuanzi-value" id="busuanzi_value_site_pv"></span>
+      次
+    </span>
+  
+</div>
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+  
+  
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/three/three.min.js"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/three/canvas_sphere.min.js"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+    <script type="text/javascript">
+      (function(d, s) {
+        var j, e = d.getElementsByTagName(s)[0];
+        if (typeof LivereTower === 'function') { return; }
+        j = d.createElement(s);
+        j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+        j.async = true;
+        e.parentNode.insertBefore(j, e);
+      })(document, 'script');
+    </script>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

@@ -295,6 +295,172 @@
   
   
   <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://stevenhoukai.github.io/2020/12/18/20201218-HexoTransferWindowsToMac/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="steven Hou">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/upload/images/avatar.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="迷途小书童">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+                
+                <a class="post-title-link" href="/2020/12/18/20201218-HexoTransferWindowsToMac/" itemprop="url">hexo迁移（Windows -> Mac）</a></h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2020-12-18T00:00:01+08:00">
+                2020-12-18
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Hexo/" itemprop="url" rel="index">
+                    <span itemprop="name">Hexo</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          
+            <h2 id="Hexo迁移（Windows-gt-Mac）"><a href="#Hexo迁移（Windows-gt-Mac）" class="headerlink" title="Hexo迁移（Windows -&gt; Mac）"></a>Hexo迁移（Windows -&gt; Mac）</h2><p>最近因工作需要换了台mac，需要将windows上面的hexo全数转移至新机，记录一下整个过程。</p>
+<h3 id="1-找到自己Windows的hexo根目录"><a href="#1-找到自己Windows的hexo根目录" class="headerlink" title="1.找到自己Windows的hexo根目录"></a>1.找到自己Windows的hexo根目录</h3><h3 id="2-在-Mac-安装git和node-js"><a href="#2-在-Mac-安装git和node-js" class="headerlink" title="2.在 Mac 安装git和node.js"></a>2.在 Mac 安装git和node.js</h3><p>首先在自己电脑上装好node和git（首先确保brew安装好了） </p>
+<p><code>brew install git</code></p>
+<p><code>brew install node</code></p>
+<h3 id="3-安装hexo"><a href="#3-安装hexo" class="headerlink" title="3.安装hexo"></a>3.安装hexo</h3><p><em>用node.js来安装，这里可能会安装失败，我这里是切换npm源才成功</em></p>
+<p><code>npm config set registry https://registry.npm.taobao.org</code></p>
+<p><code>npm install -g hexo-cli</code> </p>
+<h3 id="4-初始化hexo目录"><a href="#4-初始化hexo目录" class="headerlink" title="4.初始化hexo目录"></a><strong>4.初始化hexo目录</strong></h3><p>新建一个hexo目录，mkdir blog，cd blog</p>
+<p><code>hexo init</code><br>在用<code>hexo s</code></p>
+<p>测试是否成功，打开<code>localhost:4000</code>查看本地 </p>
+<h3 id="5-生成SSH密钥，关联github"><a href="#5-生成SSH密钥，关联github" class="headerlink" title="5.生成SSH密钥，关联github"></a>5.生成SSH密钥，关联github</h3><p>先查看本地的SSH key: <code>cd ~/.ssh</code><br>(我是新买的mac，这一步需要直接先走安装）<br>$ssh-keygen -t rsa -C “<a href="mailto:youremail@example.com" target="_blank" rel="noopener">youremail@example.com</a>“  后面那个是注册邮箱</p>
+<p>进入.ssh文件夹： <code>cd ~/.ssh</code>，然后打开里面的 id_rsa.pub文件，里面的内容就是 SSH key，复制全部内容；</p>
+<p>网页打开 github 的设置：Settings -&gt; SSH and GPG keys，点击绿色的按钮 New SSH key，然后在输入框中输入刚才复制的内容；</p>
+<p>保存后，github 会向你的邮箱发送一个验证链接（记得要去登录邮箱验证，不然之后的 hexo d 部署会一直不成功的！）；</p>
+<p>可以先测试一下是否成功：ssh <a href="mailto:git@github.com" target="_blank" rel="noopener">git@github.com</a>，<br>看到以下即成功：</p>
+<blockquote>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">&gt; PTY allocation request failed on channel 0</span><br><span class="line">&gt; Hi gjincai! You&apos;ve successfully authenticated, but GitHub does not provide shell access.</span><br><span class="line">&gt; Connection to github.com closed.</span><br><span class="line">&gt;</span><br></pre></td></tr></table></figure>
+</blockquote>
+<h3 id="6-文件配置转移"><a href="#6-文件配置转移" class="headerlink" title="6.文件配置转移"></a>6.文件配置转移</h3><p>windows 下的博客根目录 hexo，复制该目录下的：<code>_config.yml</code>, <code>scaffolds</code>, <code>source</code>, <code>themes</code>；<br>mac 下的博客根目录 hexo，把刚才复制的内容，直接覆盖替换相同的文件文件夹。</p>
+<h3 id="7-设置个人信息"><a href="#7-设置个人信息" class="headerlink" title="7.设置个人信息"></a>7.设置个人信息</h3><p><code>git config --global user.name &quot;yourname&quot;</code></p>
+<p><code>git config --global user.email youremail@example.com</code></p>
+<p>到这就好了，和往常一样hexo g   hexo d(或者直接hexo g -d)发布文章吧！结果会提示ERROR Deployer not found: git</p>
+<p>安装以下再尝试：<code>npm install hexo-deployer-git --save（若提示有关权限不足的，加sudo，反正我是遇到了）</code></p>
+<h3 id="8-最重要！！！！！！！"><a href="#8-最重要！！！！！！！" class="headerlink" title="8.最重要！！！！！！！"></a>8.最重要！！！！！！！</h3><p>以上是通常情况下的解决方案，本人遇到这个问题其实比较棘手并没有那么的顺利：本人旧机Window安装的node是v10.15.3，hexo版本是v3.9.0；要知道hexo最新版本已经是v5.2.0，跟旧版本相比有了很大的改动，比如主题安装，变化还是比较多的。所以最好是确定node版本在12或13或者以下版本，hexo版本最好也保持一致，否则会出现deploy d失败的情况，可以通过nvm安装多版本node解决即可</p>
+<p><img src="/2020/12/18/20201218-HexoTransferWindowsToMac/6.jpg" alt></p>
+
+          
+        
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+    
+      
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
     <link itemprop="mainEntityOfPage" href="http://stevenhoukai.github.io/2020/12/04/20201204-goroutine/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -1866,176 +2032,6 @@
 
 
     
-      
-
-  
-
-  
-  
-  
-
-  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
-  
-  
-  
-  <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="http://stevenhoukai.github.io/2019/11/25/20191125-springboot-actuator/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="name" content="steven Hou">
-      <meta itemprop="description" content>
-      <meta itemprop="image" content="/upload/images/avatar.jpg">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="迷途小书童">
-    </span>
-
-    
-      <header class="post-header">
-
-        
-        
-          <h1 class="post-title" itemprop="name headline">
-                
-                <a class="post-title-link" href="/2019/11/25/20191125-springboot-actuator/" itemprop="url">springboot添加actuator</a></h1>
-        
-
-        <div class="post-meta">
-          <span class="post-time">
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">发表于</span>
-              
-              <time title="创建于" itemprop="dateCreated datePublished" datetime="2019-11-25T19:07:58+08:00">
-                2019-11-25
-              </time>
-            
-
-            
-
-            
-          </span>
-
-          
-            <span class="post-category">
-            
-              <span class="post-meta-divider">|</span>
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-folder-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">分类于</span>
-              
-              
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/springboot/" itemprop="url" rel="index">
-                    <span itemprop="name">springboot</span>
-                  </a>
-                </span>
-
-                
-                
-              
-            </span>
-          
-
-          
-            
-          
-
-          
-          
-
-          
-
-          
-
-          
-
-        </div>
-      </header>
-    
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-      
-
-      
-        
-          
-            <h1 id="springboot如何添加actuator"><a href="#springboot如何添加actuator" class="headerlink" title="springboot如何添加actuator"></a>springboot如何添加actuator</h1><h2 id="一、正常添加"><a href="#一、正常添加" class="headerlink" title="一、正常添加"></a>一、正常添加</h2><p>首先你需要引入相关jar包</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">dependencies &#123;</span><br><span class="line">        compile(&apos;org.springframework.boot:spring-boot-starter-actuator&apos;)</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
-
-<p>接下来需要在yml添加如下配置，大致意思就是开放节点检查并且暴露出所有的endpoint以http的方式</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">management:</span><br><span class="line">  endpoint:</span><br><span class="line">    health:</span><br><span class="line">      show-details: always</span><br><span class="line">  endpoints:</span><br><span class="line">    web:</span><br><span class="line">      exposure:</span><br><span class="line">        include: &quot;*&quot;</span><br></pre></td></tr></table></figure>
-
-<p>其实到这一步就完成了配置了，你就可以在浏览器通过http:\ip:port\actuator进行访问了，但是这个东东还是个挺隐私的东西,我们不能让任何人通过url就能进行访问和操作，所以需要你对这个东西进行权限验证，<br>这里我们使用springsecurity，添加如下代码:</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">@Configuration</span><br><span class="line">@EnableWebSecurity</span><br><span class="line">public class WebSecurityConfig extends WebSecurityConfigurerAdapter &#123;</span><br><span class="line">    @Override</span><br><span class="line">    protected void configure(HttpSecurity http) throws Exception &#123;</span><br><span class="line">        http.formLogin().and().authorizeRequests()</span><br><span class="line">                .antMatchers(&quot;/actuator/*&quot;).authenticated()</span><br><span class="line">                .and().csrf().disable();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>有没有发现我们配置了地址授权，但是我们要输入什么授权信息了？所以你还需要在yml中添加如下代码</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">spring:</span><br><span class="line">  security:</span><br><span class="line">    user:</span><br><span class="line">      roles: ACTUATOR_ADMIN</span><br><span class="line">      name: actuator</span><br><span class="line">      password: AA@4321,</span><br></pre></td></tr></table></figure>
-
-<p>到这里我们就真正完成了actuator的添加，我们来测试一下，但我访问：<br>http:\ip:port\actuator\info时，浏览器直接就跳转了：<br><img src="/2019/11/25/20191125-springboot-actuator/1.jpg" alt="图p1"></p>
-<center>**图p1**</center>
-当然这是一种简单的情况，应用本来就没有做任何的权限或加密动作，添加起来也是很简单，下面就说一种小猴我项目中遇到的特殊情况
-
-<h2 id="二、不正常情况添加"><a href="#二、不正常情况添加" class="headerlink" title="二、不正常情况添加"></a>二、不正常情况添加</h2><p>其实我说的这种不正常添加就是原本的项目你就已经添加了security，并且使用了加密检测。</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">@Bean</span><br><span class="line">public BCryptPasswordEncoder bcryptPasswordEncoder()&#123;</span><br><span class="line">    return new BCryptPasswordEncoder();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>现在我们就用上述的方式启动项目然后访问http:\ip:port\actuator\info看看是什么情况，没错你会发现正常会跳转到授权页面<br><img src="/2019/11/25/20191125-springboot-actuator/2.jpg" alt="图p2"></p>
-<center>**图p2**</center>  
-但是你只要输入密码，  就会像下图一样显示这样的报错信息：  
-同时，  我们在控制台也能看到如下的警告：  
-![图p4](20191125-springboot-actuator/4.jpg)
-<center>**图p4**</center>
-很明显所有的问题都出在这个加密器上面，这时你只需要加入下面一行代码，所有的问题就可以得到解决：
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">@Value(&quot;$&#123;spring.security.user.roles&#125;&quot;)</span><br><span class="line">private String roles;</span><br><span class="line">@Value(&quot;$&#123;spring.security.user.name&#125;&quot;)</span><br><span class="line">private String name;</span><br><span class="line">@Value(&quot;$&#123;spring.security.user.password&#125;&quot;)</span><br><span class="line">private String password;</span><br><span class="line"></span><br><span class="line">@Override</span><br><span class="line">    protected void configure(AuthenticationManagerBuilder auth) throws Exception &#123;</span><br><span class="line">        auth.inMemoryAuthentication()</span><br><span class="line">                .withUser(name)</span><br><span class="line">                .password(new BCryptPasswordEncoder().encode(password))</span><br><span class="line">                .roles(roles);</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
-
-<p>这行代码大致意思就是还是在配置文件yml里面配置相关信息，但是这些信息注册到授权时先用这个加密器把密码加密好，然后当你重启后再输入用户密码，就能看到以下页面了<br><img src="/2019/11/25/20191125-springboot-actuator/5.jpg" alt="图p5"></p>
-<center>**图p5**</center>
-          
-        
-      
-    </div>
-    
-    
-    
-
-    
-
-    
-
-    
-
-    <footer class="post-footer">
-      
-
-      
-
-      
-
-      
-      
-        <div class="post-eof"></div>
-      
-    </footer>
-  </div>
-  
-  
-  
-  </article>
-
-
-    
   </section>
 
   
@@ -2088,7 +2084,7 @@
               
                 <a href="/archives/">
               
-                  <span class="site-state-item-count">34</span>
+                  <span class="site-state-item-count">35</span>
                   <span class="site-state-item-name">日志</span>
                 </a>
               </div>
@@ -2099,7 +2095,7 @@
               
               <div class="site-state-item site-state-categories">
                 <a href="/categories/index.html">
-                  <span class="site-state-item-count">20</span>
+                  <span class="site-state-item-count">21</span>
                   <span class="site-state-item-name">分类</span>
                 </a>
               </div>
@@ -2110,7 +2106,7 @@
               
               <div class="site-state-item site-state-tags">
                 <a href="/tags/index.html">
-                  <span class="site-state-item-count">31</span>
+                  <span class="site-state-item-count">32</span>
                   <span class="site-state-item-name">标签</span>
                 </a>
               </div>
