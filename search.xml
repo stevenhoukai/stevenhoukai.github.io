@@ -1,6 +1,108 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
+    <title>和弦的构成（分析）</title>
+    <url>/2021/10/10/20211010-guitar/</url>
+    <content><![CDATA[<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>弹了有段时间的吉他的，一直对吉他乐理方面没有做一个系统的分析，今天来对常用3和弦和7和弦做一个完整的分析以及公式总结</p>
+<h2 id="3和弦"><a href="#3和弦" class="headerlink" title="3和弦"></a>3和弦</h2><ul>
+<li><p>大3和弦（大三度+小三度）</p>
+<p>例如：<br>C和弦 组成音： 1 &lt;大三度&gt; 3 &lt;小三度&gt; 5<br>D和弦 组成音： 2 &lt;大三度&gt; 4(#) &lt;小三度&gt; 6 </p>
+<p>同理可推导<br>G和弦 组成音：5 &lt;大三度&gt; 7 &lt;小三度&gt; 2^</p>
+</li>
+<li><p>小3和弦（小三度+大三度）</p>
+<p>例如：<br>Cm和弦 组成音： 1 &lt;小三度&gt; 3(b) &lt;大三度&gt; 5<br>Dm和弦 组成音： 2 &lt;小三度&gt; 4 &lt;大三度&gt; 6</p>
+<p>同理可以推导</p>
+<p>Gm和弦 组成音： 5 &lt;小三度&gt; 7(b) &lt;大三度&gt; 2^</p>
+</li>
+<li><p>增3和弦（大三度+大三度）</p>
+<p>例如：C+或者 Caug</p>
+</li>
+<li><p>减3和弦（小三度+小三度）</p>
+<p>例如：C- 或者 Cdim</p>
+</li>
+</ul>
+<h2 id="7和弦"><a href="#7和弦" class="headerlink" title="7和弦"></a>7和弦</h2><p>记得看中国好声音时，李荣浩说leehom的《爱错》中的bridge中那句在这少了你的世界那里的7减5和弦让他头皮发麻，这就来看看啥是7减5和弦，其实那时说7减5的时候王力宏是懵逼的，专业叫法应该叫半减7和弦。</p>
+<ul>
+<li><p>大小7和弦（属7和弦）（大三和弦+小7度）[小7度就是包含两个半音，大7度就是包含一个半音]</p>
+<p>例如：</p>
+<p>C7和弦组成音本质就是 C和弦+小7度（1 3 5 + 7(b)）</p>
+<p>F7和弦组成音本质就是 F和弦+小7度（4 6 1^ + 3^(b)）</p>
+</li>
+<li><p>小7和弦（小三和弦+小7度）</p>
+<p>例如：</p>
+<p>Cm7和弦的组成音本质就是 Cm和弦+小7度 （1 3(b) 5 7(b)）</p>
+</li>
+<li><p>大7和弦（大三和弦+大7度）</p>
+<p>例如：</p>
+<p>Cmaj7和弦组成音本质就是C和弦+大7度（1 3 5 + 7）</p>
+<p>Fmaj7和弦组成音本质就是F和弦+大7度 （4 6 1^ 3^）</p>
+</li>
+<li><p>小大7和弦（小三和弦+大7度）</p>
+<p>例如：</p>
+<p>Cmmaj7和弦组成音本质就是Cm和弦+大7度（1 3(b) 5 7）</p>
+</li>
+<li><p>半减7和弦</p>
+<p>例如：</p>
+<p>Bm7-5 这个和弦就是上面说到的让李荣浩头皮发麻的7-5和弦了，没错这种和弦的收缩性非常强，用到合适的地方确实会头皮发麻。</p>
+<p>那么这个和弦的本质其实就是Bm和弦(7 2^ 4^(#) + 小7度 + 5音降半音 ( 7 2^ 4^ 6^)</p>
+<p>所以通过公式我们也可以推到出Ammaj7-5和弦的组成音了，哈哈哈 虽然这个和弦不一定存在。</p>
+</li>
+</ul>
+<h2 id="和弦色彩"><a href="#和弦色彩" class="headerlink" title="和弦色彩"></a>和弦色彩</h2><p>今天不打算对和弦色彩进行总结，但是要提一句的是，和弦色彩对于编配来说实在是太重要了，就好像一首歌你可以用4536251去完成，你也可以用分割和弦 5/4去代替其中的5，但是两者表达出来的色彩是完全不一样的。后面会对和弦色彩进行一次详细的记录。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>像我这种业余玩流行音乐的，和弦其实是一个非常重要的理论基础，就像我们写程序你要写好代码就一定要懂原理，老实说其实掌握一些和弦套路例如6451，4536251还有17654325(卡农和弦)低音下行这些后基本上流行乐坛百分之70的歌你都能弹唱了，无非就是一首换一首，就像你你做开发选用的是dubbo框架还是springcloud框架一样。但是如果想玩的更有趣一点就需要去了解这些框架的构成原理了。</p>
+<p><img src="/2021/10/10/20211010-guitar/6.jpg" alt></p>
+]]></content>
+      <categories>
+        <category>乐理</category>
+      </categories>
+      <tags>
+        <tag>guitar</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>如何搭建一个高性能cdk系统</title>
+    <url>/2021/10/08/20211008-cdk/</url>
+    <content><![CDATA[<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>本人前不久稍稍改进了一个cdkey系统，来总结下是如何设计一个cdkey(兑换码)系统的，本文打算从以下三个方面来说。</p>
+<ul>
+<li>cdkey兑换</li>
+<li>如何生成cdkey以及如何存储</li>
+<li>如何保证高可用</li>
+</ul>
+<h2 id="cdkey兑换"><a href="#cdkey兑换" class="headerlink" title="cdkey兑换"></a>cdkey兑换</h2><p>cdkey本身只是一种推广售卖方式，其实不用也是可以的，不过市面上的商品一般除了正常的收费购买之外一定会伴随有cdkey售卖这样的方式。一个cdkey就对应着一个具体的商品，这也意味着cdkey是需要与商品以及订进行绑定的，举个例子，类似这样的一串字符串XXX3XXXNLMX1YEXXX就是cdkey的一个样式，是一个36进制构成的16位表达式，一般先由系统提前生成好然后下发出去售卖或者活动赠送等，兑换的时候做一些校验工作然后是生成订单流程，订单流程走完之后最后将订单号与cdkey绑定并将其状态更改成已兑换。流程如下图:</p>
+<p>流程图因涉及到公司的业务流转 不方便在此贴出</p>
+<h2 id="如何生成cdkey以及如何存储"><a href="#如何生成cdkey以及如何存储" class="headerlink" title="如何生成cdkey以及如何存储"></a>如何生成cdkey以及如何存储</h2><p>上一节提到目前系统的cdkey是一个36进制的16位表达式，针对36进制我们可以预先定义一个数组：</p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line">myVal = []<span class="keyword">string</span>&#123;<span class="string">"A"</span>, <span class="string">"B"</span>, <span class="string">"C"</span>, <span class="string">"D"</span>, <span class="string">"E"</span>, <span class="string">"F"</span>, <span class="string">"G"</span>, <span class="string">"H"</span>, <span class="string">"I"</span>, <span class="string">"J"</span>, <span class="string">"K"</span>, <span class="string">"L"</span>, <span class="string">"M"</span>, <span class="string">"N"</span>, <span class="string">"O"</span>, <span class="string">"P"</span>,<span class="string">"Q"</span>, <span class="string">"R"</span>, <span class="string">"S"</span>, <span class="string">"T"</span>, <span class="string">"U"</span>, <span class="string">"V"</span>, <span class="string">"W"</span>, <span class="string">"X"</span>, <span class="string">"Y"</span>, <span class="string">"Z"</span>,<span class="string">"0"</span>, <span class="string">"1"</span>, <span class="string">"2"</span>, <span class="string">"3"</span>, <span class="string">"4"</span>, <span class="string">"5"</span>, <span class="string">"6"</span>, <span class="string">"7"</span>, <span class="string">"8"</span>, <span class="string">"9"</span>&#125;</span><br><span class="line"><span class="comment">//生成一个cdk的代码，所以是有可能一批cdk里面产生重复的，必须做好本地去重</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">genOneKey</span><span class="params">()</span> <span class="title">string</span></span> &#123;</span><br><span class="line">	buf.Reset()</span><br><span class="line">	<span class="keyword">for</span> j := <span class="number">0</span>; j &lt; <span class="number">16</span>; j++ &#123;</span><br><span class="line">		val := rand.Intn(<span class="built_in">len</span>(myVal))</span><br><span class="line">		buf.WriteString(myVal[val])</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">return</span> buf.String()</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>当然为了安全我们也可以将上述的数组顺序随意打乱，这种方式在上一篇短链系统设计的时候已经用过一次了，只不过短链用的是64进制而已。我们也可以使用64进制来降低cdkey生成时的碰撞率，不过就cdkey而言为了美观一般就不掺杂小写字母了。本人目前的需求是需要支持大批量cdk申请的，单批次申请需要支持10w，所以我这边cdkey的生成实际是按批次生成的，这样的好处就是可以减少与数据库的网络IO，每次生成一批cdkey然后去数据库校验是否存在，存在了就重试生成一批新cdkey再校验，直到校验不存在就插入数据库然后生成下一批，反复执行直到申请数量全部生成完毕。</p>
+<p>总体流程图如下：</p>
+<p><img src="/2021/10/08/20211008-cdk/2.png" alt></p>
+<p>接下来是单批次生成cdk详细逻辑:</p>
+<p><img src="/2021/10/08/20211008-cdk/3.png" alt></p>
+<p>给出表设计方案 : </p>
+<p>下面的表中很多字段都是与具体业务相关的，不必过于关心，但是核心的字段在一个cdk系统中基本上都是不变的。</p>
+<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line">//因为表设计也有相关敏感信息不方便在此处贴出具体字段</span><br><span class="line">//cdk订单申请表</span><br><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TABLE</span> <span class="string">`cdk_order`</span> (</span><br><span class="line">) <span class="keyword">ENGINE</span>=<span class="keyword">InnoDB</span> <span class="keyword">DEFAULT</span> <span class="keyword">CHARSET</span>=utf8mb4 <span class="keyword">COMMENT</span>=<span class="string">'cdk申请单表'</span></span><br><span class="line"></span><br><span class="line">//cdk详情表</span><br><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TABLE</span> <span class="string">`cdk_detail`</span> (</span><br><span class="line">) <span class="keyword">ENGINE</span>=<span class="keyword">InnoDB</span> <span class="keyword">DEFAULT</span> <span class="keyword">CHARSET</span>=utf8mb4 <span class="keyword">COMMENT</span>=<span class="string">'cdk明细表'</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="如何保证高可用"><a href="#如何保证高可用" class="headerlink" title="如何保证高可用"></a>如何保证高可用</h2><p>一般来说通过集群部署可解决系统高可用问题，但是集群部署就会导致新的问题，可能两个服务节点同时工作产生的cdkey就有可能会出现交集本地去重并不能解决问题，这里我列出了两种方案来解决这个问题，就当前情况而言本人采用了第一种方案:</p>
+<ul>
+<li><p>方案一：通过数据库自身来解决该问题</p>
+<p>上一节介绍的方案就是了，通过数据库校验 + 事务 + 重试来解决</p>
+</li>
+<li><p>方案二：通过分布式锁+bloomfilter来解决这个问题</p>
+<p>见方案设计图:</p>
+<p><img src="/2021/10/08/20211008-cdk/4.png" alt></p>
+</li>
+</ul>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>本文对cdk系统设计方案作了一点总结，整体的思路就是要减少碰撞，保证申请数量与实际生成数量一致，并且要防止一次性提交数据量过大，具体最后的高可用方案哪种更合适还是依据实际情况再做定夺为佳。</p>
+<p><img src="/2021/10/08/20211008-cdk/6.jpg" alt></p>
+]]></content>
+      <categories>
+        <category>工作沉淀</category>
+      </categories>
+      <tags>
+        <tag>系统设计</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>高性能短链系统的一些设计思考</title>
     <url>/2021/09/27/20210927-shorturl/</url>
     <content><![CDATA[<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>最近遇到一个需求，需要短时间内将大量的长链转换成短链然后再转成二维码，由于我们的短链服务是通过接口外部进行调用的，而且不能批量转换，所以这里就会出现一个情况就是短时间的大量请求接口会以失败告终，如果能自己设计一个短链系统，这个问题就能解决了。那么今天就来谈谈如何设计一个高性能短链系统。</p>
@@ -11,7 +113,7 @@
 <li>如何生成短链以及如何存储</li>
 <li>如何保证高性能高可用</li>
 </ul>
-<h2 id="短链的优势-长链的缺点"><a href="#短链的优势-长链的缺点" class="headerlink" title="短链的优势 长链的缺点"></a>短链的优势 长链的缺点</h2><p>下面是自如给我发的推送短信，点击下方蓝色的链接（短链）</p>
+<h2 id="为啥要用短链-长链存在哪些问题"><a href="#为啥要用短链-长链存在哪些问题" class="headerlink" title="为啥要用短链 长链存在哪些问题"></a>为啥要用短链 长链存在哪些问题</h2><p>下面是自如给我发的推送短信，点击下方蓝色的链接（短链）</p>
 <p><img src="/2021/09/27/20210927-shorturl/1.png" alt="img"></p>
 <p>浏览器接着会跳转到一个确认跳转页面。</p>
 <p><img src="/2021/09/27/20210927-shorturl/2.jpeg" alt="img"></p>
@@ -563,44 +665,6 @@
       </tags>
   </entry>
   <entry>
-    <title>Golang练习一</title>
-    <url>/2020/11/26/20201127-golangprectice1/</url>
-    <content><![CDATA[<p>学习Golang的过程中，练习必不可少，俗话说的好 Talk is cheap,show me the code，学完Golang基本语法，是需要适当做一些练习加深理解的，虽然很很很简单！但是本人Java转go，语法还是要多熟悉，秉承多写一遍就多一次理解的原则，开始吧~</p>
-<ul>
-<li><h4 id="练习1"><a href="#练习1" class="headerlink" title="练习1"></a><strong>练习1</strong></h4><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">//练习1</span><br><span class="line">  //编写代码分别定义一个整型、浮点型、布尔型、字符串型变量，使</span><br><span class="line">  //用fmt.Printf()搭配%T分别打印出上述变量的值和类型。</span><br><span class="line">  package main</span><br><span class="line">  </span><br><span class="line">  import (</span><br><span class="line">  	&quot;fmt&quot;</span><br><span class="line">  )</span><br><span class="line">  </span><br><span class="line">  func test1() &#123;</span><br><span class="line">  	a := 10</span><br><span class="line">  	b := 1.0</span><br><span class="line">  	c := false</span><br><span class="line">  	d := &quot;哈哈哈&quot;</span><br><span class="line">  	fmt.Printf(&quot;a的类型为%T\n&quot;, a)</span><br><span class="line">  	fmt.Printf(&quot;b的类型为%T\n&quot;, b)</span><br><span class="line">  	fmt.Printf(&quot;c的类型为%T\n&quot;, c)</span><br><span class="line">  	fmt.Printf(&quot;d的类型为%T\n&quot;, d)</span><br><span class="line">  &#125;</span><br><span class="line">  </span><br><span class="line">  func main() &#123;</span><br><span class="line">  	test1()</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure>
-
-
-</li>
-</ul>
-<ul>
-<li><h4 id="练习2"><a href="#练习2" class="headerlink" title="练习2"></a><strong>练习2</strong></h4><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">//练习2</span><br><span class="line">  //编写代码统计出字符串&quot;hello沙河小王子&quot;中汉字的数量</span><br><span class="line">  package main</span><br><span class="line">  </span><br><span class="line">  import (</span><br><span class="line">  	&quot;fmt&quot;</span><br><span class="line">  	&quot;unicode&quot;</span><br><span class="line">  )</span><br><span class="line">  </span><br><span class="line">  func test2() &#123;</span><br><span class="line">  	s := &quot;hello沙河小王子&quot;</span><br><span class="line">  	count := 0</span><br><span class="line">  	for _, c := range s &#123;</span><br><span class="line">  		if unicode.Is(unicode.Han, c) &#123;</span><br><span class="line">  			count = count + 1</span><br><span class="line">  		&#125;</span><br><span class="line">  	&#125;</span><br><span class="line">  	fmt.Printf(&quot;字符串包含%v个中文&quot;, count)</span><br><span class="line">  &#125;</span><br><span class="line">  </span><br><span class="line">  func main() &#123;</span><br><span class="line">  	test2()</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure>
-
-
-</li>
-</ul>
-<ul>
-<li><h4 id="练习3"><a href="#练习3" class="headerlink" title="练习3"></a><strong>练习3</strong></h4><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">//练习3</span><br><span class="line">  //求数组[1, 3, 5, 7, 8]所有元素的和</span><br><span class="line">  package main</span><br><span class="line">  </span><br><span class="line">  import (</span><br><span class="line">  	&quot;fmt&quot;</span><br><span class="line">  	&quot;unicode&quot;</span><br><span class="line">  )</span><br><span class="line">  </span><br><span class="line">  func test3() &#123;</span><br><span class="line">  	arr := [...]int&#123;1, 3, 5, 7, 9&#125;</span><br><span class="line">  	count := 0</span><br><span class="line">  	for _, v := range arr &#123;</span><br><span class="line">  		count = count + v</span><br><span class="line">  	&#125;</span><br><span class="line">  	fmt.Printf(&quot;result:%v&quot;, count)</span><br><span class="line">  &#125;</span><br><span class="line">  </span><br><span class="line">  func main() &#123;</span><br><span class="line">  	test3()</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure>
-
-
-</li>
-</ul>
-<ul>
-<li><h4 id="练习4"><a href="#练习4" class="headerlink" title="练习4"></a><strong>练习4</strong></h4><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">//练习4</span><br><span class="line">  //找出数组中和为指定值的两个元素的下标，</span><br><span class="line">  //比如从数组[1, 3, 5, 7, 8]中找出和为8的两个元素的下标分别为(0,3)和(1,2)。</span><br><span class="line">  package main</span><br><span class="line">  </span><br><span class="line">  import &quot;fmt&quot;</span><br><span class="line">  </span><br><span class="line">  func test4() (int, int) &#123;</span><br><span class="line">  	result := 8</span><br><span class="line">  	resultmap := make(map[int]int)</span><br><span class="line">  	arr := [...]int&#123;1, 3, 5, 7, 9&#125;</span><br><span class="line">  	for index, v := range arr &#123;</span><br><span class="line">  		gapv := result - v</span><br><span class="line">  		va, ok := resultmap[gapv]</span><br><span class="line">  		if ok &#123;</span><br><span class="line">  			return index, va</span><br><span class="line">  		&#125;</span><br><span class="line">  		resultmap[v] = index</span><br><span class="line">  	&#125;</span><br><span class="line">  	fmt.Println(resultmap)</span><br><span class="line">  	return 0, 0</span><br><span class="line">  &#125;</span><br><span class="line">  </span><br><span class="line">  func main() &#123;</span><br><span class="line">  	res1, res2 := test4()</span><br><span class="line">  	fmt.Printf(&quot;%v,%v&quot;, res1, res2)</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure>
-
-
-</li>
-</ul>
-<p>  Talk is cheap,show me the code~</p>
-<p>  <img src="/2020/11/26/20201127-golangprectice1/1.jpeg" alt></p>
-]]></content>
-      <categories>
-        <category>Golang</category>
-      </categories>
-      <tags>
-        <tag>Golang习题</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>二叉树的遍历</title>
     <url>/2020/11/26/20201126-blbinarytree/</url>
     <content><![CDATA[<p>本文主要就二叉树的遍历方式进行总结和记录，从而了解递归、栈以及队列的应用，通常对于一个二叉树的遍历方式大致分为：</p>
@@ -690,6 +754,44 @@
       <tags>
         <tag>栈</tag>
         <tag>二叉树</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Golang练习一</title>
+    <url>/2020/11/26/20201127-golangprectice1/</url>
+    <content><![CDATA[<p>学习Golang的过程中，练习必不可少，俗话说的好 Talk is cheap,show me the code，学完Golang基本语法，是需要适当做一些练习加深理解的，虽然很很很简单！但是本人Java转go，语法还是要多熟悉，秉承多写一遍就多一次理解的原则，开始吧~</p>
+<ul>
+<li><h4 id="练习1"><a href="#练习1" class="headerlink" title="练习1"></a><strong>练习1</strong></h4><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">//练习1</span><br><span class="line">  //编写代码分别定义一个整型、浮点型、布尔型、字符串型变量，使</span><br><span class="line">  //用fmt.Printf()搭配%T分别打印出上述变量的值和类型。</span><br><span class="line">  package main</span><br><span class="line">  </span><br><span class="line">  import (</span><br><span class="line">  	&quot;fmt&quot;</span><br><span class="line">  )</span><br><span class="line">  </span><br><span class="line">  func test1() &#123;</span><br><span class="line">  	a := 10</span><br><span class="line">  	b := 1.0</span><br><span class="line">  	c := false</span><br><span class="line">  	d := &quot;哈哈哈&quot;</span><br><span class="line">  	fmt.Printf(&quot;a的类型为%T\n&quot;, a)</span><br><span class="line">  	fmt.Printf(&quot;b的类型为%T\n&quot;, b)</span><br><span class="line">  	fmt.Printf(&quot;c的类型为%T\n&quot;, c)</span><br><span class="line">  	fmt.Printf(&quot;d的类型为%T\n&quot;, d)</span><br><span class="line">  &#125;</span><br><span class="line">  </span><br><span class="line">  func main() &#123;</span><br><span class="line">  	test1()</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure>
+
+
+</li>
+</ul>
+<ul>
+<li><h4 id="练习2"><a href="#练习2" class="headerlink" title="练习2"></a><strong>练习2</strong></h4><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">//练习2</span><br><span class="line">  //编写代码统计出字符串&quot;hello沙河小王子&quot;中汉字的数量</span><br><span class="line">  package main</span><br><span class="line">  </span><br><span class="line">  import (</span><br><span class="line">  	&quot;fmt&quot;</span><br><span class="line">  	&quot;unicode&quot;</span><br><span class="line">  )</span><br><span class="line">  </span><br><span class="line">  func test2() &#123;</span><br><span class="line">  	s := &quot;hello沙河小王子&quot;</span><br><span class="line">  	count := 0</span><br><span class="line">  	for _, c := range s &#123;</span><br><span class="line">  		if unicode.Is(unicode.Han, c) &#123;</span><br><span class="line">  			count = count + 1</span><br><span class="line">  		&#125;</span><br><span class="line">  	&#125;</span><br><span class="line">  	fmt.Printf(&quot;字符串包含%v个中文&quot;, count)</span><br><span class="line">  &#125;</span><br><span class="line">  </span><br><span class="line">  func main() &#123;</span><br><span class="line">  	test2()</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure>
+
+
+</li>
+</ul>
+<ul>
+<li><h4 id="练习3"><a href="#练习3" class="headerlink" title="练习3"></a><strong>练习3</strong></h4><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">//练习3</span><br><span class="line">  //求数组[1, 3, 5, 7, 8]所有元素的和</span><br><span class="line">  package main</span><br><span class="line">  </span><br><span class="line">  import (</span><br><span class="line">  	&quot;fmt&quot;</span><br><span class="line">  	&quot;unicode&quot;</span><br><span class="line">  )</span><br><span class="line">  </span><br><span class="line">  func test3() &#123;</span><br><span class="line">  	arr := [...]int&#123;1, 3, 5, 7, 9&#125;</span><br><span class="line">  	count := 0</span><br><span class="line">  	for _, v := range arr &#123;</span><br><span class="line">  		count = count + v</span><br><span class="line">  	&#125;</span><br><span class="line">  	fmt.Printf(&quot;result:%v&quot;, count)</span><br><span class="line">  &#125;</span><br><span class="line">  </span><br><span class="line">  func main() &#123;</span><br><span class="line">  	test3()</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure>
+
+
+</li>
+</ul>
+<ul>
+<li><h4 id="练习4"><a href="#练习4" class="headerlink" title="练习4"></a><strong>练习4</strong></h4><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">//练习4</span><br><span class="line">  //找出数组中和为指定值的两个元素的下标，</span><br><span class="line">  //比如从数组[1, 3, 5, 7, 8]中找出和为8的两个元素的下标分别为(0,3)和(1,2)。</span><br><span class="line">  package main</span><br><span class="line">  </span><br><span class="line">  import &quot;fmt&quot;</span><br><span class="line">  </span><br><span class="line">  func test4() (int, int) &#123;</span><br><span class="line">  	result := 8</span><br><span class="line">  	resultmap := make(map[int]int)</span><br><span class="line">  	arr := [...]int&#123;1, 3, 5, 7, 9&#125;</span><br><span class="line">  	for index, v := range arr &#123;</span><br><span class="line">  		gapv := result - v</span><br><span class="line">  		va, ok := resultmap[gapv]</span><br><span class="line">  		if ok &#123;</span><br><span class="line">  			return index, va</span><br><span class="line">  		&#125;</span><br><span class="line">  		resultmap[v] = index</span><br><span class="line">  	&#125;</span><br><span class="line">  	fmt.Println(resultmap)</span><br><span class="line">  	return 0, 0</span><br><span class="line">  &#125;</span><br><span class="line">  </span><br><span class="line">  func main() &#123;</span><br><span class="line">  	res1, res2 := test4()</span><br><span class="line">  	fmt.Printf(&quot;%v,%v&quot;, res1, res2)</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure>
+
+
+</li>
+</ul>
+<p>  Talk is cheap,show me the code~</p>
+<p>  <img src="/2020/11/26/20201127-golangprectice1/1.jpeg" alt></p>
+]]></content>
+      <categories>
+        <category>Golang</category>
+      </categories>
+      <tags>
+        <tag>Golang习题</tag>
       </tags>
   </entry>
   <entry>
@@ -1237,8 +1339,8 @@ ok搭建完成。
         <category>环境笔记篇</category>
       </categories>
       <tags>
-        <tag>linux</tag>
         <tag>java</tag>
+        <tag>linux</tag>
         <tag>vsftpd</tag>
       </tags>
   </entry>

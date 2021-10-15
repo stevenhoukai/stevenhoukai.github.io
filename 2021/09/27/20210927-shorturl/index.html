@@ -96,7 +96,7 @@
 <meta property="og:image" content="http://stevenhoukai.github.io/2021/09/27/20210927-shorturl/5.png">
 <meta property="og:image" content="http://stevenhoukai.github.io/2021/09/27/20210927-shorturl/6.png">
 <meta property="og:image" content="http://stevenhoukai.github.io/2021/09/27/20210927-shorturl/6.jpg">
-<meta property="og:updated_time" content="2021-09-29T06:46:14.262Z">
+<meta property="og:updated_time" content="2021-10-08T11:20:52.283Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="高性能短链系统的一些设计思考">
 <meta name="twitter:description" content="前言最近遇到一个需求，需要短时间内将大量的长链转换成短链然后再转成二维码，由于我们的短链服务是通过接口外部进行调用的，而且不能批量转换，所以这里就会出现一个情况就是短时间的大量请求接口会以失败告终，如果能自己设计一个短链系统，这个问题就能解决了。那么今天就来谈谈如何设计一个高性能短链系统。 本文将会从以下几个方面来进行探讨   为啥要用短链 长链存在哪些问题 短链是如何实现跳转的 如何生成短链以及">
@@ -407,7 +407,7 @@
 <li>如何生成短链以及如何存储</li>
 <li>如何保证高性能高可用</li>
 </ul>
-<h2 id="短链的优势-长链的缺点"><a href="#短链的优势-长链的缺点" class="headerlink" title="短链的优势 长链的缺点"></a>短链的优势 长链的缺点</h2><p>下面是自如给我发的推送短信，点击下方蓝色的链接（短链）</p>
+<h2 id="为啥要用短链-长链存在哪些问题"><a href="#为啥要用短链-长链存在哪些问题" class="headerlink" title="为啥要用短链 长链存在哪些问题"></a>为啥要用短链 长链存在哪些问题</h2><p>下面是自如给我发的推送短信，点击下方蓝色的链接（短链）</p>
 <p><img src="/2021/09/27/20210927-shorturl/1.png" alt="img"></p>
 <p>浏览器接着会跳转到一个确认跳转页面。</p>
 <p><img src="/2021/09/27/20210927-shorturl/2.jpeg" alt="img"></p>
@@ -502,6 +502,10 @@
 
           <div class="post-nav-prev post-nav-item">
             
+              <a href="/2021/10/08/20211008-cdk/" rel="prev" title="如何搭建一个高性能cdk系统">
+                如何搭建一个高性能cdk系统 <i class="fa fa-chevron-right"></i>
+              </a>
+            
           </div>
         </div>
       
@@ -584,7 +588,7 @@
               
                 <a href="/archives/">
               
-                  <span class="site-state-item-count">35</span>
+                  <span class="site-state-item-count">37</span>
                   <span class="site-state-item-name">日志</span>
                 </a>
               </div>
@@ -595,7 +599,7 @@
               
               <div class="site-state-item site-state-categories">
                 <a href="/categories/index.html">
-                  <span class="site-state-item-count">21</span>
+                  <span class="site-state-item-count">22</span>
                   <span class="site-state-item-name">分类</span>
                 </a>
               </div>
@@ -606,7 +610,7 @@
               
               <div class="site-state-item site-state-tags">
                 <a href="/tags/index.html">
-                  <span class="site-state-item-count">32</span>
+                  <span class="site-state-item-count">33</span>
                   <span class="site-state-item-name">标签</span>
                 </a>
               </div>
@@ -649,7 +653,7 @@
             
 
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#前言"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#短链的优势-长链的缺点"><span class="nav-number">2.</span> <span class="nav-text">短链的优势 长链的缺点</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#短链是如何实现跳转的"><span class="nav-number">3.</span> <span class="nav-text">短链是如何实现跳转的</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#如何生成短链以及如何存储"><span class="nav-number">4.</span> <span class="nav-text">如何生成短链以及如何存储</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1、Hash"><span class="nav-number">4.1.</span> <span class="nav-text">1、Hash</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2、Sequence"><span class="nav-number">4.2.</span> <span class="nav-text">2、Sequence</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#高性能短链的架构设计"><span class="nav-number">5.</span> <span class="nav-text">高性能短链的架构设计</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#总结"><span class="nav-number">6.</span> <span class="nav-text">总结</span></a></li></ol></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#前言"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#为啥要用短链-长链存在哪些问题"><span class="nav-number">2.</span> <span class="nav-text">为啥要用短链 长链存在哪些问题</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#短链是如何实现跳转的"><span class="nav-number">3.</span> <span class="nav-text">短链是如何实现跳转的</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#如何生成短链以及如何存储"><span class="nav-number">4.</span> <span class="nav-text">如何生成短链以及如何存储</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1、Hash"><span class="nav-number">4.1.</span> <span class="nav-text">1、Hash</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2、Sequence"><span class="nav-number">4.2.</span> <span class="nav-text">2、Sequence</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#高性能短链的架构设计"><span class="nav-number">5.</span> <span class="nav-text">高性能短链的架构设计</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#总结"><span class="nav-number">6.</span> <span class="nav-text">总结</span></a></li></ol></div>
             
 
           </div>

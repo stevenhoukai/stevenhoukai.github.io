@@ -295,6 +295,336 @@
   
   
   <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://stevenhoukai.github.io/2021/08/12/20210812-explainCount/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="steven Hou">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/upload/images/avatar.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="迷途小书童">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+                
+                <a class="post-title-link" href="/2021/08/12/20210812-explainCount/" itemprop="url">count(1)、count(*)、count(列)有什么区别？</a></h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2021-08-12T00:00:01+08:00">
+                2021-08-12
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/数据库/" itemprop="url" rel="index">
+                    <span itemprop="name">数据库</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          
+            <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a><strong>前言</strong></h2><p>不知不觉入职tencent已经半年了，期间一直都在忙着适应golang还有新的业务新的微服务框架，从java转到golang有所适有所不适吧，但总体来说问题不大，所以就很久没有更新了，但是没关系，工作中遇到的问题小弟我都有一一记录，后面全部补上。今天主要来对sql统计中的count进行一下总结。</p>
+<h2 id="count-1-and-count"><a href="#count-1-and-count" class="headerlink" title="count(1) and count(*)"></a><strong>count(1) and count(*)</strong></h2><p>当表的数据量大些时，对表作分析之后，使用count(1)还要比使用count(*)用时多了！ </p>
+<p>从执行计划来看，count(1)和count(<em>)的效果是一样的。但是在表做过分析之后，count(1)会比count(</em>)的用时少些（1w以内数据量），不过差不了多少。 </p>
+<p>如果count(1)是聚索引,id,那肯定是count(1)快。但是差的很小的。 </p>
+<p>因为count(<em>),自动会优化指定到那一个字段。所以没必要去count(1)，用count(</em>)，sql会帮你完成优化的 因此：count(1)和count(*)基本没有差别！</p>
+<h2 id="count-1-and-count-字段"><a href="#count-1-and-count-字段" class="headerlink" title="count(1) and count(字段)"></a><strong>count(1) and count(字段)</strong></h2><p>两者的主要区别是</p>
+<ol>
+<li>count(1) 会统计表中的所有的记录数，包含字段为null 的记录。</li>
+<li>count(字段) 会统计该字段在表中出现的次数，忽略字段为null 的情况。即不统计字段为null 的记录。 </li>
+</ol>
+<p><strong>count(*) 和 count(1)和count(列名)区别</strong> </p>
+<p>执行效果上： </p>
+<ul>
+<li>count(<em>)包括了所有的列，相当于行数，在统计结果的时候，*</em>不会忽略列值为NULL** </li>
+<li>count(1)包括了忽略所有列，用1代表代码行，在统计结果的时候，<strong>不会忽略列值为NULL</strong> </li>
+<li>count(列名)只包括列名那一列，在统计结果的时候，会忽略列值为空（这里的空不是只空字符串或者0，而是表示null）的计数，<strong>即某个字段值为NULL时，不统计</strong>。</li>
+</ul>
+<p>执行效率上： </p>
+<ul>
+<li>列名为主键，count(列名)会比count(1)快 </li>
+<li>列名不为主键，count(1)会比count(列名)快 </li>
+<li>如果表多个列并且没有主键，则 count（1） 的执行效率优于 count（*） </li>
+<li>如果有主键，则 select count（主键）的执行效率是最优的 </li>
+<li>如果表只有一个字段，则 select count（*）最优。</li>
+</ul>
+<h3 id="实例查看效果"><a href="#实例查看效果" class="headerlink" title="实例查看效果"></a>实例查看效果</h3><p>下面来看看一个列子吧</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; create table counttest(name char(<span class="number">1</span>), age char(<span class="number">2</span>));</span><br><span class="line">Query OK, <span class="number">0</span> rows affected (<span class="number">0.03</span> sec)</span><br><span class="line"> </span><br><span class="line">mysql&gt; insert into counttest values -&gt; (<span class="string">'a'</span>, <span class="string">'14'</span>),(<span class="string">'a'</span>, <span class="string">'15'</span>), (<span class="string">'a'</span>, <span class="string">'15'</span>), -&gt; (<span class="string">'b'</span>, NULL), (<span class="string">'b'</span>, <span class="string">'16'</span>), -&gt; (<span class="string">'c'</span>, <span class="string">'17'</span>), -&gt; (<span class="string">'d'</span>, null), -&gt;(<span class="string">'e'</span>, <span class="string">'');</span></span><br><span class="line"><span class="string">Query OK, 8 rows affected (0.01 sec)</span></span><br><span class="line"><span class="string">Records: 8  Duplicates: 0  Warnings: 0</span></span><br><span class="line"><span class="string"> </span></span><br><span class="line"><span class="string">mysql&gt; select * from counttest;</span></span><br><span class="line"><span class="string">+------+------+</span></span><br><span class="line"><span class="string">| name | age  |</span></span><br><span class="line"><span class="string">+------+------+</span></span><br><span class="line"><span class="string">| a | 14   |</span></span><br><span class="line"><span class="string">| a | 15   |</span></span><br><span class="line"><span class="string">| a | 15   |</span></span><br><span class="line"><span class="string">| b | NULL |</span></span><br><span class="line"><span class="string">| b | 16   |</span></span><br><span class="line"><span class="string">| c | 17   |</span></span><br><span class="line"><span class="string">| d | NULL |</span></span><br><span class="line"><span class="string">| e | |</span></span><br><span class="line"><span class="string">+------+------+</span></span><br><span class="line"><span class="string">8 rows in set (0.00 sec)</span></span><br><span class="line"><span class="string">mysql&gt; select name, count(name), count(1), count(*), count(age), count(distinct(age)) -&gt; from counttest -&gt; group by name;</span></span><br><span class="line"><span class="string">+------+-------------+----------+----------+------------+----------------------+</span></span><br><span class="line"><span class="string">| name | count(name) | count(1) | count(*) | count(age) | count(distinct(age)) |</span></span><br><span class="line"><span class="string">+------+-------------+----------+----------+------------+----------------------+</span></span><br><span class="line"><span class="string">| a | 3 | 3 | 3 | 3 | 2 |</span></span><br><span class="line"><span class="string">| b | 2 | 2 | 2 | 1 | 1 |</span></span><br><span class="line"><span class="string">| c | 1 | 1 | 1 | 1 | 1 |</span></span><br><span class="line"><span class="string">| d | 1 | 1 | 1 | 0 | 0 |</span></span><br><span class="line"><span class="string">| e | 1 | 1 | 1 | 1 | 1 |</span></span><br><span class="line"><span class="string">+------+-------------+----------+----------+------------+----------------------+</span></span><br><span class="line"><span class="string">5 rows in set (0.00 sec)</span></span><br></pre></td></tr></table></figure>
+
+<p>好记性不如烂笔头哈～</p>
+<p><img src="/2021/08/12/20210812-explainCount/6.jpg" alt></p>
+
+          
+        
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+    
+      
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://stevenhoukai.github.io/2020/12/29/20201229-goroutine2/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="steven Hou">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/upload/images/avatar.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="迷途小书童">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+                
+                <a class="post-title-link" href="/2020/12/29/20201229-goroutine2/" itemprop="url">goroutine与线程的关系</a></h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2020-12-29T00:00:01+08:00">
+                2020-12-29
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Golang并发编程/" itemprop="url" rel="index">
+                    <span itemprop="name">Golang并发编程</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          
+            <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a><strong>前言</strong></h2><p>学到这里，我们需要了解一下OS线程一般都是有属于自己的线程栈内存（通常为2MB）。一个goroutine栈在刚启动的时候确实很小的（通常是2KB），所以一次性创建10w个goroutine也是没有问题的，随着运行goroutine栈最大可达到1GB。goroutine属于用户态线程，go语言在runtime层面通过实现了一个GPM机制来对goroutine进行调度。</p>
+<h2 id="goroutine的调度机制"><a href="#goroutine的调度机制" class="headerlink" title="goroutine的调度机制"></a><strong>goroutine的调度</strong>机制</h2><p>首先来大致解释下什么是GPM</p>
+<p><strong>G：就是goroutine，包含goroutine信息以及与所在P的绑定等信息</strong></p>
+<p><strong>P：管理着一组goroutine的队列，P里面会存储当前goroutine运行的上下文环境（函数指针，堆栈地址以及地址边界），P内部对自己管理的一些列G进行调度，当自己管理的队列消费完了还会去全局队列中取，如果全局队列也消费完了还会去其他的P中取任务</strong></p>
+<p><strong>M：是Golang中对os内核线程的抽象，M与内核线程一般就是11对应的关系，goroutine最终都是会在M上进行执行的</strong></p>
+<p>我们来稍微理解一下这个GPM模型，本人会觉得与java中的线程池模型还是很相似的，只是本人研究的java线程池中并无全局队列以及去其他队列抢任务的概念出现，了解j<strong><a href="https://www.baidu.com" target="_blank" rel="noopener">JAVA中线程池工作原理</a></strong>戳这里。在GPM中，P和M通常也是11对应的，但这并不是绝对的，可以这么通俗的来理解一个队列P对应一个os线程M，os线程由操作系统cpu运行，然后P来对队列中的任务goroutine进行调度，让每一个goroutine在os线程上不停的来回切换运行（准确一点的表达：P管理着一组G挂载在M上运行，当一个G长久阻塞在一个M上时，runtime会新建一个M，阻塞G所在的P会把其他的G挂载在新建的M上去。当旧的G阻塞完成或者认为其已经死掉时那么就会回收旧的M）。</p>
+<h2 id="GOMAXPROCS"><a href="#GOMAXPROCS" class="headerlink" title="GOMAXPROCS"></a><strong>GOMAXPROCS</strong></h2><p>​    在前言中我们说了G的内存大小以及创建数量等问题，那么P由这方面的限制吗？P的个数是通过runtime.GOMAXPROCS设定（最大256），Go1.5版本之后默认为物理线程数。在并发量大的时候会适当增加一些P和M，但是也不会太多，切换太频繁也没有太多必要。</p>
+<h3 id="实例查看效果"><a href="#实例查看效果" class="headerlink" title="实例查看效果"></a>实例查看效果</h3><p>Go运行时的调度器使用<code>GOMAXPROCS</code>参数来确定需要使用多少个OS线程来同时执行Go代码。默认值是机器上的CPU核心数。例如在一个8核cpu上，调度器会把Go代码同时调度到8个OS线程上（GOMAXPROCS是m:n调度中的n）。</p>
+<p>Go语言中可以通过<code>runtime.GOMAXPROCS()</code>函数设置当前程序并发时占用的CPU逻辑核心数。</p>
+<p>Go1.5版本之前，默认使用的是单核心执行。Go1.5版本之后，默认使用全部的CPU逻辑核心数。</p>
+<p>我们可以通过将任务分配到不同的CPU逻辑核心上实现并行的效果，这里我们来举个例子看看。</p>
+<h4 id="例1"><a href="#例1" class="headerlink" title="例1:"></a>例1:</h4><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> main</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> (</span><br><span class="line">	<span class="string">"fmt"</span></span><br><span class="line">	<span class="string">"runtime"</span></span><br><span class="line">	<span class="string">"time"</span></span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">a</span><span class="params">()</span></span> &#123;</span><br><span class="line">	<span class="keyword">for</span> i := <span class="number">1</span>; i &lt; <span class="number">10</span>; i++ &#123;</span><br><span class="line">		fmt.Println(<span class="string">"A:"</span>, i)</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">b</span><span class="params">()</span></span> &#123;</span><br><span class="line">	<span class="keyword">for</span> i := <span class="number">1</span>; i &lt; <span class="number">10</span>; i++ &#123;</span><br><span class="line">		fmt.Println(<span class="string">"B:"</span>, i)</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">main</span><span class="params">()</span></span> &#123;</span><br><span class="line">	runtime.GOMAXPROCS(<span class="number">1</span>)</span><br><span class="line">	<span class="keyword">go</span> a()</span><br><span class="line">	<span class="keyword">go</span> b()</span><br><span class="line">	time.Sleep(time.Second)</span><br><span class="line">&#125;</span><br><span class="line">运行结果：</span><br><span class="line">modora#: <span class="keyword">go</span> run ./main.<span class="keyword">go</span></span><br><span class="line">B: <span class="number">1</span></span><br><span class="line">B: <span class="number">2</span></span><br><span class="line">B: <span class="number">3</span></span><br><span class="line">B: <span class="number">4</span></span><br><span class="line">B: <span class="number">5</span></span><br><span class="line">B: <span class="number">6</span></span><br><span class="line">B: <span class="number">7</span></span><br><span class="line">B: <span class="number">8</span></span><br><span class="line">B: <span class="number">9</span></span><br><span class="line">A: <span class="number">1</span></span><br><span class="line">A: <span class="number">2</span></span><br><span class="line">A: <span class="number">3</span></span><br><span class="line">A: <span class="number">4</span></span><br><span class="line">A: <span class="number">5</span></span><br><span class="line">A: <span class="number">6</span></span><br><span class="line">A: <span class="number">7</span></span><br><span class="line">A: <span class="number">8</span></span><br><span class="line">A: <span class="number">9</span></span><br></pre></td></tr></table></figure>
+
+<p>上面例子中我们设置了runtime.GOMAXPROCS()为1，也就是说GPM模型中最多一个OS线程在运行，可以很明显的看到Agoroutine和Bgoroutine是串行打印，原因也很简单，两个goroutine在一个OS线程上进行调度的。下面我们将runtime.GOMAXPROCS()设置成2，两个goroutine在两个OS线程上进行调度，这里其实可以理解在OS线程层面并行。</p>
+<h4 id="例2"><a href="#例2" class="headerlink" title="例2:"></a>例2:</h4><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> main</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> (</span><br><span class="line">	<span class="string">"fmt"</span></span><br><span class="line">	<span class="string">"runtime"</span></span><br><span class="line">	<span class="string">"time"</span></span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">a</span><span class="params">()</span></span> &#123;</span><br><span class="line">	<span class="keyword">for</span> i := <span class="number">1</span>; i &lt; <span class="number">10</span>; i++ &#123;</span><br><span class="line">		fmt.Println(<span class="string">"A:"</span>, i)</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">b</span><span class="params">()</span></span> &#123;</span><br><span class="line">	<span class="keyword">for</span> i := <span class="number">1</span>; i &lt; <span class="number">10</span>; i++ &#123;</span><br><span class="line">		fmt.Println(<span class="string">"B:"</span>, i)</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">main</span><span class="params">()</span></span> &#123;</span><br><span class="line">	runtime.GOMAXPROCS(<span class="number">2</span>)</span><br><span class="line">	<span class="keyword">go</span> a()</span><br><span class="line">	<span class="keyword">go</span> b()</span><br><span class="line">	time.Sleep(time.Second)</span><br><span class="line">&#125;</span><br><span class="line">执行结果：</span><br><span class="line">modora#: <span class="keyword">go</span> run ./main.<span class="keyword">go</span></span><br><span class="line">A: <span class="number">1</span></span><br><span class="line">A: <span class="number">2</span></span><br><span class="line">A: <span class="number">3</span></span><br><span class="line">A: <span class="number">4</span></span><br><span class="line">A: <span class="number">5</span></span><br><span class="line">A: <span class="number">6</span></span><br><span class="line">A: <span class="number">7</span></span><br><span class="line">A: <span class="number">8</span></span><br><span class="line">B: <span class="number">1</span></span><br><span class="line">B: <span class="number">2</span></span><br><span class="line">B: <span class="number">3</span></span><br><span class="line">B: <span class="number">4</span></span><br><span class="line">B: <span class="number">5</span></span><br><span class="line">B: <span class="number">6</span></span><br><span class="line">B: <span class="number">7</span></span><br><span class="line">B: <span class="number">8</span></span><br><span class="line">B: <span class="number">9</span></span><br><span class="line">A: <span class="number">9</span></span><br></pre></td></tr></table></figure>
+
+<p>再次运行上述代码，发现AB变成了交替打印。各种意味自行理解哈～</p>
+<p><img src="/2020/12/29/20201229-goroutine2/6.jpg" alt></p>
+
+          
+        
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+    
+      
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
     <link itemprop="mainEntityOfPage" href="http://stevenhoukai.github.io/2020/12/18/20201218-HexoTransferWindowsToMac/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -796,174 +1126,6 @@
   
   
   <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="http://stevenhoukai.github.io/2020/11/26/20201127-golangprectice1/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="name" content="steven Hou">
-      <meta itemprop="description" content>
-      <meta itemprop="image" content="/upload/images/avatar.jpg">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="迷途小书童">
-    </span>
-
-    
-      <header class="post-header">
-
-        
-        
-          <h1 class="post-title" itemprop="name headline">
-                
-                <a class="post-title-link" href="/2020/11/26/20201127-golangprectice1/" itemprop="url">Golang练习一</a></h1>
-        
-
-        <div class="post-meta">
-          <span class="post-time">
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">发表于</span>
-              
-              <time title="创建于" itemprop="dateCreated datePublished" datetime="2020-11-26T00:00:01+08:00">
-                2020-11-26
-              </time>
-            
-
-            
-
-            
-          </span>
-
-          
-            <span class="post-category">
-            
-              <span class="post-meta-divider">|</span>
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-folder-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">分类于</span>
-              
-              
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/Golang/" itemprop="url" rel="index">
-                    <span itemprop="name">Golang</span>
-                  </a>
-                </span>
-
-                
-                
-              
-            </span>
-          
-
-          
-            
-          
-
-          
-          
-
-          
-
-          
-
-          
-
-        </div>
-      </header>
-    
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-      
-
-      
-        
-          
-            <p>学习Golang的过程中，练习必不可少，俗话说的好 Talk is cheap,show me the code，学完Golang基本语法，是需要适当做一些练习加深理解的，虽然很很很简单！但是本人Java转go，语法还是要多熟悉，秉承多写一遍就多一次理解的原则，开始吧~</p>
-<ul>
-<li><h4 id="练习1"><a href="#练习1" class="headerlink" title="练习1"></a><strong>练习1</strong></h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line">//练习1</span><br><span class="line">  //编写代码分别定义一个整型、浮点型、布尔型、字符串型变量，使</span><br><span class="line">  //用fmt.Printf()搭配%T分别打印出上述变量的值和类型。</span><br><span class="line">  package main</span><br><span class="line">  </span><br><span class="line">  import (</span><br><span class="line">  	&quot;fmt&quot;</span><br><span class="line">  )</span><br><span class="line">  </span><br><span class="line">  func test1() &#123;</span><br><span class="line">  	a := 10</span><br><span class="line">  	b := 1.0</span><br><span class="line">  	c := false</span><br><span class="line">  	d := &quot;哈哈哈&quot;</span><br><span class="line">  	fmt.Printf(&quot;a的类型为%T\n&quot;, a)</span><br><span class="line">  	fmt.Printf(&quot;b的类型为%T\n&quot;, b)</span><br><span class="line">  	fmt.Printf(&quot;c的类型为%T\n&quot;, c)</span><br><span class="line">  	fmt.Printf(&quot;d的类型为%T\n&quot;, d)</span><br><span class="line">  &#125;</span><br><span class="line">  </span><br><span class="line">  func main() &#123;</span><br><span class="line">  	test1()</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure>
-
-
-</li>
-</ul>
-<ul>
-<li><h4 id="练习2"><a href="#练习2" class="headerlink" title="练习2"></a><strong>练习2</strong></h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line">//练习2</span><br><span class="line">  //编写代码统计出字符串&quot;hello沙河小王子&quot;中汉字的数量</span><br><span class="line">  package main</span><br><span class="line">  </span><br><span class="line">  import (</span><br><span class="line">  	&quot;fmt&quot;</span><br><span class="line">  	&quot;unicode&quot;</span><br><span class="line">  )</span><br><span class="line">  </span><br><span class="line">  func test2() &#123;</span><br><span class="line">  	s := &quot;hello沙河小王子&quot;</span><br><span class="line">  	count := 0</span><br><span class="line">  	for _, c := range s &#123;</span><br><span class="line">  		if unicode.Is(unicode.Han, c) &#123;</span><br><span class="line">  			count = count + 1</span><br><span class="line">  		&#125;</span><br><span class="line">  	&#125;</span><br><span class="line">  	fmt.Printf(&quot;字符串包含%v个中文&quot;, count)</span><br><span class="line">  &#125;</span><br><span class="line">  </span><br><span class="line">  func main() &#123;</span><br><span class="line">  	test2()</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure>
-
-
-</li>
-</ul>
-<ul>
-<li><h4 id="练习3"><a href="#练习3" class="headerlink" title="练习3"></a><strong>练习3</strong></h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line">//练习3</span><br><span class="line">  //求数组[1, 3, 5, 7, 8]所有元素的和</span><br><span class="line">  package main</span><br><span class="line">  </span><br><span class="line">  import (</span><br><span class="line">  	&quot;fmt&quot;</span><br><span class="line">  	&quot;unicode&quot;</span><br><span class="line">  )</span><br><span class="line">  </span><br><span class="line">  func test3() &#123;</span><br><span class="line">  	arr := [...]int&#123;1, 3, 5, 7, 9&#125;</span><br><span class="line">  	count := 0</span><br><span class="line">  	for _, v := range arr &#123;</span><br><span class="line">  		count = count + v</span><br><span class="line">  	&#125;</span><br><span class="line">  	fmt.Printf(&quot;result:%v&quot;, count)</span><br><span class="line">  &#125;</span><br><span class="line">  </span><br><span class="line">  func main() &#123;</span><br><span class="line">  	test3()</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure>
-
-
-</li>
-</ul>
-<ul>
-<li><h4 id="练习4"><a href="#练习4" class="headerlink" title="练习4"></a><strong>练习4</strong></h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line">//练习4</span><br><span class="line">  //找出数组中和为指定值的两个元素的下标，</span><br><span class="line">  //比如从数组[1, 3, 5, 7, 8]中找出和为8的两个元素的下标分别为(0,3)和(1,2)。</span><br><span class="line">  package main</span><br><span class="line">  </span><br><span class="line">  import &quot;fmt&quot;</span><br><span class="line">  </span><br><span class="line">  func test4() (int, int) &#123;</span><br><span class="line">  	result := 8</span><br><span class="line">  	resultmap := make(map[int]int)</span><br><span class="line">  	arr := [...]int&#123;1, 3, 5, 7, 9&#125;</span><br><span class="line">  	for index, v := range arr &#123;</span><br><span class="line">  		gapv := result - v</span><br><span class="line">  		va, ok := resultmap[gapv]</span><br><span class="line">  		if ok &#123;</span><br><span class="line">  			return index, va</span><br><span class="line">  		&#125;</span><br><span class="line">  		resultmap[v] = index</span><br><span class="line">  	&#125;</span><br><span class="line">  	fmt.Println(resultmap)</span><br><span class="line">  	return 0, 0</span><br><span class="line">  &#125;</span><br><span class="line">  </span><br><span class="line">  func main() &#123;</span><br><span class="line">  	res1, res2 := test4()</span><br><span class="line">  	fmt.Printf(&quot;%v,%v&quot;, res1, res2)</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure>
-
-
-</li>
-</ul>
-<p>  Talk is cheap,show me the code~</p>
-<p>  <img src="/2020/11/26/20201127-golangprectice1/1.jpeg" alt></p>
-
-          
-        
-      
-    </div>
-    
-    
-    
-
-    
-
-    
-
-    
-
-    <footer class="post-footer">
-      
-
-      
-
-      
-
-      
-      
-        <div class="post-eof"></div>
-      
-    </footer>
-  </div>
-  
-  
-  
-  </article>
-
-
-    
-      
-
-  
-
-  
-  
-  
-
-  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
-  
-  
-  
-  <div class="post-block">
     <link itemprop="mainEntityOfPage" href="http://stevenhoukai.github.io/2020/11/26/20201126-blbinarytree/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -1137,6 +1299,174 @@
 <p><img src="/2020/11/26/20201126-blbinarytree/1.jpeg" alt></p>
 </li>
 </ul>
+
+          
+        
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+    
+      
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://stevenhoukai.github.io/2020/11/26/20201127-golangprectice1/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="steven Hou">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/upload/images/avatar.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="迷途小书童">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+                
+                <a class="post-title-link" href="/2020/11/26/20201127-golangprectice1/" itemprop="url">Golang练习一</a></h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2020-11-26T00:00:01+08:00">
+                2020-11-26
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Golang/" itemprop="url" rel="index">
+                    <span itemprop="name">Golang</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          
+            <p>学习Golang的过程中，练习必不可少，俗话说的好 Talk is cheap,show me the code，学完Golang基本语法，是需要适当做一些练习加深理解的，虽然很很很简单！但是本人Java转go，语法还是要多熟悉，秉承多写一遍就多一次理解的原则，开始吧~</p>
+<ul>
+<li><h4 id="练习1"><a href="#练习1" class="headerlink" title="练习1"></a><strong>练习1</strong></h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line">//练习1</span><br><span class="line">  //编写代码分别定义一个整型、浮点型、布尔型、字符串型变量，使</span><br><span class="line">  //用fmt.Printf()搭配%T分别打印出上述变量的值和类型。</span><br><span class="line">  package main</span><br><span class="line">  </span><br><span class="line">  import (</span><br><span class="line">  	&quot;fmt&quot;</span><br><span class="line">  )</span><br><span class="line">  </span><br><span class="line">  func test1() &#123;</span><br><span class="line">  	a := 10</span><br><span class="line">  	b := 1.0</span><br><span class="line">  	c := false</span><br><span class="line">  	d := &quot;哈哈哈&quot;</span><br><span class="line">  	fmt.Printf(&quot;a的类型为%T\n&quot;, a)</span><br><span class="line">  	fmt.Printf(&quot;b的类型为%T\n&quot;, b)</span><br><span class="line">  	fmt.Printf(&quot;c的类型为%T\n&quot;, c)</span><br><span class="line">  	fmt.Printf(&quot;d的类型为%T\n&quot;, d)</span><br><span class="line">  &#125;</span><br><span class="line">  </span><br><span class="line">  func main() &#123;</span><br><span class="line">  	test1()</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure>
+
+
+</li>
+</ul>
+<ul>
+<li><h4 id="练习2"><a href="#练习2" class="headerlink" title="练习2"></a><strong>练习2</strong></h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line">//练习2</span><br><span class="line">  //编写代码统计出字符串&quot;hello沙河小王子&quot;中汉字的数量</span><br><span class="line">  package main</span><br><span class="line">  </span><br><span class="line">  import (</span><br><span class="line">  	&quot;fmt&quot;</span><br><span class="line">  	&quot;unicode&quot;</span><br><span class="line">  )</span><br><span class="line">  </span><br><span class="line">  func test2() &#123;</span><br><span class="line">  	s := &quot;hello沙河小王子&quot;</span><br><span class="line">  	count := 0</span><br><span class="line">  	for _, c := range s &#123;</span><br><span class="line">  		if unicode.Is(unicode.Han, c) &#123;</span><br><span class="line">  			count = count + 1</span><br><span class="line">  		&#125;</span><br><span class="line">  	&#125;</span><br><span class="line">  	fmt.Printf(&quot;字符串包含%v个中文&quot;, count)</span><br><span class="line">  &#125;</span><br><span class="line">  </span><br><span class="line">  func main() &#123;</span><br><span class="line">  	test2()</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure>
+
+
+</li>
+</ul>
+<ul>
+<li><h4 id="练习3"><a href="#练习3" class="headerlink" title="练习3"></a><strong>练习3</strong></h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line">//练习3</span><br><span class="line">  //求数组[1, 3, 5, 7, 8]所有元素的和</span><br><span class="line">  package main</span><br><span class="line">  </span><br><span class="line">  import (</span><br><span class="line">  	&quot;fmt&quot;</span><br><span class="line">  	&quot;unicode&quot;</span><br><span class="line">  )</span><br><span class="line">  </span><br><span class="line">  func test3() &#123;</span><br><span class="line">  	arr := [...]int&#123;1, 3, 5, 7, 9&#125;</span><br><span class="line">  	count := 0</span><br><span class="line">  	for _, v := range arr &#123;</span><br><span class="line">  		count = count + v</span><br><span class="line">  	&#125;</span><br><span class="line">  	fmt.Printf(&quot;result:%v&quot;, count)</span><br><span class="line">  &#125;</span><br><span class="line">  </span><br><span class="line">  func main() &#123;</span><br><span class="line">  	test3()</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure>
+
+
+</li>
+</ul>
+<ul>
+<li><h4 id="练习4"><a href="#练习4" class="headerlink" title="练习4"></a><strong>练习4</strong></h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line">//练习4</span><br><span class="line">  //找出数组中和为指定值的两个元素的下标，</span><br><span class="line">  //比如从数组[1, 3, 5, 7, 8]中找出和为8的两个元素的下标分别为(0,3)和(1,2)。</span><br><span class="line">  package main</span><br><span class="line">  </span><br><span class="line">  import &quot;fmt&quot;</span><br><span class="line">  </span><br><span class="line">  func test4() (int, int) &#123;</span><br><span class="line">  	result := 8</span><br><span class="line">  	resultmap := make(map[int]int)</span><br><span class="line">  	arr := [...]int&#123;1, 3, 5, 7, 9&#125;</span><br><span class="line">  	for index, v := range arr &#123;</span><br><span class="line">  		gapv := result - v</span><br><span class="line">  		va, ok := resultmap[gapv]</span><br><span class="line">  		if ok &#123;</span><br><span class="line">  			return index, va</span><br><span class="line">  		&#125;</span><br><span class="line">  		resultmap[v] = index</span><br><span class="line">  	&#125;</span><br><span class="line">  	fmt.Println(resultmap)</span><br><span class="line">  	return 0, 0</span><br><span class="line">  &#125;</span><br><span class="line">  </span><br><span class="line">  func main() &#123;</span><br><span class="line">  	res1, res2 := test4()</span><br><span class="line">  	fmt.Printf(&quot;%v,%v&quot;, res1, res2)</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure>
+
+
+</li>
+</ul>
+<p>  Talk is cheap,show me the code~</p>
+<p>  <img src="/2020/11/26/20201127-golangprectice1/1.jpeg" alt></p>
 
           
         
@@ -1694,344 +2024,6 @@
 
 
     
-      
-
-  
-
-  
-  
-  
-
-  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
-  
-  
-  
-  <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="http://stevenhoukai.github.io/2020/01/29/springioc-anno/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="name" content="steven Hou">
-      <meta itemprop="description" content>
-      <meta itemprop="image" content="/upload/images/avatar.jpg">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="迷途小书童">
-    </span>
-
-    
-      <header class="post-header">
-
-        
-        
-          <h1 class="post-title" itemprop="name headline">
-                
-                <a class="post-title-link" href="/2020/01/29/springioc-anno/" itemprop="url">springIOC---2、手工简单实现基于annotation的IOC框架</a></h1>
-        
-
-        <div class="post-meta">
-          <span class="post-time">
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">发表于</span>
-              
-              <time title="创建于" itemprop="dateCreated datePublished" datetime="2020-01-29T00:00:01+08:00">
-                2020-01-29
-              </time>
-            
-
-            
-
-            
-          </span>
-
-          
-            <span class="post-category">
-            
-              <span class="post-meta-divider">|</span>
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-folder-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">分类于</span>
-              
-              
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/spring相关框架原理/" itemprop="url" rel="index">
-                    <span itemprop="name">spring相关框架原理</span>
-                  </a>
-                </span>
-
-                
-                
-              
-            </span>
-          
-
-          
-            
-          
-
-          
-          
-
-          
-
-          
-
-          
-
-        </div>
-      </header>
-    
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-      
-
-      
-        
-          
-            <h1 id="序言"><a href="#序言" class="headerlink" title="序言"></a>序言</h1><p>……上一篇中我们探讨了基于xml配置文件的方式如何实现一个IOC容器，然而实际情况是这种方式在现在的开发中应用场景已经不多了，如果你们公司还在使用这种方式那说明你们公司的技术是真的还挺落后的，在敏捷开发至上的时代，我们往往使用的是另外一种方式—基于annotation来实现IOC管理，springboot中就已经很少去使用xml文件的方式了，基本上都是采用注解的方式，下面我们就来看看，基于annotation我们该如何去实现一个IOC容器。</p>
-<h1 id="如何基于注解实现一个IOC容器"><a href="#如何基于注解实现一个IOC容器" class="headerlink" title="如何基于注解实现一个IOC容器"></a>如何基于注解实现一个IOC容器</h1><p>……这里我也不多做关于spring的相关介绍，大家可自行去官网了解相关内容，我们直接进入正题，承接上一篇文章，今天就来讲解一下第2种方式，通过annotation的方式来实现IOC容器。</p>
-<h2 id="代码结构"><a href="#代码结构" class="headerlink" title="代码结构"></a>代码结构</h2><p>……整体的代码结构如下图，下面就逐一解析<br><img src="/2020/01/29/springioc-anno/1.jpg" alt="图p1"></p>
-<center>**代码结构**</center>
-
-<h3 id="入口类TestMain"><a href="#入口类TestMain" class="headerlink" title="入口类TestMain"></a>入口类TestMain</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">package com.hk.annospringioc;</span><br><span class="line"></span><br><span class="line">public class TestMain &#123;</span><br><span class="line">	public static void main(String[] args) &#123;</span><br><span class="line">		MyAnnotationApplicationContext fac = new MyAnnotationApplicationContext(&quot;com.hk.annospringioc&quot;);</span><br><span class="line">		Boy bean1 = (Boy) fac.getBean(&quot;boy&quot;);</span><br><span class="line">		bean1.printAll();</span><br><span class="line">		Girl bean2 = (Girl) fac.getBean(&quot;girl&quot;);</span><br><span class="line">		bean2.printAll();</span><br><span class="line">		Person bean = (Person) fac.getBean(&quot;person&quot;);</span><br><span class="line">		Person beancopy = (Person) fac.getBean(&quot;person&quot;);</span><br><span class="line">		bean.printAll();</span><br><span class="line">		System.out.println(bean == beancopy ? &quot;是同一个person&quot; : &quot;不是同一个person&quot;);</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>整个程序的main方法中我们new了一个MyAnnotationApplicationContext这样的一个对象，并传入了一个类似包路径的参数，这里我们管它叫包扫描根目录，springboot就有这个概念，默认在主函数同级目录，这个类也是整个注解IOC构建过程中的核心类，介绍该类之前，先说明两个接口<br>ApplicationContext用于IOC容器构建  </p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">package com.hk.springioc;</span><br><span class="line"></span><br><span class="line">public interface ApplicationContext &#123;</span><br><span class="line">	public void springIOC();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>BeanFactory用于对象实例管理与获取</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">package com.hk.springioc;</span><br><span class="line"></span><br><span class="line">public interface BeanFactory &#123;</span><br><span class="line">	public Object getBean(String name);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<h3 id="MyAnnotationApplicationContext"><a href="#MyAnnotationApplicationContext" class="headerlink" title="MyAnnotationApplicationContext"></a>MyAnnotationApplicationContext</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br></pre></td><td class="code"><pre><span class="line">package com.hk.annospringioc;</span><br><span class="line"></span><br><span class="line">import java.lang.reflect.Field;</span><br><span class="line">import java.util.HashMap;</span><br><span class="line">import java.util.List;</span><br><span class="line">import java.util.Map;</span><br><span class="line">import java.util.Map.Entry;</span><br><span class="line">import java.util.Set;</span><br><span class="line"></span><br><span class="line">public class MyAnnotationApplicationContext implements BeanFactory,ApplicationContext &#123;</span><br><span class="line"></span><br><span class="line">	private ConfigManager configManager;</span><br><span class="line">	</span><br><span class="line">	private Map&lt;String,AnnoBean&gt; beanContainer;</span><br><span class="line">	</span><br><span class="line">	private Map&lt;String,Object&gt; instanceContainer ;</span><br><span class="line">	</span><br><span class="line">	public MyAnnotationApplicationContext(String path)&#123;</span><br><span class="line">		configManager = new ConfigManager();</span><br><span class="line">		instanceContainer = new HashMap&lt;String,Object&gt;();</span><br><span class="line">		beanContainer = configManager.ScanPackage(path);</span><br><span class="line">		springIOC();</span><br><span class="line">	&#125;</span><br><span class="line">	</span><br><span class="line">	</span><br><span class="line">	</span><br><span class="line">	//依賴注入的關鍵</span><br><span class="line">	@Override</span><br><span class="line">	public void springIOC() &#123;</span><br><span class="line">		Set&lt;Entry&lt;String, AnnoBean&gt;&gt; entrySet = beanContainer.entrySet();</span><br><span class="line">		for(Entry&lt;String, AnnoBean&gt; entry : entrySet)&#123;</span><br><span class="line">//			String name = entry.getKey();</span><br><span class="line">			AnnoBean bean = entry.getValue();</span><br><span class="line">			Object instance = createBean(bean);</span><br><span class="line">//			instanceContainer.put(name, instance);</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	private Object createBean(AnnoBean bean) &#123;</span><br><span class="line">		if(instanceContainer.get(bean.getName())!=null)&#123;</span><br><span class="line">			return instanceContainer.get(bean.getName());</span><br><span class="line">		&#125;</span><br><span class="line">		String className = bean.getClassName();</span><br><span class="line">		List&lt;Property&gt; props = bean.getProps();</span><br><span class="line">		Object newInstance = null;</span><br><span class="line">		try &#123;</span><br><span class="line">			Class&lt;?&gt; forName = Class.forName(className);</span><br><span class="line">			newInstance = forName.newInstance();</span><br><span class="line">			for(Property pro : props)&#123;</span><br><span class="line">				String name = pro.getName();</span><br><span class="line">				Field field = forName.getDeclaredField(name);</span><br><span class="line">				field.setAccessible(true);</span><br><span class="line">				if(pro.getRef()!=null)&#123;</span><br><span class="line">					String ref = pro.getRef();</span><br><span class="line">					Object existBean = getBean(ref);</span><br><span class="line">					if(existBean==null)&#123;</span><br><span class="line">						Object createBean = createBean(beanContainer.get(ref));</span><br><span class="line">						field.set(newInstance,createBean);</span><br><span class="line">					&#125;else&#123;</span><br><span class="line">						field.set(newInstance,existBean);</span><br><span class="line">					&#125;</span><br><span class="line">				&#125;else&#123;</span><br><span class="line">					Class&lt;?&gt; type = field.getType();</span><br><span class="line">					if(type==int.class)&#123;</span><br><span class="line">						field.set(newInstance,Integer.parseInt(pro.getValue()));</span><br><span class="line">					&#125;else&#123;</span><br><span class="line">						field.set(newInstance,pro.getValue());</span><br><span class="line">					&#125;</span><br><span class="line">					</span><br><span class="line">				&#125;</span><br><span class="line">			&#125;</span><br><span class="line">			if(bean.getSingleton().equals(&quot;1&quot;))&#123;</span><br><span class="line">				instanceContainer.put(bean.getName(), newInstance);</span><br><span class="line">			&#125;</span><br><span class="line">			</span><br><span class="line">		&#125; catch (ClassNotFoundException e) &#123;</span><br><span class="line">			e.printStackTrace();</span><br><span class="line">		&#125; catch (InstantiationException e) &#123;</span><br><span class="line">			e.printStackTrace();</span><br><span class="line">		&#125; catch (IllegalAccessException e) &#123;</span><br><span class="line">			e.printStackTrace();</span><br><span class="line">		&#125; catch (NoSuchFieldException e) &#123;</span><br><span class="line">			e.printStackTrace();</span><br><span class="line">		&#125; catch (SecurityException e) &#123;</span><br><span class="line">			e.printStackTrace();</span><br><span class="line">		&#125;</span><br><span class="line">		return newInstance;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"></span><br><span class="line">	@Override</span><br><span class="line">	public Object getBean(String name) &#123;</span><br><span class="line">		return instanceContainer.get(name);</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>解释一下这个类主要做了什么：<br>1、new了一个ConfigManager对象<br>2、构建了一个HashMap类型的实例化容器instanceContainer<br>3、用第一步的ConfigManager对象对包扫描根目录下面的所有类进行扫描，获取一个Bean容器，这里的Bean就是annotation注解的相关bean信息，后面会有一个类进行封装<br>4、对Bean容器进行解析，构建最终的IOC实例容器，也就是第二步中的instanceContainer<br>下面就是我们相关自定义注解以及实体类中的注解表达方式</p>
-<h3 id="VO组装已经相关类和属相的注解信息"><a href="#VO组装已经相关类和属相的注解信息" class="headerlink" title="VO组装已经相关类和属相的注解信息"></a>VO组装已经相关类和属相的注解信息</h3><p>实体组装结构如下</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">封装Person信息，依赖注入Boy和Girl</span><br><span class="line">package com.hk.annospringioc;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">@MyComponent(value=&quot;person&quot;)</span><br><span class="line">public class Person &#123;</span><br><span class="line">	</span><br><span class="line">	@MyAutoWired(value = &quot;boy&quot;)</span><br><span class="line">	private Boy boy;</span><br><span class="line">	@MyAutoWired(value = &quot;girl&quot;)</span><br><span class="line">	private Girl girl;</span><br><span class="line"></span><br><span class="line">	public void printAll()&#123;</span><br><span class="line">		boy.printAll();</span><br><span class="line">		girl.printAll();</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">类封装girl信息  </span><br><span class="line">package com.hk.annospringioc;</span><br><span class="line"></span><br><span class="line">@MyComponent(&quot;girl&quot;)</span><br><span class="line">public class Girl &#123;</span><br><span class="line">	</span><br><span class="line">	@MyValue(&quot;lily&quot;)</span><br><span class="line">	private String name;</span><br><span class="line">	@MyValue(&quot;17&quot;)</span><br><span class="line">	private int age;</span><br><span class="line"></span><br><span class="line">	public void printAll()&#123;</span><br><span class="line">		System.out.println(name+&quot;:&quot;+age);</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">封装boy的信息  </span><br><span class="line">package com.hk.annospringioc;</span><br><span class="line"></span><br><span class="line">@MyComponent(&quot;boy&quot;)</span><br><span class="line">public class Boy &#123;</span><br><span class="line"></span><br><span class="line">	@MyValue(&quot;lilei&quot;)</span><br><span class="line">	private String name;</span><br><span class="line">	</span><br><span class="line">	@MyValue(&quot;12&quot;)</span><br><span class="line">	private int age;</span><br><span class="line"></span><br><span class="line">	public void printAll()&#123;</span><br><span class="line">		System.out.println(name+&quot;:&quot;+age);</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">封装在类级别打上了注解的bean信息  </span><br><span class="line">package com.hk.annospringioc;</span><br><span class="line"></span><br><span class="line">import java.util.List;</span><br><span class="line"></span><br><span class="line">public class AnnoBean &#123;</span><br><span class="line">	private String name;</span><br><span class="line">	private String className;</span><br><span class="line">	public String getName() &#123;</span><br><span class="line">		return name;</span><br><span class="line">	&#125;</span><br><span class="line">	public void setName(String name) &#123;</span><br><span class="line">		this.name = name;</span><br><span class="line">	&#125;</span><br><span class="line">	public String getClassName() &#123;</span><br><span class="line">		return className;</span><br><span class="line">	&#125;</span><br><span class="line">	public void setClassName(String className) &#123;</span><br><span class="line">		this.className = className;</span><br><span class="line">	&#125;</span><br><span class="line">	public String getSingleton() &#123;</span><br><span class="line">		return singleton;</span><br><span class="line">	&#125;</span><br><span class="line">	public void setSingleton(String singleton) &#123;</span><br><span class="line">		this.singleton = singleton;</span><br><span class="line">	&#125;</span><br><span class="line">	public List&lt;Property&gt; getProps() &#123;</span><br><span class="line">		return props;</span><br><span class="line">	&#125;</span><br><span class="line">	public void setProps(List&lt;Property&gt; props) &#123;</span><br><span class="line">		this.props = props;</span><br><span class="line">	&#125;</span><br><span class="line">	private String singleton = &quot;1&quot;;</span><br><span class="line">	private List&lt;Property&gt; props;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">封装在属性级别打上了注解的property的bean信息  </span><br><span class="line">package com.hk.annospringioc;</span><br><span class="line"></span><br><span class="line">public class Property &#123;</span><br><span class="line">	private String name;</span><br><span class="line">	private String value;</span><br><span class="line">	private String ref;</span><br><span class="line"></span><br><span class="line">	public String getName() &#123;</span><br><span class="line">		return name;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	public void setName(String name) &#123;</span><br><span class="line">		this.name = name;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	public String getValue() &#123;</span><br><span class="line">		return value;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	public void setValue(String value) &#123;</span><br><span class="line">		this.value = value;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	public String getRef() &#123;</span><br><span class="line">		return ref;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	public void setRef(String ref) &#123;</span><br><span class="line">		this.ref = ref;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<h3 id="ConfigManager"><a href="#ConfigManager" class="headerlink" title="ConfigManager"></a>ConfigManager</h3><p>……这里我们只需要对包扫描根路径下的所有类进行扫描，通过类以及属性的注解扫描组装好对应bean容器即可，其实跟xml配置文件的整个流程是一样一样的，只是在实际实现上面，我们不用去解析xml文件，而是通过reflect对每一个类进行扫描解析，扫描到对应的注解就做对应的操作，仅此而已，大家稍看代码自己体会一下。</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br></pre></td><td class="code"><pre><span class="line">package com.hk.annospringioc;</span><br><span class="line"></span><br><span class="line">import java.io.File;</span><br><span class="line">import java.io.InputStream;</span><br><span class="line">import java.lang.annotation.Annotation;</span><br><span class="line">import java.lang.reflect.Field;</span><br><span class="line">import java.net.URL;</span><br><span class="line">import java.util.ArrayList;</span><br><span class="line">import java.util.HashMap;</span><br><span class="line">import java.util.List;</span><br><span class="line">import java.util.Map;</span><br><span class="line"></span><br><span class="line">import org.dom4j.Document;</span><br><span class="line">import org.dom4j.DocumentException;</span><br><span class="line">import org.dom4j.Element;</span><br><span class="line">import org.dom4j.io.SAXReader;</span><br><span class="line"></span><br><span class="line">/**</span><br><span class="line"> * </span><br><span class="line"> * @ClassName: ConfigManager </span><br><span class="line"> * @Description: TODO(这里用一句话描述这个类的作用) </span><br><span class="line"> * @author A18ccms a18ccms_gmail_com </span><br><span class="line"> * @date 2019年4月9日 下午5:33:23 </span><br><span class="line"> *</span><br><span class="line"> */</span><br><span class="line">public class ConfigManager &#123;</span><br><span class="line">	</span><br><span class="line">	public  Map&lt;String,AnnoBean&gt; ScanPackage(String basePackage)&#123;</span><br><span class="line">		List&lt;String&gt; list = new ArrayList&lt;String&gt;();</span><br><span class="line">		Map&lt;String,AnnoBean&gt; map = new HashMap&lt;String,AnnoBean&gt;();</span><br><span class="line">		final URL url = this.getClass().getClassLoader().getResource(basePackage.replaceAll(&quot;\\.&quot;, &quot;/&quot;));</span><br><span class="line">        final File basePackageFile = new File(url.getPath());</span><br><span class="line">        File[] listFiles = basePackageFile.listFiles();</span><br><span class="line">        for(File file : listFiles)&#123;</span><br><span class="line">        	if(file.isFile())&#123;</span><br><span class="line">        		list.add(basePackage+&quot;.&quot;+file.getName().split(&quot;\\.&quot;)[0]);</span><br><span class="line">        	&#125;</span><br><span class="line">        &#125;</span><br><span class="line">        </span><br><span class="line">        for(String strr : list)&#123;</span><br><span class="line">        	String className = strr;</span><br><span class="line">        	try &#123;</span><br><span class="line">				Class&lt;?&gt; forName = Class.forName(className);</span><br><span class="line">				if(forName.isAnnotationPresent(MyComponent.class))&#123;</span><br><span class="line">					MyComponent annotation = forName.getAnnotation(MyComponent.class);</span><br><span class="line">					String value = annotation.value();</span><br><span class="line">					AnnoBean bean = new AnnoBean();</span><br><span class="line">					bean.setName(value);</span><br><span class="line">					bean.setClassName(className);</span><br><span class="line">					List&lt;Property&gt; propList = new ArrayList&lt;Property&gt;();</span><br><span class="line">					Field[] fields = forName.getDeclaredFields();</span><br><span class="line">					for(Field field : fields)&#123;</span><br><span class="line">						if(field.isAnnotationPresent(MyAutoWired.class))&#123;</span><br><span class="line">							Property prop = new Property();</span><br><span class="line">							MyAutoWired annotation2 = field.getAnnotation(MyAutoWired.class);</span><br><span class="line">							prop.setName(field.getName());</span><br><span class="line">							prop.setRef(annotation2.value());</span><br><span class="line">							propList.add(prop);</span><br><span class="line">						&#125;</span><br><span class="line">						if(field.isAnnotationPresent(MyValue.class))&#123;</span><br><span class="line">							Property prop = new Property();</span><br><span class="line">							MyValue annotation2 = field.getAnnotation(MyValue.class);</span><br><span class="line">							prop.setName(field.getName());</span><br><span class="line">							prop.setValue(annotation2.value());</span><br><span class="line">							propList.add(prop);</span><br><span class="line">						&#125;</span><br><span class="line">					&#125;</span><br><span class="line">					bean.setProps(propList);</span><br><span class="line">					map.put(value,bean);</span><br><span class="line">				&#125;</span><br><span class="line">			&#125; catch (ClassNotFoundException e) &#123;</span><br><span class="line">				e.printStackTrace();</span><br><span class="line">			&#125;</span><br><span class="line">        	</span><br><span class="line">        &#125;</span><br><span class="line">		return map;</span><br><span class="line">	&#125;</span><br><span class="line">	</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>写到这里还没有完，现在重点来了，有没有发现，上面这些类的类名或者属性上面多了三个这个东西，@MyAutoWired，@MyComponent，@MyValue，这就是我们的自定义注解，下面就看看这三个东西如何编写。 </p>
-<h3 id="自定义注解编写"><a href="#自定义注解编写" class="headerlink" title="自定义注解编写"></a>自定义注解编写</h3><p>……自定义注解其实就是告诉框架，需要识别的注解是哪些，当构建bean容器的时候，框架初始化时见到对应的注解去做对应的操作，MyComponent是类级别注解，MyAutowired、MyValue是属性级别注解，只能在对应区域进行使用！！！  </p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">package com.hk.annospringioc;</span><br><span class="line"></span><br><span class="line">import java.lang.annotation.ElementType;</span><br><span class="line">import java.lang.annotation.Retention;</span><br><span class="line">import java.lang.annotation.RetentionPolicy;</span><br><span class="line">import java.lang.annotation.Target;</span><br><span class="line"></span><br><span class="line">import org.dom4j.Element;</span><br><span class="line"></span><br><span class="line">@Retention(RetentionPolicy.RUNTIME)</span><br><span class="line">@Target(ElementType.FIELD)</span><br><span class="line">public @interface MyAutoWired &#123;</span><br><span class="line">	String value();</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">package com.hk.annospringioc;</span><br><span class="line"></span><br><span class="line">import java.lang.annotation.ElementType;</span><br><span class="line">import java.lang.annotation.Retention;</span><br><span class="line">import java.lang.annotation.RetentionPolicy;</span><br><span class="line">import java.lang.annotation.Target;</span><br><span class="line"></span><br><span class="line">import org.dom4j.Element;</span><br><span class="line"></span><br><span class="line">@Retention(RetentionPolicy.RUNTIME)</span><br><span class="line">@Target(ElementType.TYPE)</span><br><span class="line">public @interface MyComponent &#123;</span><br><span class="line">	String value();</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">package com.hk.annospringioc;</span><br><span class="line"></span><br><span class="line">import java.lang.annotation.ElementType;</span><br><span class="line">import java.lang.annotation.Retention;</span><br><span class="line">import java.lang.annotation.RetentionPolicy;</span><br><span class="line">import java.lang.annotation.Target;</span><br><span class="line"></span><br><span class="line">import org.dom4j.Element;</span><br><span class="line"></span><br><span class="line">@Retention(RetentionPolicy.RUNTIME)</span><br><span class="line">@Target(ElementType.FIELD)</span><br><span class="line">public @interface MyValue &#123;</span><br><span class="line">	String value();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>好了，到此整个基于注解的ioc实现方式代码就写完了，下面我们来运行一下看看结果</p>
-<h3 id="最后运行TestMain"><a href="#最后运行TestMain" class="headerlink" title="最后运行TestMain"></a>最后运行TestMain</h3><p>查看最终运行结果: 同样IOC容器内的实例也是单例的<br><img src="/2020/01/29/springioc-anno/2.jpg" alt="图p2"></p>
-<center>**运行结果**</center>
-
-<h1 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h1><p>……ok，写到这里我们就简单的实现了一个基于注解方式的IOC容器，原理其实也很简单，只需要你了解reflect以及java基础你都不用去了解xml相关的内容，本篇文章重点只是向大家介绍一个最基本的实现原理，理解这个原理对于以后的开发会有极大的帮助，所以现在你有稍微了解到我们在使用springboot开发过程中那些@Controller、@Service、@Component、@Autowired注解的含义了吗？下一篇文章我们就基于本篇的原理来自己实现一个简单的springmvc框架…谢谢！</p>
-
-          
-        
-      
-    </div>
-    
-    
-    
-
-    
-
-    
-
-    
-
-    <footer class="post-footer">
-      
-
-      
-
-      
-
-      
-      
-        <div class="post-eof"></div>
-      
-    </footer>
-  </div>
-  
-  
-  
-  </article>
-
-
-    
-      
-
-  
-
-  
-  
-  
-
-  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
-  
-  
-  
-  <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="http://stevenhoukai.github.io/2020/01/28/20200127springioc/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="name" content="steven Hou">
-      <meta itemprop="description" content>
-      <meta itemprop="image" content="/upload/images/avatar.jpg">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="迷途小书童">
-    </span>
-
-    
-      <header class="post-header">
-
-        
-        
-          <h1 class="post-title" itemprop="name headline">
-                
-                <a class="post-title-link" href="/2020/01/28/20200127springioc/" itemprop="url">springIOC---1、手工简单实现基于xml的IOC框架</a></h1>
-        
-
-        <div class="post-meta">
-          <span class="post-time">
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">发表于</span>
-              
-              <time title="创建于" itemprop="dateCreated datePublished" datetime="2020-01-28T00:00:01+08:00">
-                2020-01-28
-              </time>
-            
-
-            
-
-            
-          </span>
-
-          
-            <span class="post-category">
-            
-              <span class="post-meta-divider">|</span>
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-folder-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">分类于</span>
-              
-              
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/spring相关框架原理/" itemprop="url" rel="index">
-                    <span itemprop="name">spring相关框架原理</span>
-                  </a>
-                </span>
-
-                
-                
-              
-            </span>
-          
-
-          
-            
-          
-
-          
-          
-
-          
-
-          
-
-          
-
-        </div>
-      </header>
-    
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-      
-
-      
-        
-          
-            <h1 id="如何自己实现一个IOC容器"><a href="#如何自己实现一个IOC容器" class="headerlink" title="如何自己实现一个IOC容器"></a>如何自己实现一个IOC容器</h1><p>……这里我并不想多做关于spring的相关介绍，大家可自行去官网了解相关内容，我们直接进入正题，假如让你自己去做开发，并且spring开始收取高额的费用了，这里只是假设，你该如何去开发？思考一分钟……稍微有点框架基础的人应该都会说自己开发一个IOC框架进行容器管理不就得了，确实，容器管理是本文的重点，今天就来讲解一下第一种方式，通过xml文件的方式来实现IOC容器。</p>
-<h2 id="代码结构"><a href="#代码结构" class="headerlink" title="代码结构"></a>代码结构</h2><p>……整体的代码结构如下图，下面就逐一解析<br><img src="/2020/01/28/20200127springioc/1.png" alt="图p1"></p>
-<center>**代码结构**</center>
-
-<h3 id="入口类TestMain"><a href="#入口类TestMain" class="headerlink" title="入口类TestMain"></a>入口类TestMain</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">package com.hk.springioc;</span><br><span class="line"></span><br><span class="line">public class TestMain &#123;</span><br><span class="line">	public static void main(String[] args) &#123;</span><br><span class="line">		MyXmlClassPathApplicationContext fac = new MyXmlClassPathApplicationContext(&quot;myspring.xml&quot;);</span><br><span class="line">		Person bean1 = (Person) fac.getBean(&quot;person&quot;);</span><br><span class="line">		Person bean2 = (Person) fac.getBean(&quot;person&quot;);</span><br><span class="line">		bean1.printAll();</span><br><span class="line">		bean2.printAll();</span><br><span class="line">		System.out.print(bean1 == bean2 ? &quot;同一个对象&quot; : &quot;非同一个对象&quot;);</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>整个程序的main方法中我们new了一个MyXmlClassPathApplicationContext这样的一个对象，这也是整个稍后IOC构建过程中的核心类，介绍该类之前，先说明两个接口<br>ApplicationContext用于IOC容器构建  </p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">package com.hk.springioc;</span><br><span class="line"></span><br><span class="line">public interface ApplicationContext &#123;</span><br><span class="line">	public void springIOC();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>BeanFactory用于对象实例管理与获取</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">package com.hk.springioc;</span><br><span class="line"></span><br><span class="line">public interface BeanFactory &#123;</span><br><span class="line">	public Object getBean(String name);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<h3 id="MyXmlClassPathApplicationContext"><a href="#MyXmlClassPathApplicationContext" class="headerlink" title="MyXmlClassPathApplicationContext"></a>MyXmlClassPathApplicationContext</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br></pre></td><td class="code"><pre><span class="line">package com.hk.springioc;</span><br><span class="line"></span><br><span class="line">import java.lang.reflect.Field;</span><br><span class="line">import java.util.HashMap;</span><br><span class="line">import java.util.List;</span><br><span class="line">import java.util.Map;</span><br><span class="line">import java.util.Map.Entry;</span><br><span class="line">import java.util.Set;</span><br><span class="line"></span><br><span class="line">public class MyXmlClassPathApplicationContext implements BeanFactory,ApplicationContext &#123;</span><br><span class="line"></span><br><span class="line">	private ConfigManager configManager;</span><br><span class="line">	</span><br><span class="line">	private Map&lt;String,Bean&gt; beanContainer;</span><br><span class="line">	</span><br><span class="line">	private Map&lt;String,Object&gt; instanceContainer ;</span><br><span class="line">	</span><br><span class="line">	public MyXmlClassPathApplicationContext(String path)&#123;</span><br><span class="line">		configManager = new ConfigManager();</span><br><span class="line">		instanceContainer = new HashMap&lt;String,Object&gt;();</span><br><span class="line">		beanContainer = configManager.parseXML(path);</span><br><span class="line">		springIOC();</span><br><span class="line">	&#125;</span><br><span class="line">	</span><br><span class="line">	</span><br><span class="line">	</span><br><span class="line">	//依賴注入的關鍵</span><br><span class="line">	@Override</span><br><span class="line">	public void springIOC() &#123;</span><br><span class="line">		Set&lt;Entry&lt;String, Bean&gt;&gt; entrySet = beanContainer.entrySet();</span><br><span class="line">		for(Entry&lt;String, Bean&gt; entry : entrySet)&#123;</span><br><span class="line">//			String name = entry.getKey();</span><br><span class="line">			Bean bean = entry.getValue();</span><br><span class="line">			Object instance = createBean(bean);</span><br><span class="line">//			instanceContainer.put(name, instance);</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	private Object createBean(Bean bean) &#123;</span><br><span class="line">		if(instanceContainer.get(bean.getName())!=null)&#123;</span><br><span class="line">			return instanceContainer.get(bean.getName());</span><br><span class="line">		&#125;</span><br><span class="line">		String className = bean.getClassName();</span><br><span class="line">		List&lt;Property&gt; props = bean.getProps();</span><br><span class="line">		Object newInstance = null;</span><br><span class="line">		try &#123;</span><br><span class="line">			Class&lt;?&gt; forName = Class.forName(className);</span><br><span class="line">			newInstance = forName.newInstance();</span><br><span class="line">			for(Property pro : props)&#123;</span><br><span class="line">				String name = pro.getName();</span><br><span class="line">				Field field = forName.getDeclaredField(name);</span><br><span class="line">				field.setAccessible(true);</span><br><span class="line">				if(pro.getRef()!=null)&#123;</span><br><span class="line">					String ref = pro.getRef();</span><br><span class="line">					Object existBean = getBean(ref);</span><br><span class="line">					if(existBean==null)&#123;</span><br><span class="line">						Object createBean = createBean(beanContainer.get(ref));</span><br><span class="line">						field.set(newInstance,createBean);</span><br><span class="line">					&#125;else&#123;</span><br><span class="line">						field.set(newInstance,existBean);</span><br><span class="line">					&#125;</span><br><span class="line">				&#125;else&#123;</span><br><span class="line">					Class&lt;?&gt; type = field.getType();</span><br><span class="line">					if(type==int.class)&#123;</span><br><span class="line">						field.set(newInstance,Integer.parseInt(pro.getValue()));</span><br><span class="line">					&#125;else&#123;</span><br><span class="line">						field.set(newInstance,pro.getValue());</span><br><span class="line">					&#125;</span><br><span class="line">					</span><br><span class="line">				&#125;</span><br><span class="line">			&#125;</span><br><span class="line">			if(bean.getSingleton().equals(&quot;1&quot;))&#123;</span><br><span class="line">				instanceContainer.put(bean.getName(), newInstance);</span><br><span class="line">			&#125;</span><br><span class="line">			</span><br><span class="line">		&#125; catch (ClassNotFoundException e) &#123;</span><br><span class="line">			e.printStackTrace();</span><br><span class="line">		&#125; catch (InstantiationException e) &#123;</span><br><span class="line">			e.printStackTrace();</span><br><span class="line">		&#125; catch (IllegalAccessException e) &#123;</span><br><span class="line">			e.printStackTrace();</span><br><span class="line">		&#125; catch (NoSuchFieldException e) &#123;</span><br><span class="line">			e.printStackTrace();</span><br><span class="line">		&#125; catch (SecurityException e) &#123;</span><br><span class="line">			e.printStackTrace();</span><br><span class="line">		&#125;</span><br><span class="line">		return newInstance;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"></span><br><span class="line">	@Override</span><br><span class="line">	public Object getBean(String name) &#123;</span><br><span class="line">		return instanceContainer.get(name);</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>解释一下这个类主要做了什么：<br>1、new了一个ConfigManager对象<br>2、构建了一个HashMap类型的实例化容器instanceContainer<br>3、用第一步的ConfigManager对象解析XML文件，获取一个Bean容器，这里的Bean就是XML文件中配置的相关bean信息，后面会有一个类进行封装<br>4、对Bean容器进行解析，构建最终的IOC实例容器，也就是第二步中的instanceContainer<br>下面就是xml文件以及对应封装类Bean</p>
-<h3 id="myspring-xml"><a href="#myspring-xml" class="headerlink" title="myspring.xml"></a>myspring.xml</h3><p>配置文件结构如下</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br><span class="line">146</span><br><span class="line">147</span><br><span class="line">148</span><br><span class="line">149</span><br><span class="line">150</span><br><span class="line">151</span><br><span class="line">152</span><br><span class="line">153</span><br><span class="line">154</span><br><span class="line">155</span><br><span class="line">156</span><br><span class="line">157</span><br><span class="line">158</span><br><span class="line">159</span><br><span class="line">160</span><br><span class="line">161</span><br><span class="line">162</span><br><span class="line">163</span><br><span class="line">164</span><br><span class="line">165</span><br><span class="line">166</span><br><span class="line">167</span><br><span class="line">168</span><br><span class="line">169</span><br><span class="line">170</span><br><span class="line">171</span><br><span class="line">172</span><br><span class="line">173</span><br><span class="line">174</span><br><span class="line">175</span><br><span class="line">176</span><br><span class="line">177</span><br><span class="line">178</span><br><span class="line">179</span><br></pre></td><td class="code"><pre><span class="line">&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;</span><br><span class="line">&lt;beans&gt;</span><br><span class="line">&lt;bean name=&quot;person&quot; class=&quot;com.hk.springioc.Person&quot;&gt;</span><br><span class="line">&lt;property name=&quot;boy&quot; ref=&quot;boy&quot; /&gt;</span><br><span class="line">&lt;property name=&quot;girl&quot; ref=&quot;girl&quot; /&gt;</span><br><span class="line">&lt;/bean&gt;</span><br><span class="line"></span><br><span class="line">&lt;bean name=&quot;boy&quot; class=&quot;com.hk.springioc.Boy&quot;&gt;</span><br><span class="line">&lt;property name=&quot;age&quot; value=&quot;2&quot; /&gt;</span><br><span class="line">&lt;property name=&quot;name&quot; value=&quot;lilei&quot; /&gt;</span><br><span class="line">&lt;/bean&gt;</span><br><span class="line"></span><br><span class="line">&lt;bean name=&quot;girl&quot; class=&quot;com.hk.springioc.Girl&quot;&gt;</span><br><span class="line">&lt;property name=&quot;age&quot; value=&quot;1&quot; /&gt;</span><br><span class="line">&lt;property name=&quot;name&quot; value=&quot;lily&quot; /&gt;</span><br><span class="line">&lt;/bean&gt;</span><br><span class="line">&lt;/beans&gt;</span><br><span class="line"></span><br><span class="line">封装Person信息，依赖注入Boy和Girl</span><br><span class="line">package com.hk.springioc;</span><br><span class="line"></span><br><span class="line">public class Person &#123;</span><br><span class="line">	private Boy boy;</span><br><span class="line">	private Girl girl;</span><br><span class="line">	public Boy getBoy() &#123;</span><br><span class="line">		return boy;</span><br><span class="line">	&#125;</span><br><span class="line">	public void setBoy(Boy boy) &#123;</span><br><span class="line">		this.boy = boy;</span><br><span class="line">	&#125;</span><br><span class="line">	public Girl getGirl() &#123;</span><br><span class="line">		return girl;</span><br><span class="line">	&#125;</span><br><span class="line">	public void setGirl(Girl girl) &#123;</span><br><span class="line">		this.girl = girl;</span><br><span class="line">	&#125;</span><br><span class="line">	</span><br><span class="line">	public Person()&#123;</span><br><span class="line">		</span><br><span class="line">	&#125;</span><br><span class="line">	public void printAll()&#123;</span><br><span class="line">		System.out.println(boy.getName()+&quot;:&quot;+boy.getAge());</span><br><span class="line">		System.out.println(girl.getName()+&quot;:&quot;+girl.getAge());</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">类封装girl信息  </span><br><span class="line">package com.hk.springioc;</span><br><span class="line"></span><br><span class="line">public class Girl &#123;</span><br><span class="line">	private String name;</span><br><span class="line">	private int age;</span><br><span class="line"></span><br><span class="line">	public String getName() &#123;</span><br><span class="line">		return name;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	public void setName(String name) &#123;</span><br><span class="line">		this.name = name;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	public int getAge() &#123;</span><br><span class="line">		return age;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	public void setAge(int age) &#123;</span><br><span class="line">		this.age = age;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	public Girl()&#123;</span><br><span class="line">		</span><br><span class="line">	&#125;</span><br><span class="line">	public void printAll()&#123;</span><br><span class="line">		System.out.println(name+&quot;:&quot;+age);</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">封装boy的信息  </span><br><span class="line">package com.hk.springioc;</span><br><span class="line"></span><br><span class="line">public class Boy &#123;</span><br><span class="line"></span><br><span class="line">	private String name;</span><br><span class="line">	private int age;</span><br><span class="line"></span><br><span class="line">	public String getName() &#123;</span><br><span class="line">		return name;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	public void setName(String name) &#123;</span><br><span class="line">		this.name = name;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	public int getAge() &#123;</span><br><span class="line">		return age;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	public void setAge(int age) &#123;</span><br><span class="line">		this.age = age;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	public Boy()&#123;</span><br><span class="line">		</span><br><span class="line">	&#125;</span><br><span class="line">	public void printAll()&#123;</span><br><span class="line">		System.out.println(name+&quot;:&quot;+age);</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">类封装xml中的bean标签信息  </span><br><span class="line">package com.hk.springioc;</span><br><span class="line"></span><br><span class="line">import java.util.List;</span><br><span class="line"></span><br><span class="line">public class Bean &#123;</span><br><span class="line">	private String name;</span><br><span class="line">	private String className;</span><br><span class="line">	public String getName() &#123;</span><br><span class="line">		return name;</span><br><span class="line">	&#125;</span><br><span class="line">	public void setName(String name) &#123;</span><br><span class="line">		this.name = name;</span><br><span class="line">	&#125;</span><br><span class="line">	public String getClassName() &#123;</span><br><span class="line">		return className;</span><br><span class="line">	&#125;</span><br><span class="line">	public void setClassName(String className) &#123;</span><br><span class="line">		this.className = className;</span><br><span class="line">	&#125;</span><br><span class="line">	public String getSingleton() &#123;</span><br><span class="line">		return singleton;</span><br><span class="line">	&#125;</span><br><span class="line">	public void setSingleton(String singleton) &#123;</span><br><span class="line">		this.singleton = singleton;</span><br><span class="line">	&#125;</span><br><span class="line">	public List&lt;Property&gt; getProps() &#123;</span><br><span class="line">		return props;</span><br><span class="line">	&#125;</span><br><span class="line">	public void setProps(List&lt;Property&gt; props) &#123;</span><br><span class="line">		this.props = props;</span><br><span class="line">	&#125;</span><br><span class="line">	private String singleton = &quot;1&quot;;</span><br><span class="line">	private List&lt;Property&gt; props;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">类封装xml文件中的property信息  </span><br><span class="line"></span><br><span class="line">package com.hk.springioc;</span><br><span class="line"></span><br><span class="line">public class Property &#123;</span><br><span class="line">	private String name;</span><br><span class="line">	private String value;</span><br><span class="line">	private String ref;</span><br><span class="line"></span><br><span class="line">	public String getName() &#123;</span><br><span class="line">		return name;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	public void setName(String name) &#123;</span><br><span class="line">		this.name = name;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	public String getValue() &#123;</span><br><span class="line">		return value;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	public void setValue(String value) &#123;</span><br><span class="line">		this.value = value;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	public String getRef() &#123;</span><br><span class="line">		return ref;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	public void setRef(String ref) &#123;</span><br><span class="line">		this.ref = ref;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<h3 id="ConfigManager"><a href="#ConfigManager" class="headerlink" title="ConfigManager"></a>ConfigManager</h3><p>我们可以使用dom4j或者SAXReader对xml文件进行解析，构建需要的Bean容器，这里需要重点说明一点！！！我们的xml配置文件中没有特殊说明的bean都是singleton，也只有单例的对象才需要IOC容器进行管理，非单例的对象IOC容器是不会管理的  </p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br></pre></td><td class="code"><pre><span class="line">package com.hk.springioc;</span><br><span class="line"></span><br><span class="line">import java.io.InputStream;</span><br><span class="line">import java.util.ArrayList;</span><br><span class="line">import java.util.HashMap;</span><br><span class="line">import java.util.List;</span><br><span class="line">import java.util.Map;</span><br><span class="line"></span><br><span class="line">import org.dom4j.Document;</span><br><span class="line">import org.dom4j.DocumentException;</span><br><span class="line">import org.dom4j.Element;</span><br><span class="line">import org.dom4j.io.SAXReader;</span><br><span class="line"></span><br><span class="line">/**</span><br><span class="line"> * </span><br><span class="line"> * @ClassName: ConfigManager </span><br><span class="line"> * @Description: TODO(这里用一句话描述这个类的作用) </span><br><span class="line"> * @author A18ccms a18ccms_gmail_com </span><br><span class="line"> * @date 2019年4月9日 下午5:33:23 </span><br><span class="line"> * 解析xml組裝Bean容器</span><br><span class="line"> *</span><br><span class="line"> */</span><br><span class="line">public class ConfigManager &#123;</span><br><span class="line">	</span><br><span class="line">	public  Map&lt;String,Bean&gt; parseXML(String path)&#123;</span><br><span class="line">		Map&lt;String,Bean&gt; map = new HashMap&lt;String,Bean&gt;();</span><br><span class="line">		InputStream is = this.getClass().getResourceAsStream(path);</span><br><span class="line">		SAXReader reader = new SAXReader();</span><br><span class="line">		try &#123;</span><br><span class="line">			Document doc = reader.read(is);</span><br><span class="line">			List&lt;Element&gt; selectNodes = doc.selectNodes(&quot;//bean&quot;);</span><br><span class="line">			for(Element ele : selectNodes)&#123;</span><br><span class="line">				String nameValue = ele.attributeValue(&quot;name&quot;);</span><br><span class="line">				String classValue = ele.attributeValue(&quot;class&quot;);</span><br><span class="line">				String singtonValue = ele.attributeValue(&quot;singleton&quot;);</span><br><span class="line">				Bean bean = new Bean();</span><br><span class="line">				bean.setName(nameValue);</span><br><span class="line">				bean.setClassName(classValue);</span><br><span class="line">				if(singtonValue!=null)&#123;</span><br><span class="line">					bean.setSingleton(singtonValue);</span><br><span class="line">				&#125;</span><br><span class="line">				List&lt;Property&gt; list = new ArrayList&lt;Property&gt;();</span><br><span class="line">				List&lt;Element&gt; pros = ele.elements(&quot;property&quot;);</span><br><span class="line">				for(Element pro : pros)&#123;</span><br><span class="line">					Property prop = new Property();</span><br><span class="line">					prop.setName(pro.attributeValue(&quot;name&quot;));</span><br><span class="line">					prop.setValue(pro.attributeValue(&quot;value&quot;));</span><br><span class="line">					prop.setRef(pro.attributeValue(&quot;ref&quot;));</span><br><span class="line">					list.add(prop);</span><br><span class="line">				&#125;</span><br><span class="line">				bean.setProps(list);</span><br><span class="line">				map.put(bean.getName(), bean);</span><br><span class="line">			&#125;</span><br><span class="line">		&#125; catch (DocumentException e) &#123;</span><br><span class="line">			e.printStackTrace();</span><br><span class="line">		&#125;</span><br><span class="line">		</span><br><span class="line"></span><br><span class="line">		return map;</span><br><span class="line">	&#125;</span><br><span class="line">	</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<h3 id="最后运行TestMain"><a href="#最后运行TestMain" class="headerlink" title="最后运行TestMain"></a>最后运行TestMain</h3><p>查看最终运行结果:<br><img src="/2020/01/28/20200127springioc/2.png" alt="图p2"></p>
-<center>**运行结果**</center>
-
-<h1 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h1><p>……好了，写到这里我们就简单的实现了一个基于xml配置文件方式的IOC容器，原理其实很简单，只需要你了解reflect以及java基础，难的在于实现，spring框架通过各种设计模式实现了方便大家使用的最终发版，这里我不多做讲解，因为本人也在研究和学习当中，设计模式也是本人的缺陷，本篇文章重点只是向大家介绍一个最基本的实现原理，理解这个原理对于以后的开发会有很大的帮助，下一篇文章中我们再来讨论一下基于annotation的IOC容器构建…谢谢</p>
-
-          
-        
-      
-    </div>
-    
-    
-    
-
-    
-
-    
-
-    
-
-    <footer class="post-footer">
-      
-
-      
-
-      
-
-      
-      
-        <div class="post-eof"></div>
-      
-    </footer>
-  </div>
-  
-  
-  
-  </article>
-
-
-    
   </section>
 
   
@@ -2084,7 +2076,7 @@
               
                 <a href="/archives/">
               
-                  <span class="site-state-item-count">35</span>
+                  <span class="site-state-item-count">37</span>
                   <span class="site-state-item-name">日志</span>
                 </a>
               </div>
@@ -2095,7 +2087,7 @@
               
               <div class="site-state-item site-state-categories">
                 <a href="/categories/index.html">
-                  <span class="site-state-item-count">21</span>
+                  <span class="site-state-item-count">22</span>
                   <span class="site-state-item-name">分类</span>
                 </a>
               </div>
@@ -2106,7 +2098,7 @@
               
               <div class="site-state-item site-state-tags">
                 <a href="/tags/index.html">
-                  <span class="site-state-item-count">32</span>
+                  <span class="site-state-item-count">33</span>
                   <span class="site-state-item-name">标签</span>
                 </a>
               </div>
