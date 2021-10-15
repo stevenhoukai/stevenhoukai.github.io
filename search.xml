@@ -93,7 +93,7 @@
 </li>
 </ul>
 <h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>本文对cdk系统设计方案作了一点总结，整体的思路就是要减少碰撞，保证申请数量与实际生成数量一致，并且要防止一次性提交数据量过大，具体最后的高可用方案哪种更合适还是依据实际情况再做定夺为佳。</p>
-<p><img src="/2021/10/08/20211008-cdk/6.jpg" alt></p>
+<p><img src="/2021/10/08/20211008-cdk/5.jpg" alt></p>
 ]]></content>
       <categories>
         <category>工作沉淀</category>
