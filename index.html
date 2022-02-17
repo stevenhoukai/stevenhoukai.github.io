@@ -295,6 +295,620 @@
   
   
   <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://stevenhoukai.github.io/2022/02/16/20220216-pulsar-replicate/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="steven Hou">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/upload/images/avatar.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="迷途小书童">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+                
+                <a class="post-title-link" href="/2022/02/16/20220216-pulsar-replicate/" itemprop="url">消息副本与存储机制</a></h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2022-02-16T00:00:01+08:00">
+                2022-02-16
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/pulsar/" itemprop="url" rel="index">
+                    <span itemprop="name">pulsar</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          
+            <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>上一篇文章对Pulsar的消息存储原理和ID规则进行了介绍，本篇文章来对消息副本以及存储机制来介绍一下。lets go</p>
+<h2 id="消息元数据组成"><a href="#消息元数据组成" class="headerlink" title="消息元数据组成"></a>消息元数据组成</h2><p>Pulsar 中每个分区 Topic 的消息数据以 ledger 的形式存储在 BookKeeper 集群的 bookie 存储节点上，每个 ledger 包含一组 entry，而 bookie 只会按照 entry 维度进行写入、查找、获取。</p>
+<blockquote>
+<p>说明：</p>
+<p>批量生产消息的情况下，一个 entry 中可能包含多条消息，所以 entry 和消息并不一定是一一对应的。</p>
+</blockquote>
+<p>Ledger 和 entry 分别对应不同的元数据。</p>
+<ul>
+<li>ledger 的元数据存储在 zk 上。</li>
+<li>entry 除了消息数据部分之外，还包含元数据，entry 的数据存储在 bookie 存储节点上。</li>
+</ul>
+<img src="/2022/02/16/20220216-pulsar-replicate/1.png" style="zoom: 50%;">
+
+<table>
+<thead>
+<tr>
+<th align="left">类型</th>
+<th align="left">参数</th>
+<th align="left">参数说明</th>
+<th align="left">数据存放位置</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left">ledger</td>
+<td align="left">ensemble size（E）</td>
+<td align="left">每个 ledger 选用的 bookie 节点的个数</td>
+<td align="left">元数据存储在 zk 上</td>
+</tr>
+<tr>
+<td align="left">ledger</td>
+<td align="left">write quorum size（Qw）</td>
+<td align="left">每个 entry 需要向多少个 bookie 发送写入请求</td>
+<td align="left">元数据存储在 zk 上</td>
+</tr>
+<tr>
+<td align="left">ledger</td>
+<td align="left">ack quorum size（Qa）</td>
+<td align="left">收到多少个写入确认后，即可认为写入成功</td>
+<td align="left">元数据存储在 zk 上</td>
+</tr>
+<tr>
+<td align="left">ledger</td>
+<td align="left">Ensembles（E）</td>
+<td align="left">使用的 ensemble 列表，形式为&lt;entry id=””, ensembles=””&gt; 元组key（entry id）：使用这个 ensembles 列表开始时的 entry idvalue（ensembles）：ledger 选用的 bookie ip 列表，每个 value 中包含 ensemble size （E）个 IP每个 ledger 可能包含多个 ensemble 列表，同一时刻每个 ledger 最多只有一个 ensembles 列表在使用</td>
+<td align="left">元数据存储在 zk 上</td>
+</tr>
+<tr>
+<td align="left">Entry</td>
+<td align="left">Ledger ID</td>
+<td align="left">entry 所在的 ledger id</td>
+<td align="left">数据存储在 bookie 存储节点上</td>
+</tr>
+<tr>
+<td align="left">Entry</td>
+<td align="left">Entry ID</td>
+<td align="left">当前 entry id</td>
+<td align="left">数据存储在 bookie 存储节点上</td>
+</tr>
+<tr>
+<td align="left">Entry</td>
+<td align="left">Last Add Confirmed</td>
+<td align="left">创建当前 entry 的时候，已知最新的写入确认的 entry id</td>
+<td align="left">数据存储在 bookie 存储节点上</td>
+</tr>
+<tr>
+<td align="left">Entry</td>
+<td align="left">Digest</td>
+<td align="left">CRC</td>
+<td align="left">数据存储在 bookie 存储节点上</td>
+</tr>
+</tbody></table>
+<p>每个 ledger 在创建的时候，会在现有的 BookKeeper 集群中的可写状态的 bookie 候选节点列表中，选用 ensemble size 对应个数的 bookie 节点，如果没有足够的候选节点则会抛出 BKNotEnoughBookiesException 异常。选出候选节点后，将这些信息组成 &lt;entry id, ensembles&gt; 元组，存储到 ledger 的元数据里的 ensembles 中。</p>
+<h2 id="消息副本机制"><a href="#消息副本机制" class="headerlink" title="消息副本机制"></a>消息副本机制</h2><p><strong>消息写入流程</strong></p>
+<img src="/2022/02/16/20220216-pulsar-replicate/2.png" style="zoom: 60%;">
+
+<p>客户端在写入消息时，每个 entry 会向 ledger 当前使用的 ensemble 列表中的 Qw 个 bookie 节点发送写入请求，当收到 Qa 个写确认后，即认为当前消息写入存储成功。同时会通过 LAP（lastAddPushed）和 LAC（LastAddConfirmed）分别标识当前推送的位置和已经收到存储确认的位置。</p>
+<p>每个正在推送的 entry 中的 LAC 元数据值，为当前时刻创建发送 entry 请求时，已经收到最新的确认位置值。LAC 所在位置及之前的消息对读客户端是可见的。</p>
+<p>同时，pulsar 通过 fencing 机制，来避免同时有多个客户端对同一个 ledger 进行写操作。这里主要适用于一个 topic/partition 的归属关系从一个 broker 变迁到另一个 broker 的场景。</p>
+<p><strong>消息副本分布</strong></p>
+<p>每个 entry 写入时，会根据当前消息的 entry id 和当前使用的 ensembles 列表的开始 entry id（即key值），计算出在当前 entry 需要使用 ensemble 列表中由哪组 Qw 个 bookie 节点进行写入。之后，broker 会向这些 bookie 节点发送写请求，当收到 Qa 个写确认后，即认为当前消息写入存储成功。这时至少能够保证 Qa 个消息的副本个数。</p>
+<img src="/2022/02/16/20220216-pulsar-replicate/3.png" style="zoom: 50%;">
+
+<p>如上图所示，ledger 选用了4个 bookie 节点（bookie1-4 这4个节点），每次写入3个节点，当收到2个写入确认即代表消息存储成功。当前 ledger 选中的 ensemble 从 entry 1开始，使用 bookie1、bookie2、bookie3 进行写入，写入 entry 2的时候选用 bookie2、bookie3、bookie4写入，而 entry 3 则会根据计算结果，写入 bookie3、bookie4、bookie1。</p>
+<h2 id="消息恢复机制"><a href="#消息恢复机制" class="headerlink" title="消息恢复机制"></a>消息恢复机制</h2><p>Pulsar 的 BookKeeper 集群中的每个 bookie 在启动的时候，默认自动开启 recovery 的服务，这个服务会进行如下几个事情：</p>
+<ol>
+<li>auditorElector 审计选举。</li>
+<li>replicationWorker 复制任务。</li>
+<li>deathWatcher 宕机监控。</li>
+</ol>
+<p>BookKeeper 集群中的每个 bookie 节点，会通过 zookeeper 的临时节点机制进行选主，主 bookie 主要处理如下几个事情：</p>
+<ol>
+<li>负责监控 bookie 节点的变化。</li>
+<li>到 zk 上面标记出宕机的 bookie 上面的 ledger 为 Underreplicated 状态。</li>
+<li>检查所有的 ledger 的副本数（默认一周一个周期）。</li>
+<li>Entry 副本数检查（默认未开启）。</li>
+</ol>
+<p>其中 ledger 中的数据是按照 Fragment 维度进行恢复的（每个 Fragment 对应 ledger 下的一组 ensemble 列表，如果一个 ledger 下有多个 ensemble 列表，则需要处理多个 Fragment）。</p>
+<p>在进行恢复时，首先要判断出当前的 ledger 中的哪几个 Fragment 中的哪些存储节点需要用新的候选节点进行替换和恢复数据。当 Fragment 中关联的部分 bookie 节点上面没有对应的 entry 数据（默认是按照首、尾 entry 是否存在判断），则这个 bookie 节点需要被替换，当前的这个 Fragment 需要进行数据恢复。</p>
+<p>Fragment 的数据用新的 bookie 节点进行数据恢复完毕后，更新 ledger 的元数据中当前 Fragment 对应的 ensemble 列表的原数据。</p>
+<p>经过此过程，因 bookie 节点宕机引起的数据副本数减少的场景，数据的副本数会逐步的恢复成 Qw（后台指定的副本数，TDMQ 默认3副本）个。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p><img src="/2022/02/16/20220216-pulsar-replicate/5.jpg" alt></p>
+
+          
+        
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+    
+      
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://stevenhoukai.github.io/2022/02/15/20220215-pulsar-storage/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="steven Hou">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/upload/images/avatar.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="迷途小书童">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+                
+                <a class="post-title-link" href="/2022/02/15/20220215-pulsar-storage/" itemprop="url">消息存储原理与 ID 规则</a></h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2022-02-15T00:00:01+08:00">
+                2022-02-15
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/pulsar/" itemprop="url" rel="index">
+                    <span itemprop="name">pulsar</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          
+            <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>上一篇文章对Pulsar的topic和分区做了介绍，这一篇我们就来对消息存储原理和ID规则来进行一下介绍，在本篇介绍中可能会出现一些让你非常困惑的词汇。不过不要紧我都会一一来进行解释</p>
+<h2 id="消息-ID-生成规则"><a href="#消息-ID-生成规则" class="headerlink" title="消息 ID 生成规则"></a>消息 ID 生成规则</h2><p>在 Pulsar 中，每条消息都有属于的自己的唯一 ID（即 MessageID），MessageID 由四部分组成：<code>ledgerId:entryID:partition-index:batch-index</code>。其中：</p>
+<ul>
+<li>partition-index：指分区的编号，在非分区 topic 的时候为 -1。</li>
+<li>batch-index：在非批量消息的时候为 -1。</li>
+</ul>
+<p>消息 ID 的生成规则由 Pulsar 的消息存储机制决定，Pulsar 中消息存储原理图如下：</p>
+<img src="/2022/02/15/20220215-pulsar-storage/1.png" style="zoom: 50%;">
+
+<p>如上图所示，在 Pulsar中，一个 Topic 的每一个分区会对应一系列的 ledger，其中只有一个 ledger 处于 open 状态即可写状态，而每个 ledger 只会存储与之对应的分区下的消息。</p>
+<p>Pulsar 在存储消息时，会先找到当前分区使用的 ledger ，然后生成当前消息对应的 entry ID，entry ID 在同一个 ledger 内是递增的。每个 ledger 存在的时长或保存的 entry 个数超过阈值后会进行切换，新的消息会存储到同一个 partition 中的下一个 ledger 中。</p>
+<ul>
+<li>批量生产消息情况下，一个 entry 中可能包含多条消息。</li>
+<li>非批量生产的情况下，一个 entry 中包含一条消息（producer 端可以配置这个参数，默认是批量的）。</li>
+</ul>
+<p>Ledger 只是一个逻辑概念，是数据的一种逻辑组装维度，并没有对应的实体。而 bookie 只会按照 entry 维度进行写入、查找、获取。</p>
+<h2 id="分片机制详解：Legder-和-Entry"><a href="#分片机制详解：Legder-和-Entry" class="headerlink" title="分片机制详解：Legder 和 Entry"></a>分片机制详解：Legder 和 Entry</h2><p>Pulsar 中的消息数据以 ledger 的形式存储在 BookKeeper 集群的 bookie 存储节点上。Ledger 是一个只追加的数据结构，并且只有一个写入器，这个写入器负责多个 bookie 的写入。Ledger 的条目会被复制到多个 bookie 中，同时会写入相关的数据来保证数据的一致性。</p>
+<p>BookKeeper 需要保存的数据包括：</p>
+<ul>
+<li><strong>Journals</strong><ul>
+<li>journals 文件里存储了 BookKeeper 的事务日志，在任何针对 ledger 的更新发生前，都会先将这个更新的描述信息持久化到这个 journal 文件中。</li>
+<li>BookKeeper 提供有单独的 sync 线程根据当前 journal 文件的大小来作 journal 文件的 rolling。</li>
+</ul>
+</li>
+<li><strong>EntryLogFile</strong><ul>
+<li>存储真正数据的文件，来自不同 ledger 的 entry 数据先缓存在内存buffer中，然后批量flush到EntryLogFile中。</li>
+<li>默认情况下，所有ledger的数据都是聚合然后顺序写入到同一个EntryLog文件中，避免磁盘随机写。</li>
+</ul>
+</li>
+<li><strong>Index 文件</strong><ul>
+<li>所有 Ledger 的 entry 数据都写入相同的 EntryLog 文件中，为了加速数据读取，会作 ledgerId + entryId 到文件 offset 的映射，这个映射会缓存在内存中，称为 IndexCache。</li>
+<li>IndexCache 容量达到上限时，会被 sync 线程 flush 到磁盘中。</li>
+</ul>
+</li>
+</ul>
+<img src="/2022/02/15/20220215-pulsar-storage/2.png" style="zoom: 50%;">
+
+<p>刚开始看到这里的时候我是有点懵逼的，这都是些啥啊，但是后面仔细思考下，这个设计似乎和mysql的底层原理几乎一致，Journals相当于redolog，EntryLogFile+Index相当于bufferpool。还不明白那就接着看下面的介绍：</p>
+<p><strong>Entry 数据写入</strong></p>
+<ol>
+<li>数据首先会同时写入 Journal（写入 Journal 的数据会实时落到磁盘）和 Memtable（读写缓存）。</li>
+<li>写入 Memtable 之后，对写入请求进行响应。</li>
+<li>Memtable 写满之后，会 flush 到 Entry Logger 和 Index cache，Entry Logger 中保存数据，Index cache 中保存数据的索引信息，</li>
+<li>后台线程将 Entry Logger 和 Index cache 数据落到磁盘。</li>
+</ol>
+<p><strong>Entry 数据读取</strong></p>
+<ul>
+<li>Tailing read 请求：直接从 Memtable 中读取 Entry。</li>
+<li>Catch-up read（滞后消费）请求：先读取 Index信息，然后索引从 Entry Logger 文件读取 Entry。</li>
+</ul>
+<p><strong>数据一致性保证：LastLogMark</strong></p>
+<ul>
+<li>写入的 EntryLog 和 Index 都是先缓存在内存中，再根据一定的条件周期性的 flush 到磁盘，这就造成了从内存到持久化到磁盘的时间间隔，如果在这间隔内 BookKeeper 进程崩溃，在重启后，我们需要根据 journal 文件内容来恢复，这个 LastLogMark 就记录了从 journal 中什么位置开始恢复。</li>
+<li>它其实是存在内存中，当 IndexCache 被 flush 到磁盘后其值会被更新，LastLogMark 也会周期性持久化到磁盘文件，供 Bookkeeper 进程启动时读取来从 journal 中恢复。</li>
+<li>LastLogMark 一旦被持久化到磁盘，即意味着在其之前的 Index 和 EntryLog 都已经被持久化到了磁盘，那么 journal 在这 LastLogMark 之前的数据都可以被清除了。</li>
+</ul>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p><img src="/2022/02/15/20220215-pulsar-storage/5.jpg" alt></p>
+
+          
+        
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+    
+      
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://stevenhoukai.github.io/2022/02/14/20220214-pulsar-arch/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="steven Hou">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/upload/images/avatar.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="迷途小书童">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+                
+                <a class="post-title-link" href="/2022/02/14/20220214-pulsar-arch/" itemprop="url">Pulsar Topic 和分区</a></h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2022-02-14T00:00:01+08:00">
+                2022-02-14
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/pulsar/" itemprop="url" rel="index">
+                    <span itemprop="name">pulsar</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          
+            <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>本人最近正在重构一个vdc（virus detect center）系统，为了将旧系统解耦我们将原系统拆分成了很多子系统，系统之间通过mq进行交互，在这之前本人对kafka已经是有些许了解，但是这次小组决定使用pulsar来替代kafka，那么究竟pulsar有什么好，它较kafka到底有什么优势，本人接下来的一个系列篇章就会对pulsar来进行介绍，同时也会讲解实际使用中的一些用法与问题，本系列文章的前提是假定大家对kafka都是一定了解的。</p>
+<h2 id="Apache-Pulsar-架构"><a href="#Apache-Pulsar-架构" class="headerlink" title="Apache Pulsar 架构"></a>Apache Pulsar 架构</h2><p>Apache Pulsar 是一个发布-订阅模型的消息系统，由 Broker、Apache BookKeeper、Producer、Consumer 等组件组成。我们知道传统mq的组成是没有Apache BookKeeper这一组件的，那么这个Apache BookKeeper究竟是何方神圣，后面我们会详细说一说</p>
+<p>先看一张整体的结构图：</p>
+<img src="/2022/02/14/20220214-pulsar-arch/1.png" style="zoom: 50%;">
+
+<ul>
+<li>Producer ： 消息的生产者，负责发布消息到 Topic。</li>
+<li>Consumer：消息的消费者，负责从 Topic 订阅消息。</li>
+<li>Broker：无状态服务层，负责接收和传递消息，集群负载均衡等工作，Broker 不会持久化保存元数据，因此可以快速的上、下线。</li>
+<li>Apache BookKeeper：有状态持久层，由一组 Bookie 存储节点组成，可以持久化地存储消息。</li>
+</ul>
+<p>了解kafka的朋友相信一眼就能看出一些异样，那就是kafka的存储其实就是放在broker上面的，也就是说存储与计算实际上是一体的，而从上图可知 Apache Pulsar 在架构设计上采用了计算与存储分离的模式，消息发布和订阅相关的计算逻辑在 Broker 中完成，数据存储在 Apache BookKeeper 集群的 Bookie 节点上。</p>
+<h2 id="Topic-与分区"><a href="#Topic-与分区" class="headerlink" title="Topic 与分区"></a>Topic 与分区</h2><p>Topic（主题）是某一种分类的名字，消息在 Topic 中可以被存储和发布。生产者往 Topic 中写消息，消费者从 Topic 中读消息。</p>
+<p>Pulsar 的 Topic 分为 Partitioned Topic 和 Non-Partitioned Topic 两类，Non-Partitioned Topic 可以理解为一个分区数为1的 Topic。实际上在 Pulsar 中，Topic 是一个虚拟的概念，创建一个3分区的 Topic，实际上是创建了3个“分区Topic”，发给这个 Topic 的消息会被发往这个 Topic 对应的多个 “分区Topic”。<br>例如：生产者发送消息给一个分区数为3，名为<code>my-topic</code>的 Topic，在数据流向上是均匀或者按一定规则（如果指定了key）发送给了 <code>my-topic-partition-0</code>、<code>my-topic-partition-1</code> 和 <code>my-topic-partition-2</code> 三个“分区 Topic”。</p>
+<p>分区 Topic 做数据持久化时，分区是逻辑上的概念，实际存储的单位是分片（Segment）的。</p>
+<p>如下图所示，分区 Topic1-Part2 的数据由N个 Segment 组成， 每个 Segment 均匀分布并存储在 Apache BookKeeper 群集中的多个 Bookie 节点中， 每个 Segment 具有3个副本。</p>
+<img src="/2022/02/14/20220214-pulsar-arch/2.png" style="zoom: 50%;">
+
+
+
+<h2 id="物理分区与逻辑分区"><a href="#物理分区与逻辑分区" class="headerlink" title="物理分区与逻辑分区"></a>物理分区与逻辑分区</h2><p>逻辑分区和物理分区对比如下：</p>
+<img src="/2022/02/14/20220214-pulsar-arch/3.png" style="zoom: 60%;">
+
+<p><strong>物理分区：</strong>计算与存储耦合，容错需要拷贝物理分区，扩容需要迁移物理分区来达到负载均衡。</p>
+<p><strong>逻辑分区</strong>：物理“分片”，计算层与存储层隔离，这种结构使得 Apache Pulsar 具备以下优点。</p>
+<ul>
+<li>Broker 和 Bookie 相互独立，方便实现独立的扩展以及独立的容错。</li>
+<li>Broker 无状态，便于快速上、下线，更加适合于云原生场景。</li>
+<li>分区存储不受限于单个节点存储容量。</li>
+<li>分区数据分布均匀，单个分区数据量突出不会使整个集群出现木桶效应。</li>
+<li>存储不足扩容时，能迅速利用新增节点平摊存储负载。</li>
+</ul>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p><img src="/2022/02/14/20220214-pulsar-arch/5.jpg" alt></p>
+
+          
+        
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+    
+      
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
     <link itemprop="mainEntityOfPage" href="http://stevenhoukai.github.io/2021/10/10/20211010-guitar/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -1541,530 +2155,6 @@
 
 
     
-      
-
-  
-
-  
-  
-  
-
-  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
-  
-  
-  
-  <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="http://stevenhoukai.github.io/2021/08/24/20210824-redisRehash/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="name" content="steven Hou">
-      <meta itemprop="description" content>
-      <meta itemprop="image" content="/upload/images/avatar.jpg">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="迷途小书童">
-    </span>
-
-    
-      <header class="post-header">
-
-        
-        
-          <h1 class="post-title" itemprop="name headline">
-                
-                <a class="post-title-link" href="/2021/08/24/20210824-redisRehash/" itemprop="url">Redis中的渐进式Rehash</a></h1>
-        
-
-        <div class="post-meta">
-          <span class="post-time">
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">发表于</span>
-              
-              <time title="创建于" itemprop="dateCreated datePublished" datetime="2021-08-24T00:00:01+08:00">
-                2021-08-24
-              </time>
-            
-
-            
-
-            
-          </span>
-
-          
-            <span class="post-category">
-            
-              <span class="post-meta-divider">|</span>
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-folder-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">分类于</span>
-              
-              
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/Redis/" itemprop="url" rel="index">
-                    <span itemprop="name">Redis</span>
-                  </a>
-                </span>
-
-                
-                
-              
-            </span>
-          
-
-          
-            
-          
-
-          
-          
-
-          
-
-          
-
-          
-
-        </div>
-      </header>
-    
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-      
-
-      
-        
-          
-            <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a><strong>前言</strong></h2><p>如果你有一个hash表，然后不停的往里面写值或者删值，随着操作的不断执行， 哈希表保存的键值对会逐渐地增多或者减少， 为了让哈希表的负载因子（load factor）维持在一个合理的范围之内， 当哈希表保存的键值对数量太多或者太少时， 程序需要对哈希表的大小进行相应的扩展或者收缩。这个过程就叫做rehash，而在redis中这个rehash的过程又叫做渐进式rehash。</p>
-<h2 id="Rehash原理"><a href="#Rehash原理" class="headerlink" title="Rehash原理"></a>Rehash原理</h2><p>扩展和收缩哈希表的工作可以通过执行 rehash （重新散列）操作来完成， Redis 对字典的哈希表执行 rehash 的步骤如下：</p>
-<ol>
-<li>为字典的<strong>ht[1]</strong>哈希表分配空间， 这个哈希表的空间大小取决于要执行的操作， 以及<strong>ht[0]</strong>当前包含的键值对数量 （也即是ht[0].used属性的值）：<ul>
-<li>如果执行的是扩展操作， 那么 <code>ht[1]</code> 的大小为第一个大于等于 <code>ht[0].used * 2</code> 的 2^n （<code>2</code> 的 <code>n</code> 次方幂），也就是说每次扩容后的大小一定是2^n，因为只有2^n -1的二进制每一位都为1；</li>
-<li>如果执行的是收缩操作， 那么 <code>ht[1]</code> 的大小为第一个大于等于 <code>ht[0].used</code> 的 2^n 。</li>
-</ul>
-</li>
-<li>将保存在 <code>ht[0]</code> 中的所有键值对 rehash 到 <code>ht[1]</code> 上面： rehash 指的是重新计算键的哈希值和索引值， 然后将键值对放置到 <code>ht[1]</code>哈希表的指定位置上。</li>
-<li>当 <code>ht[0]</code> 包含的所有键值对都迁移到了 <code>ht[1]</code> 之后 （<code>ht[0]</code> 变为空表）， 释放 <code>ht[0]</code> ， 将 <code>ht[1]</code> 设置为 <code>ht[0]</code> ， 并在 <code>ht[1]</code> 新创建一个空白哈希表， 为下一次 rehash 做准备。</li>
-</ol>
-<p>举个例子， 假设程序要对图 1 所示字典的 <code>ht[0]</code> 进行扩展操作， 那么程序将执行以下步骤：</p>
-<ol>
-<li><code>ht[0].used</code> 当前的值为 <code>4</code> ， <code>4 * 2 = 8</code> ， 而 <code>8</code> （2^3）恰好是第一个大于等于 <code>4</code> 的 <code>2</code> 的 <code>n</code> 次方， 所以程序会将 <code>ht[1]</code> 哈希表的大小设置为 <code>8</code> 。 图 2 展示了 <code>ht[1]</code> 在分配空间之后， 字典的样子。</li>
-<li>将 <code>ht[0]</code> 包含的四个键值对都 rehash 到 <code>ht[1]</code> ， 如图 3 所示。</li>
-<li>释放 <code>ht[0]</code> ，并将 <code>ht[1]</code> 设置为 <code>ht[0]</code> ，然后为 <code>ht[1]</code> 分配一个空白哈希表，如图 4 所示。</li>
-</ol>
-<p>至此， 对哈希表的扩展操作执行完毕， 程序成功将哈希表的大小从原来的 <code>4</code> 改为了现在的 <code>8</code> 。</p>
-<h2 id="Rehash图示"><a href="#Rehash图示" class="headerlink" title="Rehash图示"></a><strong>Rehash图示</strong></h2><p><img src="/2021/08/24/20210824-redisRehash/1.png" alt="图1"></p>
-<center>图1 执行rehash之前</center>
-
-<p><img src="/2021/08/24/20210824-redisRehash/2.png" alt="图2"></p>
-<center>图2 为字典的ht[1]哈希表分配空间</center>
-
-<p><img src="/2021/08/24/20210824-redisRehash/3.png" alt="图3"></p>
-<center>图3 ht[0]的所有值对都已经被迁移到ht[1]</center>
-
-<p><img src="/2021/08/24/20210824-redisRehash/4.png" alt="图4"></p>
-<center>图4 完成rehash之后的字典</center>
-
-<h2 id="哈希表的扩展与收缩"><a href="#哈希表的扩展与收缩" class="headerlink" title="哈希表的扩展与收缩"></a><strong>哈希表的扩展与收缩</strong></h2><p>当以下条件中的任意一个被满足时， 程序会自动开始对哈希表执行扩展操作：</p>
-<ol>
-<li>服务器目前没有在执行 BGSAVE 命令或者 BGREWRITEAOF 命令， 并且哈希表的负载因子大于等于 <code>1</code> ；</li>
-<li>服务器目前正在执行 BGSAVE 命令或者 BGREWRITEAOF 命令， 并且哈希表的负载因子大于等于 <code>5</code> ；</li>
-</ol>
-<p>其中哈希表的负载因子可以通过公式：</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"># 负载因子 = 哈希表已保存节点数量 / 哈希表大小</span><br><span class="line">load_factor = ht[0].used / ht[0].size</span><br></pre></td></tr></table></figure>
-
-<p>计算得出。</p>
-<p>比如说， 对于一个大小为 <code>4</code> ， 包含 <code>4</code> 个键值对的哈希表来说， 这个哈希表的负载因子为：</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">load_factor = 4 / 4 = 1</span><br></pre></td></tr></table></figure>
-
-<p>又比如说， 对于一个大小为 <code>512</code> ， 包含 <code>256</code> 个键值对的哈希表来说， 这个哈希表的负载因子为：</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">load_factor = 256 / 512 = 0.5</span><br></pre></td></tr></table></figure>
-
-<p>根据 BGSAVE 命令或 BGREWRITEAOF 命令是否正在执行， 服务器执行扩展操作所需的负载因子并不相同， 这是因为在执行 BGSAVE命令或 BGREWRITEAOF 命令的过程中， Redis 需要创建当前服务器进程的子进程， 而大多数操作系统都采用写时复制copy-on-write技术来优化子进程的使用效率， 所以在子进程存在期间， 服务器会提高执行扩展操作所需的负载因子， 从而尽可能地避免在子进程存在期间进行哈希表扩展操作， 这可以避免不必要的内存写入操作， 最大限度地节约内存。</p>
-<p>另一方面， 当哈希表的负载因子小于 <code>0.1</code> 时， 程序自动开始对哈希表执行收缩操作。</p>
-<h2 id="渐进式Rehash"><a href="#渐进式Rehash" class="headerlink" title="渐进式Rehash"></a><strong>渐进式Rehash</strong></h2><p>上面说过， 扩展或收缩哈希表需要将 <code>ht[0]</code> 里面的所有键值对 rehash 到 <code>ht[1]</code> 里面， 但是， 这个 rehash 动作<strong>并不是一次性、集中式地完成的， 而是分多次、渐进式地完成的</strong>。</p>
-<p>这样做的原因在于， 如果 <code>ht[0]</code> 里只保存着四个键值对， 那么服务器可以在瞬间就将这些键值对全部 rehash 到 <code>ht[1]</code> ； 但是， 如果哈希表里保存的键值对数量不是四个， 而是四百万、四千万甚至四亿个键值对， 那么要一次性将这些键值对全部 rehash 到 <code>ht[1]</code> 的话， 庞大的计算量可能会导致服务器在一段时间内停止服务。</p>
-<p>因此， 为了避免 rehash 对服务器性能造成影响， 服务器不是一次性将 <code>ht[0]</code> 里面的所有键值对全部 rehash 到 <code>ht[1]</code> ， 而是分多次、渐进式地将 <code>ht[0]</code> 里面的键值对慢慢地 rehash 到 <code>ht[1]</code> 。</p>
-<p>以下是哈希表渐进式 rehash 的详细步骤：</p>
-<ol>
-<li>为 <code>ht[1]</code> 分配空间， 让字典同时持有 <code>ht[0]</code> 和 <code>ht[1]</code> 两个哈希表。</li>
-<li>在字典中维持一个索引计数器变量 <code>rehashidx</code> ， 并将它的值设置为 <code>0</code> ， 表示 rehash 工作正式开始。</li>
-<li>在 rehash 进行期间， 每次对字典执行添加、删除、查找或者更新操作时， 程序除了执行指定的操作以外， 还会顺带将 <code>ht[0]</code> 哈希表在 <code>rehashidx</code> 索引上的所有键值对 rehash 到 <code>ht[1]</code> ， 当 rehash 工作完成之后， 程序将 <code>rehashidx</code> 属性的值增一。</li>
-<li>随着字典操作的不断执行， 最终在某个时间点上， <code>ht[0]</code> 的所有键值对都会被 rehash 至 <code>ht[1]</code> ， 这时程序将 <code>rehashidx</code> 属性的值设为 <code>-1</code> ， 表示 rehash 操作已完成。</li>
-</ol>
-<p>渐进式 rehash 的好处在于它采取分而治之的方式， 将 rehash 键值对所需的计算工作均滩到对字典的每个添加、删除、查找和更新操作上， 从而避免了集中式 rehash 而带来的庞大计算量。</p>
-<p>图 5 至图 10 展示了一次完整的渐进式 rehash 过程， 注意观察在整个 rehash 过程中， 字典的 <code>rehashidx</code> 属性是如何变化的。</p>
-<h2 id="渐进式Rehash图示"><a href="#渐进式Rehash图示" class="headerlink" title="渐进式Rehash图示"></a><strong>渐进式Rehash图示</strong></h2><p><img src="/2021/08/24/20210824-redisRehash/5.png" alt="图1"></p>
-<center>图5 准备开始rehash</center>
-
-<p><img src="/2021/08/24/20210824-redisRehash/6.png" alt="图1"></p>
-<center>图6 rehash索引0上的key value</center>
-
-<p><img src="/2021/08/24/20210824-redisRehash/7.png" alt="图1"></p>
-<center>图7 rehash索引1上的key value</center>
-
-<p><img src="/2021/08/24/20210824-redisRehash/8.png" alt="图1"></p>
-<center>图8 rehash索引2上的key value</center>
-
-<p><img src="/2021/08/24/20210824-redisRehash/9.png" alt="图1"></p>
-<center>图9 rehash索引3上的key value</center>
-
-<p><img src="/2021/08/24/20210824-redisRehash/10.png" alt="图1"></p>
-<center>图10 rehash完成</center>
-
-
-
-<h2 id="渐进式-rehash-执行期间的哈希表操作"><a href="#渐进式-rehash-执行期间的哈希表操作" class="headerlink" title="渐进式 rehash 执行期间的哈希表操作"></a><strong>渐进式 rehash 执行期间的哈希表操作</strong></h2><p>因为在进行渐进式 rehash 的过程中， 字典会同时使用 <code>ht[0]</code> 和 <code>ht[1]</code> 两个哈希表， 所以在渐进式 rehash 进行期间， 字典的删除（delete）、查找（find）、更新（update）等操作会在两个哈希表上进行： 比如说， 要在字典里面查找一个键的话， 程序会先在 <code>ht[0]</code>里面进行查找， 如果没找到的话， 就会继续到 <code>ht[1]</code> 里面进行查找， 诸如此类。</p>
-<p>另外， 在渐进式 rehash 执行期间， 新添加到字典的键值对一律会被保存到 <code>ht[1]</code> 里面， 而 <code>ht[0]</code> 则不再进行任何添加操作： 这一措施保证了 <code>ht[0]</code> 包含的键值对数量会只减不增， 并随着 rehash 操作的执行而最终变成空表。<strong>这里提前透漏一句，就是这个渐进式rehash的缩容操作导致了scan命令的重复值出现。</strong>下一篇会详细讨论一下。</p>
-<p><img src="/2021/08/24/20210824-redisRehash/6.jpg" alt></p>
-
-          
-        
-      
-    </div>
-    
-    
-    
-
-    
-
-    
-
-    
-
-    <footer class="post-footer">
-      
-
-      
-
-      
-
-      
-      
-        <div class="post-eof"></div>
-      
-    </footer>
-  </div>
-  
-  
-  
-  </article>
-
-
-    
-      
-
-  
-
-  
-  
-  
-
-  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
-  
-  
-  
-  <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="http://stevenhoukai.github.io/2021/08/19/20210819-redisScan/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="name" content="steven Hou">
-      <meta itemprop="description" content>
-      <meta itemprop="image" content="/upload/images/avatar.jpg">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="迷途小书童">
-    </span>
-
-    
-      <header class="post-header">
-
-        
-        
-          <h1 class="post-title" itemprop="name headline">
-                
-                <a class="post-title-link" href="/2021/08/19/20210819-redisScan/" itemprop="url">获取Redis中同一前缀key踩坑记录</a></h1>
-        
-
-        <div class="post-meta">
-          <span class="post-time">
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">发表于</span>
-              
-              <time title="创建于" itemprop="dateCreated datePublished" datetime="2021-08-19T00:00:01+08:00">
-                2021-08-19
-              </time>
-            
-
-            
-
-            
-          </span>
-
-          
-            <span class="post-category">
-            
-              <span class="post-meta-divider">|</span>
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-folder-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">分类于</span>
-              
-              
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/golang踩坑记录/" itemprop="url" rel="index">
-                    <span itemprop="name">golang踩坑记录</span>
-                  </a>
-                </span>
-
-                
-                
-              
-            </span>
-          
-
-          
-            
-          
-
-          
-          
-
-          
-
-          
-
-          
-
-        </div>
-      </header>
-    
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-      
-
-      
-        
-          
-            <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a><strong>前言</strong></h2><p>之前有一个订单购买后用户生效保护期的需求，根据当时的需求本人是将key设置好自定义前缀规则，并设置了过期时间然后统一放在了redis上面，后来需求变动，所有的保护期过期之后需要留档处理，这时候就需要把之前设置的同一前缀的保护期数据在过期之前全部转移到数据库留档，就需要将之前设置的所有保护期相关数据全部获取出来。这时的kv大概已经有了300w条左右了。</p>
-<p>这里就有两个方案了keys * 和 scan</p>
-<p>keys *这个虽然可以实现目的但是最好还是不要使用，因为如果线上数据过大，就会导致单线程的redis阻塞，长时间无法处理后续请求，然后你就等着被捶吧。</p>
-<p>scan可以理解是keys <em>的分批次执行，简单来说就是会有一个游标记录一次扫描的结束位置，然后拿着这个游标作为下一次扫描的起始位置，反复执行，每次执行数据量不大而且每次执行时间也足够短，直到扫描完整个redis库，全程不会造成redis的无响应状况，但是需要声明一点，*</em>这个scan操作是会出现重复key值的<strong>，所以需要业务侧做好去重处理哈。本文的重点！</strong>为什么说这个scan会出现重复值，又为什么这个scan是不会漏值的？**下面就来说说本人的理解。</p>
-<h2 id="实际使用"><a href="#实际使用" class="headerlink" title="实际使用"></a>实际使用</h2><p>下面是本人在项目中的一些用法,代码实现功能就是将自己需要的一些kv值遍历出来放进mysql进行存储，由于线上数据量较大，整个过程大约持续了30分钟，但是redis服务全程无异常状况，完美达到目的。</p>
-<h3 id="核心代码示例"><a href="#核心代码示例" class="headerlink" title="核心代码示例"></a>核心代码示例</h3><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br></pre></td><td class="code"><pre><span class="line">rcnn := redis.Connection()</span><br><span class="line">begin := time.Now().Unix()</span><br><span class="line">firstStrs, cursor := rcnn.Scan(<span class="number">0</span>, <span class="string">"xxxxx_service_xxxxx*"</span>, <span class="number">1000</span>).Val()</span><br><span class="line">fmt.Println(time.Now().Unix() - begin)</span><br><span class="line"><span class="keyword">for</span> _, value := <span class="keyword">range</span> firstStrs &#123;</span><br><span class="line">    key := value</span><br><span class="line">    keyValue := rcnn.Get(key).Val()</span><br><span class="line">    ttlSeconds := <span class="keyword">int64</span>(rcnn.TTL(key).Val().Seconds())</span><br><span class="line">    tnow := time.Now().Unix()</span><br><span class="line">    memberId, _ := strconv.Atoi((strings.Split(key, <span class="string">"&amp;"</span>)[<span class="number">1</span>]))</span><br><span class="line">    orderId := strings.Split(keyValue, <span class="string">"&amp;"</span>)[<span class="number">0</span>]</span><br><span class="line">    pPeriod := &amp;protectperiod.ProtectPeriod&#123;</span><br><span class="line">        MemberId:  <span class="keyword">int64</span>(memberId),</span><br><span class="line">        OrderId:   orderId,</span><br><span class="line">        Content:   keyValue,</span><br><span class="line">        CreatedAt: tnow + ttlSeconds - <span class="number">3628800</span>,</span><br><span class="line">        ExpiredAt: tnow + ttlSeconds,</span><br><span class="line">        Status:    <span class="string">"0"</span>,</span><br><span class="line">        Source:    <span class="string">"redis"</span>,</span><br><span class="line">    &#125;</span><br><span class="line">    cErr := pPeriod.CreateNewRecord()</span><br><span class="line">    <span class="keyword">if</span> cErr != <span class="literal">nil</span> &#123;</span><br><span class="line">        fmt.Println(cErr)</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">for</span> cursor != <span class="number">0</span> &#123;</span><br><span class="line">    cbegin := time.Now().Unix()</span><br><span class="line">    strs, nextCursor := rcnn.Scan(cursor, <span class="string">"xxxxx_service_xxxxx*"</span>, <span class="number">1000</span>).Val()</span><br><span class="line">    fmt.Println(time.Now().Unix() - cbegin)</span><br><span class="line">    <span class="keyword">for</span> _, value := <span class="keyword">range</span> strs &#123;</span><br><span class="line">        key := value</span><br><span class="line">        keyValue := rcnn.Get(key).Val()</span><br><span class="line">        ttlSeconds := <span class="keyword">int64</span>(rcnn.TTL(key).Val().Seconds())</span><br><span class="line">        tnow := time.Now().Unix()</span><br><span class="line">        memberId, _ := strconv.Atoi((strings.Split(key, <span class="string">"&amp;"</span>)[<span class="number">1</span>]))</span><br><span class="line">        orderId := strings.Split(keyValue, <span class="string">"&amp;"</span>)[<span class="number">0</span>]</span><br><span class="line">        pPeriod := &amp;protectperiod.ProtectPeriod&#123;</span><br><span class="line">            MemberId:  <span class="keyword">int64</span>(memberId),</span><br><span class="line">            OrderId:   orderId,</span><br><span class="line">            Content:   keyValue,</span><br><span class="line">            CreatedAt: tnow + ttlSeconds - <span class="number">3628800</span>,</span><br><span class="line">            ExpiredAt: tnow + ttlSeconds,</span><br><span class="line">            Status:    <span class="string">"0"</span>,</span><br><span class="line">            Source:    <span class="string">"redis"</span>,</span><br><span class="line">        &#125;</span><br><span class="line">        cErr := pPeriod.CreateNewRecord()</span><br><span class="line">        <span class="keyword">if</span> cErr != <span class="literal">nil</span> &#123;</span><br><span class="line">            fmt.Println(cErr)</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    cursor = nextCursor</span><br><span class="line">&#125;</span><br><span class="line">fmt.Println(<span class="string">"all Done"</span>)</span><br></pre></td></tr></table></figure>
-
-<h2 id="原理"><a href="#原理" class="headerlink" title="原理"></a><strong>原理</strong></h2><p>好了，在前言中有说到<strong>为什么说这个scan会出现重复值，又为什么这个scan是安全不会漏值的？</strong> 在讨论这个问题之前，我们需要先了解什么是Rehash，学过java的都知道hashmap，当hashmap中的槽不够用的时候就会在每一个槽产生过长的链表导致效率低下等问题，在hash冲突严重的时候，hashmap就会进行扩容，然后把原来的kv值转移到新的扩容的好hashmap中去，这个过程其实就是rehash。其实在redis中这一过程准确点的叫法是渐进式rehash，点此处了解什么是<a href="https://stevenhoukai.github.io/2021/08/24/20210824-redisRehash/"><strong>渐进式rehash</strong></a>, 了解完上述概念之后，我们现在再来看看<a href="https://stevenhoukai.github.io/2021/08/25/20210825-redisScanExplain/"><strong>scan命令为什么是安全不漏值而且可能会出现重复值</strong></a>的。</p>
-<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a><strong>总结</strong></h2><p>如果遇到线上redis需要获取大批量的kv值，用scan不会错。切记客户端一定要做好去重处理！！！</p>
-<p><img src="/2021/08/19/20210819-redisScan/6.jpg" alt></p>
-
-          
-        
-      
-    </div>
-    
-    
-    
-
-    
-
-    
-
-    
-
-    <footer class="post-footer">
-      
-
-      
-
-      
-
-      
-      
-        <div class="post-eof"></div>
-      
-    </footer>
-  </div>
-  
-  
-  
-  </article>
-
-
-    
-      
-
-  
-
-  
-  
-  
-
-  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
-  
-  
-  
-  <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="http://stevenhoukai.github.io/2021/08/16/20210816-gapGolangFor/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="name" content="steven Hou">
-      <meta itemprop="description" content>
-      <meta itemprop="image" content="/upload/images/avatar.jpg">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="迷途小书童">
-    </span>
-
-    
-      <header class="post-header">
-
-        
-        
-          <h1 class="post-title" itemprop="name headline">
-                
-                <a class="post-title-link" href="/2021/08/16/20210816-gapGolangFor/" itemprop="url">Golang的for循环踩坑</a></h1>
-        
-
-        <div class="post-meta">
-          <span class="post-time">
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">发表于</span>
-              
-              <time title="创建于" itemprop="dateCreated datePublished" datetime="2021-08-16T00:00:01+08:00">
-                2021-08-16
-              </time>
-            
-
-            
-
-            
-          </span>
-
-          
-            <span class="post-category">
-            
-              <span class="post-meta-divider">|</span>
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-folder-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">分类于</span>
-              
-              
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/golang踩坑记录/" itemprop="url" rel="index">
-                    <span itemprop="name">golang踩坑记录</span>
-                  </a>
-                </span>
-
-                
-                
-              
-            </span>
-          
-
-          
-            
-          
-
-          
-          
-
-          
-
-          
-
-          
-
-        </div>
-      </header>
-    
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-      
-
-      
-        
-          
-            <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a><strong>前言</strong></h2><p>最近写项目用了太多的for循环，殊不知这么简单的一个操作竟然踩出大坑，记录一波！</p>
-<h2 id="for循环使用"><a href="#for循环使用" class="headerlink" title="for循环使用"></a>for循环使用</h2><p>下面来看一下项目中的一些用法</p>
-<h3 id="实例踩坑效果"><a href="#实例踩坑效果" class="headerlink" title="实例踩坑效果"></a>实例踩坑效果</h3><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">main</span><span class="params">()</span></span> &#123;</span><br><span class="line">	arr := []<span class="keyword">int</span>&#123;<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>&#125;</span><br><span class="line">	newArr := []*<span class="keyword">int</span>&#123;&#125;</span><br><span class="line">	<span class="keyword">for</span> _, v := <span class="keyword">range</span> arr &#123;</span><br><span class="line">		newArr = <span class="built_in">append</span>(newArr, &amp;v)</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">for</span> _, v := <span class="keyword">range</span> newArr &#123;</span><br><span class="line">		fmt.Println(*v)</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line">$ <span class="keyword">go</span> run main.<span class="keyword">go</span></span><br><span class="line"><span class="number">3</span> <span class="number">3</span> <span class="number">3</span></span><br></pre></td></tr></table></figure>
-
-<p>看到这个结果的时候我其实是一脸懵逼的，这个问题起初我一个java程序员真是无法理解，后来直到我运行了如下的代码：</p>
-<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">main</span><span class="params">()</span></span> &#123;</span><br><span class="line">	arr := []<span class="keyword">int</span>&#123;<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>&#125;</span><br><span class="line">	newArr := []*<span class="keyword">int</span>&#123;&#125;</span><br><span class="line">	<span class="keyword">for</span> _, v := <span class="keyword">range</span> arr &#123;</span><br><span class="line">		fmt.Println(<span class="string">""</span>)</span><br><span class="line">		fmt.Printf(<span class="string">"origin addr: %p value: %v"</span>, &amp;v, v)</span><br><span class="line">		newArr = <span class="built_in">append</span>(newArr, &amp;v)</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">for</span> _, s := <span class="keyword">range</span> newArr &#123;</span><br><span class="line">		fmt.Println(<span class="string">""</span>)</span><br><span class="line">		fmt.Printf(<span class="string">"addr: %p  value: %v"</span>, s, *s)</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line">输出结果：</span><br><span class="line">origin addr: <span class="number">0xc0000a67a8</span> value: <span class="number">1</span></span><br><span class="line">origin addr: <span class="number">0xc0000a67a8</span> value: <span class="number">2</span></span><br><span class="line">origin addr: <span class="number">0xc0000a67a8</span> value: <span class="number">3</span></span><br><span class="line">addr: <span class="number">0xc0000a67a8</span>  value: <span class="number">3</span></span><br><span class="line">addr: <span class="number">0xc0000a67a8</span>  value: <span class="number">3</span></span><br><span class="line">addr: <span class="number">0xc0000a67a8</span>  value: <span class="number">3</span></span><br></pre></td></tr></table></figure>
-
-<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a><strong>总结</strong></h2><p>总结就是golang的for循环是通过同一个地址槽来反复接值的！！！</p>
-<p><img src="/2021/08/16/20210816-gapGolangFor/6.jpg" alt></p>
-
-          
-        
-      
-    </div>
-    
-    
-    
-
-    
-
-    
-
-    
-
-    <footer class="post-footer">
-      
-
-      
-
-      
-
-      
-      
-        <div class="post-eof"></div>
-      
-    </footer>
-  </div>
-  
-  
-  
-  </article>
-
-
-    
   </section>
 
   
@@ -2117,7 +2207,7 @@
               
                 <a href="/archives/">
               
-                  <span class="site-state-item-count">37</span>
+                  <span class="site-state-item-count">40</span>
                   <span class="site-state-item-name">日志</span>
                 </a>
               </div>
@@ -2128,7 +2218,7 @@
               
               <div class="site-state-item site-state-categories">
                 <a href="/categories/index.html">
-                  <span class="site-state-item-count">22</span>
+                  <span class="site-state-item-count">23</span>
                   <span class="site-state-item-name">分类</span>
                 </a>
               </div>
@@ -2139,7 +2229,7 @@
               
               <div class="site-state-item site-state-tags">
                 <a href="/tags/index.html">
-                  <span class="site-state-item-count">33</span>
+                  <span class="site-state-item-count">34</span>
                   <span class="site-state-item-name">标签</span>
                 </a>
               </div>
@@ -2186,7 +2276,7 @@
 
     <footer id="footer" class="footer">
       <div class="footer-inner">
-        <div class="copyright">&copy; <span itemprop="copyrightYear">2021</span>
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2022</span>
   <span class="with-love">
     <i class="fa fa-user"></i>
   </span>

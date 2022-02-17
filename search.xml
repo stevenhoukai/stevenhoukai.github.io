@@ -1,6 +1,230 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
+    <title>消息副本与存储机制</title>
+    <url>/2022/02/16/20220216-pulsar-replicate/</url>
+    <content><![CDATA[<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>上一篇文章对Pulsar的消息存储原理和ID规则进行了介绍，本篇文章来对消息副本以及存储机制来介绍一下。lets go</p>
+<h2 id="消息元数据组成"><a href="#消息元数据组成" class="headerlink" title="消息元数据组成"></a>消息元数据组成</h2><p>Pulsar 中每个分区 Topic 的消息数据以 ledger 的形式存储在 BookKeeper 集群的 bookie 存储节点上，每个 ledger 包含一组 entry，而 bookie 只会按照 entry 维度进行写入、查找、获取。</p>
+<blockquote>
+<p>说明：</p>
+<p>批量生产消息的情况下，一个 entry 中可能包含多条消息，所以 entry 和消息并不一定是一一对应的。</p>
+</blockquote>
+<p>Ledger 和 entry 分别对应不同的元数据。</p>
+<ul>
+<li>ledger 的元数据存储在 zk 上。</li>
+<li>entry 除了消息数据部分之外，还包含元数据，entry 的数据存储在 bookie 存储节点上。</li>
+</ul>
+<img src="/2022/02/16/20220216-pulsar-replicate/1.png" style="zoom: 50%;">
+
+<table>
+<thead>
+<tr>
+<th align="left">类型</th>
+<th align="left">参数</th>
+<th align="left">参数说明</th>
+<th align="left">数据存放位置</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left">ledger</td>
+<td align="left">ensemble size（E）</td>
+<td align="left">每个 ledger 选用的 bookie 节点的个数</td>
+<td align="left">元数据存储在 zk 上</td>
+</tr>
+<tr>
+<td align="left">ledger</td>
+<td align="left">write quorum size（Qw）</td>
+<td align="left">每个 entry 需要向多少个 bookie 发送写入请求</td>
+<td align="left">元数据存储在 zk 上</td>
+</tr>
+<tr>
+<td align="left">ledger</td>
+<td align="left">ack quorum size（Qa）</td>
+<td align="left">收到多少个写入确认后，即可认为写入成功</td>
+<td align="left">元数据存储在 zk 上</td>
+</tr>
+<tr>
+<td align="left">ledger</td>
+<td align="left">Ensembles（E）</td>
+<td align="left">使用的 ensemble 列表，形式为&lt;entry id=””, ensembles=””&gt; 元组key（entry id）：使用这个 ensembles 列表开始时的 entry idvalue（ensembles）：ledger 选用的 bookie ip 列表，每个 value 中包含 ensemble size （E）个 IP每个 ledger 可能包含多个 ensemble 列表，同一时刻每个 ledger 最多只有一个 ensembles 列表在使用</td>
+<td align="left">元数据存储在 zk 上</td>
+</tr>
+<tr>
+<td align="left">Entry</td>
+<td align="left">Ledger ID</td>
+<td align="left">entry 所在的 ledger id</td>
+<td align="left">数据存储在 bookie 存储节点上</td>
+</tr>
+<tr>
+<td align="left">Entry</td>
+<td align="left">Entry ID</td>
+<td align="left">当前 entry id</td>
+<td align="left">数据存储在 bookie 存储节点上</td>
+</tr>
+<tr>
+<td align="left">Entry</td>
+<td align="left">Last Add Confirmed</td>
+<td align="left">创建当前 entry 的时候，已知最新的写入确认的 entry id</td>
+<td align="left">数据存储在 bookie 存储节点上</td>
+</tr>
+<tr>
+<td align="left">Entry</td>
+<td align="left">Digest</td>
+<td align="left">CRC</td>
+<td align="left">数据存储在 bookie 存储节点上</td>
+</tr>
+</tbody></table>
+<p>每个 ledger 在创建的时候，会在现有的 BookKeeper 集群中的可写状态的 bookie 候选节点列表中，选用 ensemble size 对应个数的 bookie 节点，如果没有足够的候选节点则会抛出 BKNotEnoughBookiesException 异常。选出候选节点后，将这些信息组成 &lt;entry id, ensembles&gt; 元组，存储到 ledger 的元数据里的 ensembles 中。</p>
+<h2 id="消息副本机制"><a href="#消息副本机制" class="headerlink" title="消息副本机制"></a>消息副本机制</h2><p><strong>消息写入流程</strong></p>
+<img src="/2022/02/16/20220216-pulsar-replicate/2.png" style="zoom: 60%;">
+
+<p>客户端在写入消息时，每个 entry 会向 ledger 当前使用的 ensemble 列表中的 Qw 个 bookie 节点发送写入请求，当收到 Qa 个写确认后，即认为当前消息写入存储成功。同时会通过 LAP（lastAddPushed）和 LAC（LastAddConfirmed）分别标识当前推送的位置和已经收到存储确认的位置。</p>
+<p>每个正在推送的 entry 中的 LAC 元数据值，为当前时刻创建发送 entry 请求时，已经收到最新的确认位置值。LAC 所在位置及之前的消息对读客户端是可见的。</p>
+<p>同时，pulsar 通过 fencing 机制，来避免同时有多个客户端对同一个 ledger 进行写操作。这里主要适用于一个 topic/partition 的归属关系从一个 broker 变迁到另一个 broker 的场景。</p>
+<p><strong>消息副本分布</strong></p>
+<p>每个 entry 写入时，会根据当前消息的 entry id 和当前使用的 ensembles 列表的开始 entry id（即key值），计算出在当前 entry 需要使用 ensemble 列表中由哪组 Qw 个 bookie 节点进行写入。之后，broker 会向这些 bookie 节点发送写请求，当收到 Qa 个写确认后，即认为当前消息写入存储成功。这时至少能够保证 Qa 个消息的副本个数。</p>
+<img src="/2022/02/16/20220216-pulsar-replicate/3.png" style="zoom: 50%;">
+
+<p>如上图所示，ledger 选用了4个 bookie 节点（bookie1-4 这4个节点），每次写入3个节点，当收到2个写入确认即代表消息存储成功。当前 ledger 选中的 ensemble 从 entry 1开始，使用 bookie1、bookie2、bookie3 进行写入，写入 entry 2的时候选用 bookie2、bookie3、bookie4写入，而 entry 3 则会根据计算结果，写入 bookie3、bookie4、bookie1。</p>
+<h2 id="消息恢复机制"><a href="#消息恢复机制" class="headerlink" title="消息恢复机制"></a>消息恢复机制</h2><p>Pulsar 的 BookKeeper 集群中的每个 bookie 在启动的时候，默认自动开启 recovery 的服务，这个服务会进行如下几个事情：</p>
+<ol>
+<li>auditorElector 审计选举。</li>
+<li>replicationWorker 复制任务。</li>
+<li>deathWatcher 宕机监控。</li>
+</ol>
+<p>BookKeeper 集群中的每个 bookie 节点，会通过 zookeeper 的临时节点机制进行选主，主 bookie 主要处理如下几个事情：</p>
+<ol>
+<li>负责监控 bookie 节点的变化。</li>
+<li>到 zk 上面标记出宕机的 bookie 上面的 ledger 为 Underreplicated 状态。</li>
+<li>检查所有的 ledger 的副本数（默认一周一个周期）。</li>
+<li>Entry 副本数检查（默认未开启）。</li>
+</ol>
+<p>其中 ledger 中的数据是按照 Fragment 维度进行恢复的（每个 Fragment 对应 ledger 下的一组 ensemble 列表，如果一个 ledger 下有多个 ensemble 列表，则需要处理多个 Fragment）。</p>
+<p>在进行恢复时，首先要判断出当前的 ledger 中的哪几个 Fragment 中的哪些存储节点需要用新的候选节点进行替换和恢复数据。当 Fragment 中关联的部分 bookie 节点上面没有对应的 entry 数据（默认是按照首、尾 entry 是否存在判断），则这个 bookie 节点需要被替换，当前的这个 Fragment 需要进行数据恢复。</p>
+<p>Fragment 的数据用新的 bookie 节点进行数据恢复完毕后，更新 ledger 的元数据中当前 Fragment 对应的 ensemble 列表的原数据。</p>
+<p>经过此过程，因 bookie 节点宕机引起的数据副本数减少的场景，数据的副本数会逐步的恢复成 Qw（后台指定的副本数，TDMQ 默认3副本）个。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p><img src="/2022/02/16/20220216-pulsar-replicate/5.jpg" alt></p>
+]]></content>
+      <categories>
+        <category>pulsar</category>
+      </categories>
+      <tags>
+        <tag>pulsar</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>消息存储原理与 ID 规则</title>
+    <url>/2022/02/15/20220215-pulsar-storage/</url>
+    <content><![CDATA[<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>上一篇文章对Pulsar的topic和分区做了介绍，这一篇我们就来对消息存储原理和ID规则来进行一下介绍，在本篇介绍中可能会出现一些让你非常困惑的词汇。不过不要紧我都会一一来进行解释</p>
+<h2 id="消息-ID-生成规则"><a href="#消息-ID-生成规则" class="headerlink" title="消息 ID 生成规则"></a>消息 ID 生成规则</h2><p>在 Pulsar 中，每条消息都有属于的自己的唯一 ID（即 MessageID），MessageID 由四部分组成：<code>ledgerId:entryID:partition-index:batch-index</code>。其中：</p>
+<ul>
+<li>partition-index：指分区的编号，在非分区 topic 的时候为 -1。</li>
+<li>batch-index：在非批量消息的时候为 -1。</li>
+</ul>
+<p>消息 ID 的生成规则由 Pulsar 的消息存储机制决定，Pulsar 中消息存储原理图如下：</p>
+<img src="/2022/02/15/20220215-pulsar-storage/1.png" style="zoom: 50%;">
+
+<p>如上图所示，在 Pulsar中，一个 Topic 的每一个分区会对应一系列的 ledger，其中只有一个 ledger 处于 open 状态即可写状态，而每个 ledger 只会存储与之对应的分区下的消息。</p>
+<p>Pulsar 在存储消息时，会先找到当前分区使用的 ledger ，然后生成当前消息对应的 entry ID，entry ID 在同一个 ledger 内是递增的。每个 ledger 存在的时长或保存的 entry 个数超过阈值后会进行切换，新的消息会存储到同一个 partition 中的下一个 ledger 中。</p>
+<ul>
+<li>批量生产消息情况下，一个 entry 中可能包含多条消息。</li>
+<li>非批量生产的情况下，一个 entry 中包含一条消息（producer 端可以配置这个参数，默认是批量的）。</li>
+</ul>
+<p>Ledger 只是一个逻辑概念，是数据的一种逻辑组装维度，并没有对应的实体。而 bookie 只会按照 entry 维度进行写入、查找、获取。</p>
+<h2 id="分片机制详解：Legder-和-Entry"><a href="#分片机制详解：Legder-和-Entry" class="headerlink" title="分片机制详解：Legder 和 Entry"></a>分片机制详解：Legder 和 Entry</h2><p>Pulsar 中的消息数据以 ledger 的形式存储在 BookKeeper 集群的 bookie 存储节点上。Ledger 是一个只追加的数据结构，并且只有一个写入器，这个写入器负责多个 bookie 的写入。Ledger 的条目会被复制到多个 bookie 中，同时会写入相关的数据来保证数据的一致性。</p>
+<p>BookKeeper 需要保存的数据包括：</p>
+<ul>
+<li><strong>Journals</strong><ul>
+<li>journals 文件里存储了 BookKeeper 的事务日志，在任何针对 ledger 的更新发生前，都会先将这个更新的描述信息持久化到这个 journal 文件中。</li>
+<li>BookKeeper 提供有单独的 sync 线程根据当前 journal 文件的大小来作 journal 文件的 rolling。</li>
+</ul>
+</li>
+<li><strong>EntryLogFile</strong><ul>
+<li>存储真正数据的文件，来自不同 ledger 的 entry 数据先缓存在内存buffer中，然后批量flush到EntryLogFile中。</li>
+<li>默认情况下，所有ledger的数据都是聚合然后顺序写入到同一个EntryLog文件中，避免磁盘随机写。</li>
+</ul>
+</li>
+<li><strong>Index 文件</strong><ul>
+<li>所有 Ledger 的 entry 数据都写入相同的 EntryLog 文件中，为了加速数据读取，会作 ledgerId + entryId 到文件 offset 的映射，这个映射会缓存在内存中，称为 IndexCache。</li>
+<li>IndexCache 容量达到上限时，会被 sync 线程 flush 到磁盘中。</li>
+</ul>
+</li>
+</ul>
+<img src="/2022/02/15/20220215-pulsar-storage/2.png" style="zoom: 50%;">
+
+<p>刚开始看到这里的时候我是有点懵逼的，这都是些啥啊，但是后面仔细思考下，这个设计似乎和mysql的底层原理几乎一致，Journals相当于redolog，EntryLogFile+Index相当于bufferpool。还不明白那就接着看下面的介绍：</p>
+<p><strong>Entry 数据写入</strong></p>
+<ol>
+<li>数据首先会同时写入 Journal（写入 Journal 的数据会实时落到磁盘）和 Memtable（读写缓存）。</li>
+<li>写入 Memtable 之后，对写入请求进行响应。</li>
+<li>Memtable 写满之后，会 flush 到 Entry Logger 和 Index cache，Entry Logger 中保存数据，Index cache 中保存数据的索引信息，</li>
+<li>后台线程将 Entry Logger 和 Index cache 数据落到磁盘。</li>
+</ol>
+<p><strong>Entry 数据读取</strong></p>
+<ul>
+<li>Tailing read 请求：直接从 Memtable 中读取 Entry。</li>
+<li>Catch-up read（滞后消费）请求：先读取 Index信息，然后索引从 Entry Logger 文件读取 Entry。</li>
+</ul>
+<p><strong>数据一致性保证：LastLogMark</strong></p>
+<ul>
+<li>写入的 EntryLog 和 Index 都是先缓存在内存中，再根据一定的条件周期性的 flush 到磁盘，这就造成了从内存到持久化到磁盘的时间间隔，如果在这间隔内 BookKeeper 进程崩溃，在重启后，我们需要根据 journal 文件内容来恢复，这个 LastLogMark 就记录了从 journal 中什么位置开始恢复。</li>
+<li>它其实是存在内存中，当 IndexCache 被 flush 到磁盘后其值会被更新，LastLogMark 也会周期性持久化到磁盘文件，供 Bookkeeper 进程启动时读取来从 journal 中恢复。</li>
+<li>LastLogMark 一旦被持久化到磁盘，即意味着在其之前的 Index 和 EntryLog 都已经被持久化到了磁盘，那么 journal 在这 LastLogMark 之前的数据都可以被清除了。</li>
+</ul>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p><img src="/2022/02/15/20220215-pulsar-storage/5.jpg" alt></p>
+]]></content>
+      <categories>
+        <category>pulsar</category>
+      </categories>
+      <tags>
+        <tag>pulsar</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Pulsar Topic 和分区</title>
+    <url>/2022/02/14/20220214-pulsar-arch/</url>
+    <content><![CDATA[<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>本人最近正在重构一个vdc（virus detect center）系统，为了将旧系统解耦我们将原系统拆分成了很多子系统，系统之间通过mq进行交互，在这之前本人对kafka已经是有些许了解，但是这次小组决定使用pulsar来替代kafka，那么究竟pulsar有什么好，它较kafka到底有什么优势，本人接下来的一个系列篇章就会对pulsar来进行介绍，同时也会讲解实际使用中的一些用法与问题，本系列文章的前提是假定大家对kafka都是一定了解的。</p>
+<h2 id="Apache-Pulsar-架构"><a href="#Apache-Pulsar-架构" class="headerlink" title="Apache Pulsar 架构"></a>Apache Pulsar 架构</h2><p>Apache Pulsar 是一个发布-订阅模型的消息系统，由 Broker、Apache BookKeeper、Producer、Consumer 等组件组成。我们知道传统mq的组成是没有Apache BookKeeper这一组件的，那么这个Apache BookKeeper究竟是何方神圣，后面我们会详细说一说</p>
+<p>先看一张整体的结构图：</p>
+<img src="/2022/02/14/20220214-pulsar-arch/1.png" style="zoom: 50%;">
+
+<ul>
+<li>Producer ： 消息的生产者，负责发布消息到 Topic。</li>
+<li>Consumer：消息的消费者，负责从 Topic 订阅消息。</li>
+<li>Broker：无状态服务层，负责接收和传递消息，集群负载均衡等工作，Broker 不会持久化保存元数据，因此可以快速的上、下线。</li>
+<li>Apache BookKeeper：有状态持久层，由一组 Bookie 存储节点组成，可以持久化地存储消息。</li>
+</ul>
+<p>了解kafka的朋友相信一眼就能看出一些异样，那就是kafka的存储其实就是放在broker上面的，也就是说存储与计算实际上是一体的，而从上图可知 Apache Pulsar 在架构设计上采用了计算与存储分离的模式，消息发布和订阅相关的计算逻辑在 Broker 中完成，数据存储在 Apache BookKeeper 集群的 Bookie 节点上。</p>
+<h2 id="Topic-与分区"><a href="#Topic-与分区" class="headerlink" title="Topic 与分区"></a>Topic 与分区</h2><p>Topic（主题）是某一种分类的名字，消息在 Topic 中可以被存储和发布。生产者往 Topic 中写消息，消费者从 Topic 中读消息。</p>
+<p>Pulsar 的 Topic 分为 Partitioned Topic 和 Non-Partitioned Topic 两类，Non-Partitioned Topic 可以理解为一个分区数为1的 Topic。实际上在 Pulsar 中，Topic 是一个虚拟的概念，创建一个3分区的 Topic，实际上是创建了3个“分区Topic”，发给这个 Topic 的消息会被发往这个 Topic 对应的多个 “分区Topic”。<br>例如：生产者发送消息给一个分区数为3，名为<code>my-topic</code>的 Topic，在数据流向上是均匀或者按一定规则（如果指定了key）发送给了 <code>my-topic-partition-0</code>、<code>my-topic-partition-1</code> 和 <code>my-topic-partition-2</code> 三个“分区 Topic”。</p>
+<p>分区 Topic 做数据持久化时，分区是逻辑上的概念，实际存储的单位是分片（Segment）的。</p>
+<p>如下图所示，分区 Topic1-Part2 的数据由N个 Segment 组成， 每个 Segment 均匀分布并存储在 Apache BookKeeper 群集中的多个 Bookie 节点中， 每个 Segment 具有3个副本。</p>
+<img src="/2022/02/14/20220214-pulsar-arch/2.png" style="zoom: 50%;">
+
+
+
+<h2 id="物理分区与逻辑分区"><a href="#物理分区与逻辑分区" class="headerlink" title="物理分区与逻辑分区"></a>物理分区与逻辑分区</h2><p>逻辑分区和物理分区对比如下：</p>
+<img src="/2022/02/14/20220214-pulsar-arch/3.png" style="zoom: 60%;">
+
+<p><strong>物理分区：</strong>计算与存储耦合，容错需要拷贝物理分区，扩容需要迁移物理分区来达到负载均衡。</p>
+<p><strong>逻辑分区</strong>：物理“分片”，计算层与存储层隔离，这种结构使得 Apache Pulsar 具备以下优点。</p>
+<ul>
+<li>Broker 和 Bookie 相互独立，方便实现独立的扩展以及独立的容错。</li>
+<li>Broker 无状态，便于快速上、下线，更加适合于云原生场景。</li>
+<li>分区存储不受限于单个节点存储容量。</li>
+<li>分区数据分布均匀，单个分区数据量突出不会使整个集群出现木桶效应。</li>
+<li>存储不足扩容时，能迅速利用新增节点平摊存储负载。</li>
+</ul>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p><img src="/2022/02/14/20220214-pulsar-arch/5.jpg" alt></p>
+]]></content>
+      <categories>
+        <category>pulsar</category>
+      </categories>
+      <tags>
+        <tag>pulsar</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>和弦的构成（分析）</title>
     <url>/2021/10/10/20211010-guitar/</url>
     <content><![CDATA[<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>弹了有段时间的吉他的，一直对吉他乐理方面没有做一个系统的分析，今天来对常用3和弦和7和弦做一个完整的分析以及公式总结</p>
