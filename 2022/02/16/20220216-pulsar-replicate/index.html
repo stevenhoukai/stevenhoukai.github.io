@@ -91,7 +91,7 @@
 <meta property="og:image" content="http://stevenhoukai.github.io/2022/02/16/20220216-pulsar-replicate/2.png">
 <meta property="og:image" content="http://stevenhoukai.github.io/2022/02/16/20220216-pulsar-replicate/3.png">
 <meta property="og:image" content="http://stevenhoukai.github.io/2022/02/16/20220216-pulsar-replicate/5.jpg">
-<meta property="og:updated_time" content="2022-02-17T02:55:24.877Z">
+<meta property="og:updated_time" content="2022-02-17T03:32:44.220Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="消息副本与存储机制">
 <meta name="twitter:description" content="前言上一篇文章对Pulsar的消息存储原理和ID规则进行了介绍，本篇文章来对消息副本以及存储机制来介绍一下。lets go 消息元数据组成Pulsar 中每个分区 Topic 的消息数据以 ledger 的形式存储在 BookKeeper 集群的 bookie 存储节点上，每个 ledger 包含一组 entry，而 bookie 只会按照 entry 维度进行写入、查找、获取。  说明： 批量生">
@@ -494,8 +494,7 @@
 <p>在进行恢复时，首先要判断出当前的 ledger 中的哪几个 Fragment 中的哪些存储节点需要用新的候选节点进行替换和恢复数据。当 Fragment 中关联的部分 bookie 节点上面没有对应的 entry 数据（默认是按照首、尾 entry 是否存在判断），则这个 bookie 节点需要被替换，当前的这个 Fragment 需要进行数据恢复。</p>
 <p>Fragment 的数据用新的 bookie 节点进行数据恢复完毕后，更新 ledger 的元数据中当前 Fragment 对应的 ensemble 列表的原数据。</p>
 <p>经过此过程，因 bookie 节点宕机引起的数据副本数减少的场景，数据的副本数会逐步的恢复成 Qw（后台指定的副本数，TDMQ 默认3副本）个。</p>
-<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p><img src="/2022/02/16/20220216-pulsar-replicate/5.jpg" alt></p>
-
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><img src="/2022/02/16/20220216-pulsar-replicate/5.jpg" style="zoom: 100%;">
       
     </div>
     

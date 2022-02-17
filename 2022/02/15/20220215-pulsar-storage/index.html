@@ -90,7 +90,7 @@
 <meta property="og:image" content="http://stevenhoukai.github.io/2022/02/15/20220215-pulsar-storage/1.png">
 <meta property="og:image" content="http://stevenhoukai.github.io/2022/02/15/20220215-pulsar-storage/2.png">
 <meta property="og:image" content="http://stevenhoukai.github.io/2022/02/15/20220215-pulsar-storage/5.jpg">
-<meta property="og:updated_time" content="2022-02-17T02:25:13.051Z">
+<meta property="og:updated_time" content="2022-02-17T03:32:20.597Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="消息存储原理与 ID 规则">
 <meta name="twitter:description" content="前言上一篇文章对Pulsar的topic和分区做了介绍，这一篇我们就来对消息存储原理和ID规则来进行一下介绍，在本篇介绍中可能会出现一些让你非常困惑的词汇。不过不要紧我都会一一来进行解释 消息 ID 生成规则在 Pulsar 中，每条消息都有属于的自己的唯一 ID（即 MessageID），MessageID 由四部分组成：ledgerId:entryID:partition-index:batc">
@@ -449,8 +449,7 @@
 <li>它其实是存在内存中，当 IndexCache 被 flush 到磁盘后其值会被更新，LastLogMark 也会周期性持久化到磁盘文件，供 Bookkeeper 进程启动时读取来从 journal 中恢复。</li>
 <li>LastLogMark 一旦被持久化到磁盘，即意味着在其之前的 Index 和 EntryLog 都已经被持久化到了磁盘，那么 journal 在这 LastLogMark 之前的数据都可以被清除了。</li>
 </ul>
-<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p><img src="/2022/02/15/20220215-pulsar-storage/5.jpg" alt></p>
-
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><img src="/2022/02/15/20220215-pulsar-storage/5.jpg" style="zoom: 100%;">
       
     </div>
     
