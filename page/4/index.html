@@ -295,6 +295,212 @@
   
   
   <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://stevenhoukai.github.io/2019/11/15/20191115-quartz/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="steven Hou">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/upload/images/avatar.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="迷途小书童">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+                
+                <a class="post-title-link" href="/2019/11/15/20191115-quartz/" itemprop="url">Quartz---1、Cron表达式</a></h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2019-11-15T00:00:01+08:00">
+                2019-11-15
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Quartz/" itemprop="url" rel="index">
+                    <span itemprop="name">Quartz</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          
+            <h2 id="CronTrigger"><a href="#CronTrigger" class="headerlink" title="CronTrigger"></a>CronTrigger</h2><p>借用网上的一篇Cron表达式说明<br>CronTriggers往往比SimpleTrigger更有用，如果您需要基于日历的概念，而非SimpleTrigger完全指定的时间间隔，复发的发射工作的时间表。<br>CronTrigger，你可以指定触发的时间表如“每星期五中午”，或“每个工作日9:30时”，甚至“每5分钟一班9:00和10:00逢星期一上午，星期三星期五“。<br>即便如此，SimpleTrigger一样，CronTrigger拥有的startTime指定的时间表时生效，指定的时间表时，应停止（可选）结束时间。</p>
+<p>Cron Expressions<br>cron的表达式被用来配置CronTrigger实例。 cron的表达式是字符串，实际上是由七子表达式，描述个别细节的时间表。这些子表达式是分开的空白，代表：</p>
+<ol>
+<li>Seconds</li>
+<li>Minutes</li>
+<li>Hours</li>
+<li>Day-of-Month</li>
+<li>Month</li>
+<li>Day-of-Week</li>
+<li>Year (可选字段)<br>例  “0 0 12 ? * WED” 在每星期三下午12:00 执行,<br>个别子表达式可以包含范围, 例如，在前面的例子里(“WED”)可以替换成 “MON-FRI”, “MON, WED, FRI”甚至”MON-WED,SAT”.</li>
+</ol>
+<p>“*” 代表整个时间段.</p>
+<p>每一个字段都有一套可以指定有效值，如</p>
+<p>Seconds (秒)         ：可以用数字0－59 表示，</p>
+<p>Minutes(分)          ：可以用数字0－59 表示，</p>
+<p>Hours(时)             ：可以用数字0-23表示,</p>
+<p>Day-of-Month(天) ：可以用数字1-31 中的任一一个值，但要注意一些特别的月份</p>
+<p>Month(月)            ：可以用0-11 或用字符串  “JAN, FEB, MAR, APR, MAY, JUN, JUL, AUG, SEP, OCT, NOV and DEC” 表示</p>
+<p>Day-of-Week(每周)：可以用数字1-7表示（1 ＝ 星期日）或用字符口串“SUN, MON, TUE, WED, THU, FRI and SAT”表示</p>
+<p>“/”：为特别单位，表示为“每”如“0/15”表示每隔15分钟执行一次,“0”表示为从“0”分开始, “3/20”表示表示每隔20分钟执行一次，“3”表示从第3分钟开始执行</p>
+<p>“?”：表示每月的某一天，或第周的某一天</p>
+<p>“L”：用于每月，或每周，表示为每月的最后一天，或每个月的最后星期几如“6L”表示“每月的最后一个星期五”</p>
+<p>“W”：表示为最近工作日，如“15W”放在每月（day-of-month）字段上表示为“到本月15日最近的工作日”</p>
+<p>““#”：是用来指定“的”每月第n个工作日,例 在每周（day-of-week）这个字段中内容为”6#3” or “FRI#3” 则表示“每月第三个星期五”</p>
+<p>1）Cron表达式的格式：秒 分 时 日 月 周 年(可选)。</p>
+<pre><code>字段名                 允许的值                        允许的特殊字符  
+秒                      0-59                       , - * /  
+分                      0-59                       , - * /  
+小时                    0-23                        , - * /  
+日                      1-31                       , - * ? / L W C  
+月                      1-12 or JAN-DEC           , - * /  
+周几                    1-7 or SUN-SAT           , - * ? / L C #  
+年 (可选字段)         empty, 1970-2099                 , - * /
+
+
+
+ “?”字符：表示不确定的值
+
+ “,”字符：指定数个值
+
+ “-”字符：指定一个值的范围
+
+ “/”字符：指定一个值的增加幅度。n/m表示从n开始，每次增加m
+
+ “L”字符：用在日表示一个月中的最后一天，用在周表示该月最后一个星期X
+
+ “W”字符：指定离给定日期最近的工作日(周一到周五)
+
+ “#”字符：表示该月第几个周X。6#3表示该月第3个周五</code></pre><p>   2）Cron表达式范例：</p>
+<pre><code>每隔5秒执行一次：*/5 * * * * ?
+
+每隔1分钟执行一次：0 */1 * * * ?
+
+每天23点执行一次：0 0 23 * * ?
+
+每天凌晨1点执行一次：0 0 1 * * ?
+
+每月1号凌晨1点执行一次：0 0 1 1 * ?
+
+每月最后一天23点执行一次：0 0 23 L * ?
+
+每周星期天凌晨1点实行一次：0 0 1 ? * L
+
+在26分、29分、33分执行一次：0 26,29,33 * * * ?
+
+每天的0点、13点、18点、21点都执行一次：0 0 0,13,18,21 * * ?</code></pre>
+          
+        
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+    
+      
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
     <link itemprop="mainEntityOfPage" href="http://stevenhoukai.github.io/2019/11/15/20191116-quartz-use/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -1772,234 +1978,11 @@
 
 
     
-      
-
-  
-
-  
-  
-  
-
-  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
-  
-  
-  
-  <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="http://stevenhoukai.github.io/2019/07/19/20190719-2/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="name" content="steven Hou">
-      <meta itemprop="description" content>
-      <meta itemprop="image" content="/upload/images/avatar.jpg">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="迷途小书童">
-    </span>
-
-    
-      <header class="post-header">
-
-        
-        
-          <h1 class="post-title" itemprop="name headline">
-                
-                <a class="post-title-link" href="/2019/07/19/20190719-2/" itemprop="url">UAP应该知道的那些事儿--1(通讯模型)</a></h1>
-        
-
-        <div class="post-meta">
-          <span class="post-time">
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">发表于</span>
-              
-              <time title="创建于" itemprop="dateCreated datePublished" datetime="2019-07-19T00:00:01+08:00">
-                2019-07-19
-              </time>
-            
-
-            
-
-            
-          </span>
-
-          
-            <span class="post-category">
-            
-              <span class="post-meta-divider">|</span>
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-folder-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">分类于</span>
-              
-              
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/UAP框架/" itemprop="url" rel="index">
-                    <span itemprop="name">UAP框架</span>
-                  </a>
-                </span>
-
-                
-                
-              
-            </span>
-          
-
-          
-            
-          
-
-          
-          
-
-          
-
-          
-
-          
-
-        </div>
-      </header>
-    
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-      
-
-      
-        
-          
-            <h2 id="第一节-NCLocator了解吗-客户端与服务端如何进行通讯"><a href="#第一节-NCLocator了解吗-客户端与服务端如何进行通讯" class="headerlink" title="第一节 NCLocator了解吗,客户端与服务端如何进行通讯"></a>第一节 NCLocator了解吗,客户端与服务端如何进行通讯</h2><p>在平时的开发中，如果我们想要在客户端调用服务端部署好的服务，一般我们是这样在客户端通过以下方式：</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">IxxxService service = NCLocator.getInstance().lookup(IxxxService.class);</span><br></pre></td></tr></table></figure>
-
-<p>获取到service这样一个接口对象，然后通过这个service调用对应的method就能实现与服务端的通讯，但是诸位有没有想过为什么这样就可以进行client到server的网络IO通讯，其实这里就是通过了jdk的动态代理来实现的，jdk动态代理是javase高级知识点，没接触过的可以去看看相关知识点，在java高级知识介绍中我会用一篇日记来仔细讲解，这里就不做详细介绍。继续讲我们在客户端获取到的service对象就是一个IxxxService接口的动态代理对象，这里看一下动态代理是如何获取的，如下代码：</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Proxy.newProxyInstance(classloader, interfaces, InvocationHanddler);</span><br></pre></td></tr></table></figure>
-
-<p><img src="/2019/07/19/20190719-2/p8.png" alt="图p8"></p>
-<center>图p8</center>
-
-<p>有没有发现上图中h=RemoteInvocationHandler很眼熟，这就是一个InvocationHanddler的实现方式<br>这里我通过下面一个通用接口来进行详细说明:</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">IBillcodeManage lookup = NCLocator.getInstance().lookup(IBillcodeManage.class);</span><br></pre></td></tr></table></figure>
-
-<p>从上图我们看到在客户端拿到的lookup对象确实就是一个动态代理类，并非对象本身那么简单，换句话说我们可以理解，<br>NCLocator.getInstance()其实就是获取到客户端jvm中的一个hashmap容器，<br>key是IxxxService.class,value就是这个接口类的一个动态代理实例，<br>这样说或许会比较好容易理解，但事实上也确实如此，只是具体实现上面会复杂很多，好了<br>接下来就去看看这个客户端获取到的动态代理是如何往服务端发送请求的</p>
-<p><img src="/2019/07/19/20190719-2/p2.png" alt="图p2"></p>
-<center>图p2</center>
-
-<p><img src="/2019/07/19/20190719-2/p3.png" alt="图p3"></p>
-<center>图p3</center>
-
-<p><img src="/2019/07/19/20190719-2/p4.png" alt="图p4"></p>
-<center>图p4</center>
-
-<p>看到这里是不是有种拨开云雾的赶脚，没错，你没有眼花，我们的NC客户端采用的就是最原始最古老的BIO通讯模型<br>，不是说这个BIO模型不好，而是因为他存在有很大的局限性，比如同步、阻塞、无法处理高并发访问等，但是用在<br>erp系统中我觉得是够用的，这里我在整理总结一下当你使用客户端接口的动态代理调用方法时具体发生了什么：</p>
-<ul>
-<li>1、进入RemoteInvocationHandler的invoke方法</li>
-<li>2、获取调用的方法名称和参数</li>
-<li>3、Tcp三次握手与服务端建立连接</li>
-<li>4、网络io发送调用方法的相关信息和参数信息到服务端</li>
-<li>5、同步等待服务端返回结果（这里就是一个所谓同步调用的概念）</li>
-</ul>
-<p>这里再多解释一句，NC服务端启动的时候会有一个ServerSocket.accept()的方法专门用来处理客户端<br>发送来的连接请求，这也是BIO模型的精髓所在&lt;同步与阻塞&gt;。<br>这里还有非常一个值得一提的地方见下图，客户端并不是无限制的创建Socket，而是设计了一个Socket连接池来进行Socket复用，原理类似数据库连接池;</p>
-<p><img src="/2019/07/19/20190719-2/p5.png" alt="图p5"></p>
-<center>图p5</center>
-
-
-<p><code>Socket s = (Socket)sq.poll();</code><br>这就是通过有界阻塞队列来实现Socket容器。</p>
-<h2 id="第二节-事务与日志-NC系统的事务型组件"><a href="#第二节-事务与日志-NC系统的事务型组件" class="headerlink" title="第二节 事务与日志(NC系统的事务型组件)"></a>第二节 事务与日志(NC系统的事务型组件)</h2><p>上一节我们讲到了客户端接口类的动态代理发送请求到服务端，那么我们NC的服务端又是如何处理请求，<br>又是如何将请求发送回客户端的了？我们慢慢来讲，跟第一章一样，我们先通过：</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">IBillcodeManage lookup = NCLocator.getInstance().lookup(IBillcodeManage.class);</span><br></pre></td></tr></table></figure>
-
-<p>在服务端获取到lookup的动态代理对象，注意了这里我们是在服务端(private)获取了，不是在客户端(client)了哈,重要的事情说三遍:</p>
-<ul>
-<li>不是在客户端(client)</li>
-<li>不是在客户端(client)</li>
-<li>不是在客户端(client)</li>
-</ul>
-<p>见下图:</p>
-<p><img src="/2019/07/19/20190719-2/p1.png" alt="图p1"></p>
-<center>图p1</center>
-
-
-<p>是不是发现了异样，同样的方法在客户端和服务端拿到的lookup对象是完全不一样的！因为服务端获取到的是具体实现类的动态代理，是要去实实在在做事情的了，这也就解释了NC是分服务端容器和客户端两大容器的！见下图：</p>
-<p><img src="/2019/07/19/20190719-2/p9.png" alt="图p2"></p>
-<center>图p2</center>
-
-
-<p>有没有，看了图p2是不是就感觉发现了新大陆，这就是NC所谓的事务型组件的设计原理:根据接口设计中的方法名后缀来进行判断决定采用何种事务的传播属性，另外强调一下<br>NC的事务传播属性并没有很多种，从源码层面来看NC只支持最基本的Requires和equiresNew，并非像UAP红皮书中说的还支持mandatory、support以及never，至少我在源码层面是没有发现支持<br>与spring的7大事务传播属性相差甚远，至于这两种传播属性具体有什么区别，我会在我的第二篇UAP文章中进行剖析，好了这里我再总结一下服务端接收到客户端请求后都做了一些什么操作，见图p11、p12、p13</p>
-<ul>
-<li>1、服务端bioserver开启SocketServer等待客户端请求到来</li>
-<li>2、服务端接受到请求后解析请求参数，通过servicename去服务端的服务实现类动态代理容器中寻找对应的服务类动态代理</li>
-<li>3、最后通过反射机制，mothod.invoke(obj)来实现事务控制以及日志记录以及实际的业务处理</li>
-<li>4、返回结果到客户端，至此一次bio完整的请求通讯结束</li>
-</ul>
-<p><img src="/2019/07/19/20190719-2/p11.png" alt="图p11"></p>
-<center>图p11</center>
-
-<p><img src="/2019/07/19/20190719-2/p12.png" alt="图p12"></p>
-<center>图p12</center>
-
-<p><img src="/2019/07/19/20190719-2/p13.png" alt="图p13"></p>
-<center>图p13</center>
-
-
-<h2 id="第三节-系统是如何保证一次请求中的多次数据库交互拿到的是同一个Connection"><a href="#第三节-系统是如何保证一次请求中的多次数据库交互拿到的是同一个Connection" class="headerlink" title="第三节 系统是如何保证一次请求中的多次数据库交互拿到的是同一个Connection"></a>第三节 系统是如何保证一次请求中的多次数据库交互拿到的是同一个Connection</h2><p>其实这是一个扩展思考的问题，当时也是因为这个事务问题笨人就多思考了一点，就是说你如果要保证事务有效，<br>前提条件你必须让你的一次请求过程中拿到的conn是同一个对象对吧，<br>这个问题我并不想描述的太多，因为这是一个很基础的并发编程问题–&gt;如何让一个变量(conn)成为一个线程的独享变量，<br>从而达到解决线程安全的问题，这里的解决方案就是ThreadLocal;<br>我提供几个关键截图,朋友们可以自行去了解一下ThreadLocal的原理再回过头来就看这几行代码，<br>就能很好的理解其设计原理</p>
-<p><img src="/2019/07/19/20190719-2/p6.png" alt="p6"></p>
-<center>图p6</center>
-
-<p><img src="/2019/07/19/20190719-2/p7.png" alt="p7"></p>
-<center>图p7</center>
-
-<p>上图中的connRef对象就是一个ThreadLocal变量。用于获取当前线程的conn，但是conn对象并非是存在这个变量中的，而是存储在每一个Thread的一个ThreadLocalMap的变量中的，这个ThreadLocalMap中key就是connRef的softreference形式，value就是conn对象，这里有点绕，所以我的建议是先了解原理再看代码；</p>
-<p>前前后后写了三四个小时，终于写完了本人的第一篇博文，后续还会更新更多…</p>
-<p>Slogan:技术界一枚不起眼的迷途小书童</p>
-
-          
-        
-      
-    </div>
-    
-    
-    
-
-    
-
-    
-
-    
-
-    <footer class="post-footer">
-      
-
-      
-
-      
-
-      
-      
-        <div class="post-eof"></div>
-      
-    </footer>
-  </div>
-  
-  
-  
-  </article>
-
-
-    
   </section>
 
   
   <nav class="pagination">
-    <a class="extend prev" rel="prev" href="/page/3/"><i class="fa fa-angle-left"></i></a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/3/">3</a><span class="page-number current">4</span>
+    <a class="extend prev" rel="prev" href="/page/3/"><i class="fa fa-angle-left"></i></a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/3/">3</a><span class="page-number current">4</span><a class="page-number" href="/page/5/">5</a><a class="extend next" rel="next" href="/page/5/"><i class="fa fa-angle-right"></i></a>
   </nav>
 
 
@@ -2047,7 +2030,7 @@
               
                 <a href="/archives/">
               
-                  <span class="site-state-item-count">40</span>
+                  <span class="site-state-item-count">41</span>
                   <span class="site-state-item-name">日志</span>
                 </a>
               </div>

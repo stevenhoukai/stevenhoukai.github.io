@@ -295,6 +295,174 @@
   
   
   <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://stevenhoukai.github.io/2020/11/26/20201127-golangprectice1/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="steven Hou">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/upload/images/avatar.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="迷途小书童">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+                
+                <a class="post-title-link" href="/2020/11/26/20201127-golangprectice1/" itemprop="url">Golang练习一</a></h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2020-11-26T00:00:01+08:00">
+                2020-11-26
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Golang/" itemprop="url" rel="index">
+                    <span itemprop="name">Golang</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          
+            <p>学习Golang的过程中，练习必不可少，俗话说的好 Talk is cheap,show me the code，学完Golang基本语法，是需要适当做一些练习加深理解的，虽然很很很简单！但是本人Java转go，语法还是要多熟悉，秉承多写一遍就多一次理解的原则，开始吧~</p>
+<ul>
+<li><h4 id="练习1"><a href="#练习1" class="headerlink" title="练习1"></a><strong>练习1</strong></h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line">//练习1</span><br><span class="line">  //编写代码分别定义一个整型、浮点型、布尔型、字符串型变量，使</span><br><span class="line">  //用fmt.Printf()搭配%T分别打印出上述变量的值和类型。</span><br><span class="line">  package main</span><br><span class="line">  </span><br><span class="line">  import (</span><br><span class="line">  	&quot;fmt&quot;</span><br><span class="line">  )</span><br><span class="line">  </span><br><span class="line">  func test1() &#123;</span><br><span class="line">  	a := 10</span><br><span class="line">  	b := 1.0</span><br><span class="line">  	c := false</span><br><span class="line">  	d := &quot;哈哈哈&quot;</span><br><span class="line">  	fmt.Printf(&quot;a的类型为%T\n&quot;, a)</span><br><span class="line">  	fmt.Printf(&quot;b的类型为%T\n&quot;, b)</span><br><span class="line">  	fmt.Printf(&quot;c的类型为%T\n&quot;, c)</span><br><span class="line">  	fmt.Printf(&quot;d的类型为%T\n&quot;, d)</span><br><span class="line">  &#125;</span><br><span class="line">  </span><br><span class="line">  func main() &#123;</span><br><span class="line">  	test1()</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure>
+
+
+</li>
+</ul>
+<ul>
+<li><h4 id="练习2"><a href="#练习2" class="headerlink" title="练习2"></a><strong>练习2</strong></h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line">//练习2</span><br><span class="line">  //编写代码统计出字符串&quot;hello沙河小王子&quot;中汉字的数量</span><br><span class="line">  package main</span><br><span class="line">  </span><br><span class="line">  import (</span><br><span class="line">  	&quot;fmt&quot;</span><br><span class="line">  	&quot;unicode&quot;</span><br><span class="line">  )</span><br><span class="line">  </span><br><span class="line">  func test2() &#123;</span><br><span class="line">  	s := &quot;hello沙河小王子&quot;</span><br><span class="line">  	count := 0</span><br><span class="line">  	for _, c := range s &#123;</span><br><span class="line">  		if unicode.Is(unicode.Han, c) &#123;</span><br><span class="line">  			count = count + 1</span><br><span class="line">  		&#125;</span><br><span class="line">  	&#125;</span><br><span class="line">  	fmt.Printf(&quot;字符串包含%v个中文&quot;, count)</span><br><span class="line">  &#125;</span><br><span class="line">  </span><br><span class="line">  func main() &#123;</span><br><span class="line">  	test2()</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure>
+
+
+</li>
+</ul>
+<ul>
+<li><h4 id="练习3"><a href="#练习3" class="headerlink" title="练习3"></a><strong>练习3</strong></h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line">//练习3</span><br><span class="line">  //求数组[1, 3, 5, 7, 8]所有元素的和</span><br><span class="line">  package main</span><br><span class="line">  </span><br><span class="line">  import (</span><br><span class="line">  	&quot;fmt&quot;</span><br><span class="line">  	&quot;unicode&quot;</span><br><span class="line">  )</span><br><span class="line">  </span><br><span class="line">  func test3() &#123;</span><br><span class="line">  	arr := [...]int&#123;1, 3, 5, 7, 9&#125;</span><br><span class="line">  	count := 0</span><br><span class="line">  	for _, v := range arr &#123;</span><br><span class="line">  		count = count + v</span><br><span class="line">  	&#125;</span><br><span class="line">  	fmt.Printf(&quot;result:%v&quot;, count)</span><br><span class="line">  &#125;</span><br><span class="line">  </span><br><span class="line">  func main() &#123;</span><br><span class="line">  	test3()</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure>
+
+
+</li>
+</ul>
+<ul>
+<li><h4 id="练习4"><a href="#练习4" class="headerlink" title="练习4"></a><strong>练习4</strong></h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line">//练习4</span><br><span class="line">  //找出数组中和为指定值的两个元素的下标，</span><br><span class="line">  //比如从数组[1, 3, 5, 7, 8]中找出和为8的两个元素的下标分别为(0,3)和(1,2)。</span><br><span class="line">  package main</span><br><span class="line">  </span><br><span class="line">  import &quot;fmt&quot;</span><br><span class="line">  </span><br><span class="line">  func test4() (int, int) &#123;</span><br><span class="line">  	result := 8</span><br><span class="line">  	resultmap := make(map[int]int)</span><br><span class="line">  	arr := [...]int&#123;1, 3, 5, 7, 9&#125;</span><br><span class="line">  	for index, v := range arr &#123;</span><br><span class="line">  		gapv := result - v</span><br><span class="line">  		va, ok := resultmap[gapv]</span><br><span class="line">  		if ok &#123;</span><br><span class="line">  			return index, va</span><br><span class="line">  		&#125;</span><br><span class="line">  		resultmap[v] = index</span><br><span class="line">  	&#125;</span><br><span class="line">  	fmt.Println(resultmap)</span><br><span class="line">  	return 0, 0</span><br><span class="line">  &#125;</span><br><span class="line">  </span><br><span class="line">  func main() &#123;</span><br><span class="line">  	res1, res2 := test4()</span><br><span class="line">  	fmt.Printf(&quot;%v,%v&quot;, res1, res2)</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure>
+
+
+</li>
+</ul>
+<p>  Talk is cheap,show me the code~</p>
+<p>  <img src="/2020/11/26/20201127-golangprectice1/1.jpeg" alt></p>
+
+          
+        
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+    
+      
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
     <link itemprop="mainEntityOfPage" href="http://stevenhoukai.github.io/2020/11/25/20201125-selfcomputer/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -1818,217 +1986,11 @@ ok搭建完成。
 
 
     
-      
-
-  
-
-  
-  
-  
-
-  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
-  
-  
-  
-  <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="http://stevenhoukai.github.io/2019/11/15/20191115-quartz/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="name" content="steven Hou">
-      <meta itemprop="description" content>
-      <meta itemprop="image" content="/upload/images/avatar.jpg">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="迷途小书童">
-    </span>
-
-    
-      <header class="post-header">
-
-        
-        
-          <h1 class="post-title" itemprop="name headline">
-                
-                <a class="post-title-link" href="/2019/11/15/20191115-quartz/" itemprop="url">Quartz---1、Cron表达式</a></h1>
-        
-
-        <div class="post-meta">
-          <span class="post-time">
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">发表于</span>
-              
-              <time title="创建于" itemprop="dateCreated datePublished" datetime="2019-11-15T00:00:01+08:00">
-                2019-11-15
-              </time>
-            
-
-            
-
-            
-          </span>
-
-          
-            <span class="post-category">
-            
-              <span class="post-meta-divider">|</span>
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-folder-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">分类于</span>
-              
-              
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/Quartz/" itemprop="url" rel="index">
-                    <span itemprop="name">Quartz</span>
-                  </a>
-                </span>
-
-                
-                
-              
-            </span>
-          
-
-          
-            
-          
-
-          
-          
-
-          
-
-          
-
-          
-
-        </div>
-      </header>
-    
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-      
-
-      
-        
-          
-            <h2 id="CronTrigger"><a href="#CronTrigger" class="headerlink" title="CronTrigger"></a>CronTrigger</h2><p>借用网上的一篇Cron表达式说明<br>CronTriggers往往比SimpleTrigger更有用，如果您需要基于日历的概念，而非SimpleTrigger完全指定的时间间隔，复发的发射工作的时间表。<br>CronTrigger，你可以指定触发的时间表如“每星期五中午”，或“每个工作日9:30时”，甚至“每5分钟一班9:00和10:00逢星期一上午，星期三星期五“。<br>即便如此，SimpleTrigger一样，CronTrigger拥有的startTime指定的时间表时生效，指定的时间表时，应停止（可选）结束时间。</p>
-<p>Cron Expressions<br>cron的表达式被用来配置CronTrigger实例。 cron的表达式是字符串，实际上是由七子表达式，描述个别细节的时间表。这些子表达式是分开的空白，代表：</p>
-<ol>
-<li>Seconds</li>
-<li>Minutes</li>
-<li>Hours</li>
-<li>Day-of-Month</li>
-<li>Month</li>
-<li>Day-of-Week</li>
-<li>Year (可选字段)<br>例  “0 0 12 ? * WED” 在每星期三下午12:00 执行,<br>个别子表达式可以包含范围, 例如，在前面的例子里(“WED”)可以替换成 “MON-FRI”, “MON, WED, FRI”甚至”MON-WED,SAT”.</li>
-</ol>
-<p>“*” 代表整个时间段.</p>
-<p>每一个字段都有一套可以指定有效值，如</p>
-<p>Seconds (秒)         ：可以用数字0－59 表示，</p>
-<p>Minutes(分)          ：可以用数字0－59 表示，</p>
-<p>Hours(时)             ：可以用数字0-23表示,</p>
-<p>Day-of-Month(天) ：可以用数字1-31 中的任一一个值，但要注意一些特别的月份</p>
-<p>Month(月)            ：可以用0-11 或用字符串  “JAN, FEB, MAR, APR, MAY, JUN, JUL, AUG, SEP, OCT, NOV and DEC” 表示</p>
-<p>Day-of-Week(每周)：可以用数字1-7表示（1 ＝ 星期日）或用字符口串“SUN, MON, TUE, WED, THU, FRI and SAT”表示</p>
-<p>“/”：为特别单位，表示为“每”如“0/15”表示每隔15分钟执行一次,“0”表示为从“0”分开始, “3/20”表示表示每隔20分钟执行一次，“3”表示从第3分钟开始执行</p>
-<p>“?”：表示每月的某一天，或第周的某一天</p>
-<p>“L”：用于每月，或每周，表示为每月的最后一天，或每个月的最后星期几如“6L”表示“每月的最后一个星期五”</p>
-<p>“W”：表示为最近工作日，如“15W”放在每月（day-of-month）字段上表示为“到本月15日最近的工作日”</p>
-<p>““#”：是用来指定“的”每月第n个工作日,例 在每周（day-of-week）这个字段中内容为”6#3” or “FRI#3” 则表示“每月第三个星期五”</p>
-<p>1）Cron表达式的格式：秒 分 时 日 月 周 年(可选)。</p>
-<pre><code>字段名                 允许的值                        允许的特殊字符  
-秒                      0-59                       , - * /  
-分                      0-59                       , - * /  
-小时                    0-23                        , - * /  
-日                      1-31                       , - * ? / L W C  
-月                      1-12 or JAN-DEC           , - * /  
-周几                    1-7 or SUN-SAT           , - * ? / L C #  
-年 (可选字段)         empty, 1970-2099                 , - * /
-
-
-
- “?”字符：表示不确定的值
-
- “,”字符：指定数个值
-
- “-”字符：指定一个值的范围
-
- “/”字符：指定一个值的增加幅度。n/m表示从n开始，每次增加m
-
- “L”字符：用在日表示一个月中的最后一天，用在周表示该月最后一个星期X
-
- “W”字符：指定离给定日期最近的工作日(周一到周五)
-
- “#”字符：表示该月第几个周X。6#3表示该月第3个周五</code></pre><p>   2）Cron表达式范例：</p>
-<pre><code>每隔5秒执行一次：*/5 * * * * ?
-
-每隔1分钟执行一次：0 */1 * * * ?
-
-每天23点执行一次：0 0 23 * * ?
-
-每天凌晨1点执行一次：0 0 1 * * ?
-
-每月1号凌晨1点执行一次：0 0 1 1 * ?
-
-每月最后一天23点执行一次：0 0 23 L * ?
-
-每周星期天凌晨1点实行一次：0 0 1 ? * L
-
-在26分、29分、33分执行一次：0 26,29,33 * * * ?
-
-每天的0点、13点、18点、21点都执行一次：0 0 0,13,18,21 * * ?</code></pre>
-          
-        
-      
-    </div>
-    
-    
-    
-
-    
-
-    
-
-    
-
-    <footer class="post-footer">
-      
-
-      
-
-      
-
-      
-      
-        <div class="post-eof"></div>
-      
-    </footer>
-  </div>
-  
-  
-  
-  </article>
-
-
-    
   </section>
 
   
   <nav class="pagination">
-    <a class="extend prev" rel="prev" href="/page/2/"><i class="fa fa-angle-left"></i></a><a class="page-number" href="/">1</a><a class="page-number" href="/page/2/">2</a><span class="page-number current">3</span><a class="page-number" href="/page/4/">4</a><a class="extend next" rel="next" href="/page/4/"><i class="fa fa-angle-right"></i></a>
+    <a class="extend prev" rel="prev" href="/page/2/"><i class="fa fa-angle-left"></i></a><a class="page-number" href="/">1</a><a class="page-number" href="/page/2/">2</a><span class="page-number current">3</span><a class="page-number" href="/page/4/">4</a><a class="page-number" href="/page/5/">5</a><a class="extend next" rel="next" href="/page/4/"><i class="fa fa-angle-right"></i></a>
   </nav>
 
 
@@ -2076,7 +2038,7 @@ ok搭建完成。
               
                 <a href="/archives/">
               
-                  <span class="site-state-item-count">40</span>
+                  <span class="site-state-item-count">41</span>
                   <span class="site-state-item-name">日志</span>
                 </a>
               </div>
