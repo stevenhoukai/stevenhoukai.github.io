@@ -295,6 +295,227 @@
   
   
   <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://stevenhoukai.github.io/2020/11/26/20201126-blbinarytree/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="史蒂芬猴">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/upload/images/avatar.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="迷途小书童">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+                
+                <a class="post-title-link" href="/2020/11/26/20201126-blbinarytree/" itemprop="url">二叉树的遍历</a></h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2020-11-26T00:00:01+08:00">
+                2020-11-26
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/数据结构与算法/" itemprop="url" rel="index">
+                    <span itemprop="name">数据结构与算法</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          
+            <p>本文主要就二叉树的遍历方式进行总结和记录，从而了解递归、栈以及队列的应用，通常对于一个二叉树的遍历方式大致分为：</p>
+<ol>
+<li>前序遍历（中 -&gt; 左 -&gt; 右）</li>
+<li>中序遍历（左 -&gt; 中 -&gt; 右）</li>
+<li>后续遍历（左 -&gt; 右 -&gt; 中）</li>
+<li>层次遍历</li>
+</ol>
+<ul>
+<li><h3 id="前序遍历"><a href="#前序遍历" class="headerlink" title="前序遍历"></a><strong>前序遍历</strong></h3><p>   <img src="/2020/11/26/20201126-blbinarytree/beforebl.png" alt></p>
+<ul>
+<li><h4 id="递归实现"><a href="#递归实现" class="headerlink" title="递归实现"></a><strong>递归实现</strong></h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">/*</span><br><span class="line"> * 思路：若二叉树非空：</span><br><span class="line"> * 1、访问根节点</span><br><span class="line"> * 2、遍历左子树</span><br><span class="line"> * 3、遍历右子数</span><br><span class="line"> */</span><br><span class="line"> public void PreOrder(Btree T)&#123;</span><br><span class="line">     if(T != null)&#123;</span><br><span class="line">         show(T)</span><br><span class="line">         PreOrder(T.left)</span><br><span class="line">         PreOrder(T.right)</span><br><span class="line">     &#125;</span><br><span class="line"> &#125;</span><br></pre></td></tr></table></figure>
+
+
+
+
+</li>
+</ul>
+</li>
+</ul>
+<ul>
+<li><h4 id="栈实现"><a href="#栈实现" class="headerlink" title="栈实现"></a><strong>栈实现</strong></h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line">/*</span><br><span class="line"> * 思路：若二叉树非空</span><br><span class="line"> * 1、根遍历，拿到一个节点的指针，先判断是否为空，不为空就先访问该结点，然后直接进栈，</span><br><span class="line"> * 2、接着遍历左子树；为空则要从栈中弹出一个节点来，这个时候弹出的结点就是其父亲</span><br><span class="line"> * 3、然后访问其父亲的右子树，直到当前节点为空且栈为空时，算法结束.</span><br><span class="line"> *</span><br><span class="line"> */</span><br><span class="line"> public void PreOrder1(Btree T) &#123;</span><br><span class="line">        stack&lt;Btree&gt; st;</span><br><span class="line">        if (T == NULL)&#123;</span><br><span class="line">            return null;</span><br><span class="line">        &#125;</span><br><span class="line">        st.push(T);</span><br><span class="line">        while (!st.empty())&#123;</span><br><span class="line">            Btree T =st.pop();</span><br><span class="line">            show(T)</span><br><span class="line">            if (T.right!=NULL)</span><br><span class="line">                st.push(p.right);</span><br><span class="line">            if (p.left!=NULL)</span><br><span class="line">                st.push(p.left);</span><br><span class="line">        &#125;</span><br><span class="line">        return null;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+
+
+</li>
+</ul>
+<ul>
+<li><h3 id="中序遍历"><a href="#中序遍历" class="headerlink" title="中序遍历"></a><strong>中序遍历</strong></h3><p>   <img src="/2020/11/26/20201126-blbinarytree/middlebl.png" alt></p>
+<ul>
+<li><h4 id="递归实现-1"><a href="#递归实现-1" class="headerlink" title="递归实现"></a><strong>递归实现</strong></h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">/*</span><br><span class="line"> * 思路：若二叉树非空：</span><br><span class="line"> * 1、遍历左子树</span><br><span class="line"> * 2、访问根节点</span><br><span class="line"> * 3、遍历右子数</span><br><span class="line"> */</span><br><span class="line"> public void MidOrder(Btree T)&#123;</span><br><span class="line">     if(T != null)&#123;</span><br><span class="line">         MidOrder(T.left)</span><br><span class="line">         show(T)</span><br><span class="line">         MidOrder(T.right)</span><br><span class="line">     &#125;</span><br><span class="line"> &#125;</span><br></pre></td></tr></table></figure>
+
+
+
+
+</li>
+</ul>
+</li>
+</ul>
+<ul>
+<li><h4 id="栈实现-1"><a href="#栈实现-1" class="headerlink" title="栈实现"></a><strong>栈实现</strong></h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line">/*</span><br><span class="line"> * 思路：借助栈</span><br><span class="line"> * 1、初始时依次扫描根节点的所在左侧节点并将它们一一进栈；</span><br><span class="line"> * 2、出栈一个节点，访问它</span><br><span class="line"> * 3、扫描该节点的右孩子节点并将其出栈</span><br><span class="line"> * 4、依次扫描右孩子节点的所有左侧节点并一一进栈</span><br><span class="line"> * 5、反复 2 - 4 步骤</span><br><span class="line"> */</span><br><span class="line">public void MidOrder2(Btree T)&#123;</span><br><span class="line">    Stack s = new Stack();</span><br><span class="line">    BTree p = T;</span><br><span class="line">    while(p||!s.IsEmpty())&#123;</span><br><span class="line">        if(p)&#123;</span><br><span class="line">            s.push(p);</span><br><span class="line">            p = p.left;</span><br><span class="line">        &#125;else&#123;</span><br><span class="line">            p = s.pop();</span><br><span class="line">            show(p);</span><br><span class="line">            p = p.right;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+
+
+</li>
+</ul>
+<ul>
+<li><h3 id="后序遍历"><a href="#后序遍历" class="headerlink" title="后序遍历"></a><strong>后序遍历</strong></h3><p>​    <img src="/2020/11/26/20201126-blbinarytree/afterbl.png" alt></p>
+<ul>
+<li><h4 id="递归实现-2"><a href="#递归实现-2" class="headerlink" title="递归实现"></a><strong>递归实现</strong></h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">/*</span><br><span class="line"> * 思路：若二叉树非空：</span><br><span class="line"> * 1、遍历左子树</span><br><span class="line"> * 2、遍历右子数</span><br><span class="line"> * 3、访问根节点</span><br><span class="line"> */</span><br><span class="line"> public void PostOrder(Btree T)&#123;</span><br><span class="line">     if(T != null)&#123;</span><br><span class="line">         PostOrder(T.left)</span><br><span class="line">         PostOrder(T.right)</span><br><span class="line">         show(T)</span><br><span class="line">     &#125;</span><br><span class="line"> &#125;</span><br></pre></td></tr></table></figure>
+
+
+
+
+</li>
+</ul>
+</li>
+</ul>
+<ul>
+<li><h4 id="栈实现-2"><a href="#栈实现-2" class="headerlink" title="栈实现"></a><strong>栈实现</strong></h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><span class="line">/*</span><br><span class="line"> * 思路：借助栈</span><br><span class="line"> */</span><br><span class="line">public void AfterOrder2(Btree root)&#123;</span><br><span class="line">    if (root == NULL)&#123;</span><br><span class="line">       return;</span><br><span class="line">    &#125;</span><br><span class="line">    Stack&lt;BTree&gt; s = new Stack();</span><br><span class="line">	s.push(root);//根指针入栈</span><br><span class="line">	while (!s.empty())</span><br><span class="line">	&#123;</span><br><span class="line">		//重复将栈顶指针指向结点的左子树压栈,直到栈顶指针指向结点的左子树为空</span><br><span class="line">		while (s.top().left != NULL)&#123;</span><br><span class="line">			s.push(s.top().left);</span><br><span class="line">		&#125;</span><br><span class="line">		Btree last = NULL;//上一次遍历过的指针</span><br><span class="line">		//重复检查</span><br><span class="line">		while (!s.empty())&#123;</span><br><span class="line">			if (s.top().right==NULL||last==s.top().right) &#123;</span><br><span class="line">			//如果栈顶指针指向结点的右子树为空或者遍历过</span><br><span class="line">				show(s.top())</span><br><span class="line">				last = s.top();//更新指针last</span><br><span class="line">				s.pop();//栈顶指针出栈</span><br><span class="line">			&#125;</span><br><span class="line">			//如果栈顶指针指向的结点的右子树不为空</span><br><span class="line">			else if(s.top()-&gt;R!=NULL)&#123;</span><br><span class="line">					s.push(s.top()-&gt;R);//将右子树入栈</span><br><span class="line">					break;//退出检查</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+
+
+</li>
+</ul>
+<ul>
+<li><h3 id="层次遍历"><a href="#层次遍历" class="headerlink" title="层次遍历"></a><strong>层次遍历</strong></h3></li>
+</ul>
+<ul>
+<li><h4 id="队列实现"><a href="#队列实现" class="headerlink" title="队列实现"></a><strong>队列实现</strong></h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line">/*</span><br><span class="line"> * 思路：借助队列 队列的就是FIFO</span><br><span class="line"> * 1、初始将根节点入队并访问根节点，然后出队</span><br><span class="line"> * 2、如果有左子树，将左子树的根入队</span><br><span class="line"> * 3、如果有右子树，将右子树的根入队</span><br><span class="line"> * 4、然后出队，访问该节点</span><br><span class="line"> * 5、反复出队访问直到队列为空</span><br><span class="line"> * 伪代码</span><br><span class="line"> */</span><br><span class="line">public void levelOrder(Btree T)&#123;</span><br><span class="line">    InitQueue(Q)</span><br><span class="line">    BTree p;</span><br><span class="line">    EnQueue(Q,T)</span><br><span class="line">    while(!IsEmpty(Q))&#123;</span><br><span class="line">        Dequeue(Q,p);</span><br><span class="line">        show(p);</span><br><span class="line">        if(p.left != null)&#123;</span><br><span class="line">            EnQueue(Q,p.left);</span><br><span class="line">        &#125;</span><br><span class="line">        if(p.right != null)&#123;</span><br><span class="line">            Enqueue(Q,p.right);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+
+</li>
+</ul>
+<ul>
+<li><h3 id="总结"><a href="#总结" class="headerlink" title="总结"></a><strong>总结</strong></h3><p>二叉树是数据结构中非常重要的一环，弄懂其相关操作对于后续的学习也是十分重要，Java中的Treemap以及Hashmap中都有红黑树的引入，红黑树就是二叉树的一种特殊存在，通常我们也叫它黑高平衡树，后面再详细描述~</p>
+<p><img src="/2020/11/26/20201126-blbinarytree/1.jpeg" alt></p>
+</li>
+</ul>
+
+          
+        
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+    
+      
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
     <link itemprop="mainEntityOfPage" href="http://stevenhoukai.github.io/2020/11/26/20201127-golangprectice1/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -1811,181 +2032,6 @@ ok搭建完成。
 
 
     
-      
-
-  
-
-  
-  
-  
-
-  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
-  
-  
-  
-  <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="http://stevenhoukai.github.io/2019/11/17/20191117-quartz-devuse/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="name" content="史蒂芬猴">
-      <meta itemprop="description" content>
-      <meta itemprop="image" content="/upload/images/avatar.jpg">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="迷途小书童">
-    </span>
-
-    
-      <header class="post-header">
-
-        
-        
-          <h1 class="post-title" itemprop="name headline">
-                
-                <a class="post-title-link" href="/2019/11/17/20191117-quartz-devuse/" itemprop="url">Quartz---3、定时任务开发手册1--基础使用篇</a></h1>
-        
-
-        <div class="post-meta">
-          <span class="post-time">
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">发表于</span>
-              
-              <time title="创建于" itemprop="dateCreated datePublished" datetime="2019-11-17T00:00:01+08:00">
-                2019-11-17
-              </time>
-            
-
-            
-
-            
-          </span>
-
-          
-            <span class="post-category">
-            
-              <span class="post-meta-divider">|</span>
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-folder-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">分类于</span>
-              
-              
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/Quartz/" itemprop="url" rel="index">
-                    <span itemprop="name">Quartz</span>
-                  </a>
-                </span>
-
-                
-                
-              
-            </span>
-          
-
-          
-            
-          
-
-          
-          
-
-          
-
-          
-
-          
-
-        </div>
-      </header>
-    
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-      
-
-      
-        
-          
-            <h1 id="项目结构说明"><a href="#项目结构说明" class="headerlink" title="项目结构说明"></a>项目结构说明</h1><h2 id="项目结构图"><a href="#项目结构图" class="headerlink" title="项目结构图"></a>项目结构图</h2><p><img src="/2019/11/17/20191117-quartz-devuse/1.jpg" alt="图p1"></p>
-<center>**图p1**</center>
-整体的后台任务项目结构如上图所述,我们在开发过程中只需要关注job类的编写以及相关调用服务类的编写并且在前台配置好执行计划即可，至于任务的执行计划也就是后台任务日志会由job监听器来自动完成。我们只需要关注业务代码编写即可,这里我们希望按照一种定义好的规范进行自定义job的编写，如下：  
-
-<h2 id="job类代码"><a href="#job类代码" class="headerlink" title="job类代码"></a>job类代码</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">/***</span><br><span class="line"> * 测试job类</span><br><span class="line"> */</span><br><span class="line">@Slf4j</span><br><span class="line">@DisallowConcurrentExecution</span><br><span class="line">public class Job extends QuartzJobBean &#123;</span><br><span class="line">    </span><br><span class="line">    @Autowired</span><br><span class="line">    TestService testService;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">    @Override</span><br><span class="line">    protected void executeInternal(JobExecutionContext jobExecutionContext) throws JobExecutionException &#123;</span><br><span class="line">        // 获取参数</span><br><span class="line">        JobDataMap jobDataMap = jobExecutionContext.getJobDetail().getJobDataMap();</span><br><span class="line">        // 业务逻辑 ...</span><br><span class="line">        testService.test();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>job类需要继承QuartzJobBean,并且复写executeInternal方法,这里需要注意不要直接在该方法内写业务代码因为可能会导至事务完整性问题,实际的业务代码需要在TestService中进行编写,并将该服务类注入到自定的job中进行业务调用。@DisallowConcurrentExecution注解不可缺少。</p>
-<h2 id="Service类代码"><a href="#Service类代码" class="headerlink" title="Service类代码"></a>Service类代码</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">@Service</span><br><span class="line">public class TestService &#123;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">    @Transactional(propagation = Propagation.REQUIRED)</span><br><span class="line">    public void test()&#123;</span><br><span class="line">        System.out.println(&quot;test&quot;);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">    @Transactional(propagation = Propagation.REQUIRES_NEW)</span><br><span class="line">    public void test_NEW()&#123;</span><br><span class="line">        System.out.println(&quot;test&quot;);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>如上代码，需要@Service注解让你的服务类被IOC容器管理，并且在你的业务方法上面使用@Transactional注解，至于传播属性需要根据实际业务情况进行使用,如果不存在事务嵌套的情况,上述两种方式基本都可以解决大部分的问题,下一篇文章中我们会详细分析一下遇到事务嵌套情况该如何处理(这是一个比较复杂的问题，可能需要对aop有一定深度的理解，下一篇中我们详细探讨一下)。</p>
-<h1 id="事务完整性演示"><a href="#事务完整性演示" class="headerlink" title="事务完整性演示"></a>事务完整性演示</h1><p>介绍完基本的开发方法,来检测一下是否按照上述标准事务完整性是正确的。<br>1、job类</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">@Slf4j</span><br><span class="line">@DisallowConcurrentExecution</span><br><span class="line">public class Job extends QuartzJobBean &#123;</span><br><span class="line"></span><br><span class="line">    @Autowired</span><br><span class="line">    TestService testService;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">    @Override</span><br><span class="line">    protected void executeInternal(JobExecutionContext jobExecutionContext) throws JobExecutionException &#123;</span><br><span class="line">        // 获取参数</span><br><span class="line">        JobDataMap jobDataMap = jobExecutionContext.getJobDetail().getJobDataMap();</span><br><span class="line">        // 业务逻辑 ...</span><br><span class="line">        System.out.println(&quot;job start&quot;);</span><br><span class="line">        testService.test();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>2、service类</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line">@Service</span><br><span class="line">public class TestService &#123;</span><br><span class="line"></span><br><span class="line">    @Autowired</span><br><span class="line">    JdbcTemplate jdbcTemplate;</span><br><span class="line"></span><br><span class="line">    @Transactional(propagation = Propagation.REQUIRED)</span><br><span class="line">    public void test()&#123;</span><br><span class="line">        System.out.println(&quot;test&quot;);</span><br><span class="line">        jdbcTemplate.execute(&quot;insert into quartz_test(code,name) values(1,&apos;111&apos;) &quot;);</span><br><span class="line">        int j = 1/0;//注意这里</span><br><span class="line">        jdbcTemplate.execute(&quot;insert into quartz_test(code,name) values(2,&apos;222&apos;) &quot;);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">    @Transactional(propagation = Propagation.REQUIRES_NEW)</span><br><span class="line">    public void test_NEW()&#123;</span><br><span class="line">        System.out.println(&quot;test&quot;);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>3、注册任务项目启动后每隔15秒执行一次</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">@Component</span><br><span class="line">@Order(value = 1)</span><br><span class="line">public class AgentApplicationRun implements CommandLineRunner &#123;</span><br><span class="line"></span><br><span class="line">	@Autowired</span><br><span class="line">	QuartzService quartzService;</span><br><span class="line"></span><br><span class="line">	@Override</span><br><span class="line">	public void run(String... strings) throws Exception &#123;</span><br><span class="line">		HashMap&lt;String,Object&gt; map = new HashMap&lt;&gt;();</span><br><span class="line">		map.put(&quot;name&quot;,3);</span><br><span class="line">		quartzService.deleteJob(&quot;job3&quot;, &quot;icbc&quot;);</span><br><span class="line">		quartzService.addJob(Job.class, &quot;job3&quot;, &quot;icbc&quot;, &quot;15 * * * * ?&quot;,&quot;job任务3&quot;, map, new Date(),new Date(new Date().getTime()+1000000));</span><br><span class="line"></span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-
-<p>4、执行结果<br>4.1 服务代码中int j = 1/0没有注释掉<br><img src="/2019/11/17/20191117-quartz-devuse/2.png" alt="图p2"></p>
-<center>**图p2**</center>  
-上图我们看到任务执行，并且如期抛出了/0异常，我们再检查数据库中的确一条数据也没有
-
-<p><img src="/2019/11/17/20191117-quartz-devuse/3.jpg" alt="图p3"></p>
-<center>**图p3**</center>
-
-<p>4.1 下面我们把服务代码中int j = 1/0注释掉，再看执行结果<br><img src="/2019/11/17/20191117-quartz-devuse/4.jpg" alt="图p4"></p>
-<center>**图p4**</center>  
-上图我们看到任务执行，并且没有抛出异常，我们再检查数据库中的确两条数据都进去了
-
-<p><img src="/2019/11/17/20191117-quartz-devuse/5.jpg" alt="图p5"></p>
-<center>**图p5**</center>
-
-<h1 id="定制任务计划说明"><a href="#定制任务计划说明" class="headerlink" title="定制任务计划说明"></a>定制任务计划说明</h1><h3 id="最后需要很强调一点-由于quartz有一个复杂的misfired机制-本人暂时也没有摸的很清楚-希望在前台定制执行计划的时候选择任务开始时间时尽量选择在当前时间之后-也就是你点击保存按钮之后的时间最佳-否则就有可能出现第一次执行任务出现misfired情况-轮到第二次执行任务时会立即执行两次或两次以上-这都是由于quartz内部不同的trigger类型采用了不同的misfired机制导致的。"><a href="#最后需要很强调一点-由于quartz有一个复杂的misfired机制-本人暂时也没有摸的很清楚-希望在前台定制执行计划的时候选择任务开始时间时尽量选择在当前时间之后-也就是你点击保存按钮之后的时间最佳-否则就有可能出现第一次执行任务出现misfired情况-轮到第二次执行任务时会立即执行两次或两次以上-这都是由于quartz内部不同的trigger类型采用了不同的misfired机制导致的。" class="headerlink" title="最后需要很强调一点,由于quartz有一个复杂的misfired机制,本人暂时也没有摸的很清楚,希望在前台定制执行计划的时候选择任务开始时间时尽量选择在当前时间之后,也就是你点击保存按钮之后的时间最佳,否则就有可能出现第一次执行任务出现misfired情况,轮到第二次执行任务时会立即执行两次或两次以上,这都是由于quartz内部不同的trigger类型采用了不同的misfired机制导致的。"></a>最后需要很强调一点,由于quartz有一个复杂的misfired机制,本人暂时也没有摸的很清楚,希望在前台定制执行计划的时候选择任务开始时间时尽量选择在当前时间之后,也就是你点击保存按钮之后的时间最佳,否则就有可能出现第一次执行任务出现misfired情况,轮到第二次执行任务时会立即执行两次或两次以上,这都是由于quartz内部不同的trigger类型采用了不同的misfired机制导致的。</h3>
-          
-        
-      
-    </div>
-    
-    
-    
-
-    
-
-    
-
-    
-
-    <footer class="post-footer">
-      
-
-      
-
-      
-
-      
-      
-        <div class="post-eof"></div>
-      
-    </footer>
-  </div>
-  
-  
-  
-  </article>
-
-
-    
   </section>
 
   
@@ -2038,7 +2084,7 @@ ok搭建完成。
               
                 <a href="/archives/">
               
-                  <span class="site-state-item-count">41</span>
+                  <span class="site-state-item-count">42</span>
                   <span class="site-state-item-name">日志</span>
                 </a>
               </div>
@@ -2049,7 +2095,7 @@ ok搭建完成。
               
               <div class="site-state-item site-state-categories">
                 <a href="/categories/index.html">
-                  <span class="site-state-item-count">23</span>
+                  <span class="site-state-item-count">24</span>
                   <span class="site-state-item-name">分类</span>
                 </a>
               </div>
@@ -2060,7 +2106,7 @@ ok搭建完成。
               
               <div class="site-state-item site-state-tags">
                 <a href="/tags/index.html">
-                  <span class="site-state-item-count">34</span>
+                  <span class="site-state-item-count">35</span>
                   <span class="site-state-item-name">标签</span>
                 </a>
               </div>

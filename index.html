@@ -295,6 +295,314 @@
   
   
   <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://stevenhoukai.github.io/2022/03/17/20220313-protobuf/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="史蒂芬猴">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/upload/images/avatar.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="迷途小书童">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+                
+                <a class="post-title-link" href="/2022/03/17/20220313-protobuf/" itemprop="url">为什么要用protobuf？</a></h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2022-03-17T00:00:01+08:00">
+                2022-03-17
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/协议/" itemprop="url" rel="index">
+                    <span itemprop="name">协议</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          
+            <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>之前做java开发，服务间相互调用用的最多的就是java原生序列化和json序列化协议，然而后面去了大厂做golang开发基本都是采用pb了，刚开始以为只是规范使然，然而通过后面的学习发现pb确实是全方位领先于其他各种序列化协议的，简单来说就是pb不仅更快而且更小，下面就来细细的探讨一番。</p>
+<h2 id="bp为什么这么屌"><a href="#bp为什么这么屌" class="headerlink" title="bp为什么这么屌"></a><strong>bp为什么这么屌</strong></h2><p><strong>官方测试</strong></p>
+<p>那么pb究竟实战有多屌了，先看两幅官方测试报告图：</p>
+<img src="/2022/03/17/20220313-protobuf/1.png" style="zoom: 100%;">
+
+<p>​                                                                                           <u>解包耗时</u></p>
+<img src="/2022/03/17/20220313-protobuf/2.png" style="zoom: 100%;">
+
+<p>​                                                                                           <u>数据包压缩后大小</u></p>
+<p>可以很明显的看到，一条消息数据，用<code>protobuf</code>序列化后的大小是<code>json</code>的10分之一，是<code>xml</code>格式的20分之一，但是性能却是它们的5~100倍。</p>
+<p><strong>为什么用pb对数据包压缩后更小</strong></p>
+<p>下面以<code>json</code>数据为基础出发，通过一步一步的对它进行优化，来理解<code>protobuf</code>的实现原理。</p>
+<p>例如有一条信息，用<code>json</code>的表示方式如下：</p>
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&#123; <span class="attr">"age"</span>: <span class="number">32</span>, <span class="attr">"name"</span>: <span class="string">"xxx"</span>,  <span class="attr">"height"</span>: <span class="number">170</span>, <span class="attr">"weight"</span>: <span class="number">106</span> &#125;</span><br></pre></td></tr></table></figure>
+
+<p>很明显，整个json串种包含着很多可有可无的字符，例如”,” “:”等，为了把数据变的更小一点，我可能就会采取如下处理方式：</p>
+<table>
+<thead>
+<tr>
+<th align="center">32</th>
+<th align="center">xxx</th>
+<th align="center">170</th>
+<th align="center">106</th>
+</tr>
+</thead>
+</table>
+<p>这里直接舍去了全部不必要的冗余字符，这里其实已经对数据进行了大幅缩减了，但是这时会出现一些新的问题，接收端接收到数据后咋知道32对应的是那个字段，xxx又是对应的哪个字段，也就是字段的对应问题这时是无法解决的。</p>
+<p>那我们可以对字段都编个号，接收端接收到数据后就按照这个编号进行解析即可，如下：</p>
+<table>
+<thead>
+<tr>
+<th align="center">字段1：age</th>
+<th align="center">字段2：name</th>
+<th align="center">字段3： height</th>
+<th align="center">字段4：weight</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="center">↓</td>
+<td align="center">↓</td>
+<td align="center">↓</td>
+<td align="center">↓</td>
+</tr>
+<tr>
+<td align="center">32</td>
+<td align="center">Xxx</td>
+<td align="center">170</td>
+<td align="center">106</td>
+</tr>
+</tbody></table>
+<p>这样看来就完美达成目的了</p>
+<p><strong>新的问题以及解决方案</strong></p>
+<p>虽然上述方案可以达到解决问题的目的，但是我们来假设一下下面的情况<code>height</code>这个字段为<code>null</code>，也就是没有值，那么传递的数据就会变成如下：</p>
+<table>
+<thead>
+<tr>
+<th align="center">32</th>
+<th align="center">xxx</th>
+<th align="center">106</th>
+</tr>
+</thead>
+</table>
+<p>但是在接收端，解析数据并按照顺序进行字段匹配的时候就会出问题：</p>
+<table>
+<thead>
+<tr>
+<th align="center">字段1：age</th>
+<th align="center">字段2：name</th>
+<th align="center">字段3： height</th>
+<th align="center">字段4：weight</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="center">↓</td>
+<td align="center">↓</td>
+<td align="center">↓</td>
+<td align="center">↓</td>
+</tr>
+<tr>
+<td align="center">32</td>
+<td align="center">xxx</td>
+<td align="center">106</td>
+<td align="center"></td>
+</tr>
+</tbody></table>
+<p>很明显数据已经乱套了，原本weight的值解析到了height字段，那为了解决这个问题，pb引入了一个名为<code>tag</code>的技术：</p>
+<table>
+<thead>
+<tr>
+<th align="center">tag|30</th>
+<th align="center">tag|zhangsan</th>
+<th align="center">tag|175.33</th>
+<th align="center">tag|140</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="center"></td>
+<td align="center"></td>
+<td align="center"></td>
+<td align="center"></td>
+</tr>
+</tbody></table>
+<p>也就是说，每个字段我们都用<code>tag|value</code>的方式来存储的，在<code>tag</code>当中记录两种信息，一个是<code>value</code>对应的字段的编号，另一个是<code>value</code>的数据类型（比如是整形还是字符串等），因为<code>tag</code>中有字段编号信息，所以即使没有传递<code>height</code>字段的<code>value</code>值，根据编号也能正确的配对。细心的朋友可能已经发现了，乍一看这个方案跟json的key/value方案无异啊，绕了一圈又回到了原点？哈哈，莫急，让我慢慢道来。</p>
+<p><strong>Tag的开销</strong></p>
+<p>接着上面的问题我们继续……</p>
+<p>这个问题其实问的相当好，<code>json</code>中的<code>key</code>其实是字符串，我们知道每个字符会占据一个字节，所以像<code>name</code>这个<code>key</code>就会占据4个字节，但在<code>protobuf</code>中，<code>tag</code>使用二进制进行存储，一般只会占据一个字节，它的核心代码为：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">int</span> <span class="title">makeTag</span><span class="params">(<span class="keyword">final</span> <span class="keyword">int</span> fieldNumber, <span class="keyword">final</span> <span class="keyword">int</span> wireType)</span> </span>&#123;</span><br><span class="line">  <span class="keyword">return</span> (fieldNumber &lt;&lt; <span class="number">3</span>) | wireType;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><code>fieldNumber</code>表示后面的<code>value</code>所对应的字段的编号是多少，比如<code>fieldNumber</code>为1，就表示<code>age</code>，如果为2，就表示<code>name</code>等；<code>wireType</code>表示<code>value</code>的数据类型，以此来计算<code>value</code>占用字节的大小。在<code>protobuf</code>当中，<code>wireType</code>可以支持的字段类型如下：</p>
+<img src="/2022/03/17/20220313-protobuf/3.png" style="zoom: 100%;">
+
+<p>因为<code>tag</code>一般占用一个字节，开销还算是比较小的，所以<code>protobuf</code>整体的存储空间占用还是相对小了很多的。</p>
+<p>看完上面的说辞是否还是不太理解，下面我来举个例子就很清晰了，例如上面的0-5种数据类型分别对应二进制位 000～101，排序第一的字段age生成的tag就是00001000，一个字节前5位表示序号后三位表示类型。</p>
+<p>此时出现一个新问题，那么Tag分隔符为一个字节，如果传输的内容中出现相同的字节，会导致解析错误吗？这里就需要了解一下什么是Varint编码。</p>
+<p><strong>Varint编码</strong></p>
+<p>这里直接通过实例来进行说明更为直观，如图：</p>
+<img src="/2022/03/17/20220313-protobuf/4.png" style="zoom: 100%;">
+
+<p>图中对数字123456进行varint编码，123456用二进制表示为 <code>11110001001000000</code>，每次从低向高取7位再加上最高有效位变成 <code>11000000</code> <code>11000100</code> <code>00000111</code> 所以经过varint编码后123456占用三个字节分别为 <code>1921967</code>,同样解码的时候就逆向操作即可，通过这样的方式我们就省掉一个字节的开销，其实通常在实际项目我们传输的int一般来说都是比较小的，所以这样的设计也是非常ok的。</p>
+<p><strong>Zigzag编码</strong></p>
+<p>上面的设计看似完美，但是其实我们仔细思考一下，如果是-1这种负数改如何是好？</p>
+<p>-1 –&gt; 11111111 11111111 11111111 11111111</p>
+<p>如果继续采用上面的方式并不是一个好的选择，这里就不得不说zigzag编码方式了</p>
+<p>直接看表格吧</p>
+<table>
+<thead>
+<tr>
+<th>原始的带符号数</th>
+<th>zigzag编码后的表示</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>0</td>
+<td>0</td>
+</tr>
+<tr>
+<td>-1</td>
+<td>1</td>
+</tr>
+<tr>
+<td>1</td>
+<td>2</td>
+</tr>
+<tr>
+<td>-2</td>
+<td>3</td>
+</tr>
+<tr>
+<td>……</td>
+<td>……</td>
+</tr>
+<tr>
+<td>2147483647</td>
+<td>4294967294</td>
+</tr>
+<tr>
+<td>-2147483647</td>
+<td>4294967295</td>
+</tr>
+</tbody></table>
+<p>能看到编码方式就是  ：</p>
+<p>负数 2 *|x| - 1  正数 2 * |x|  是不是很简单又很神奇。这里提一句即使使用该编码方式后续也还是会使用varint再进行编码的。</p>
+<p><strong>Tag-Length-Value(TLV)</strong></p>
+<p>我们之前讲的varint又或者是zigtag都是以传输数字为基础的，那如果我们传输的是字符串了？那么引出了另一主角TLV，Tag为分隔符，Length为长度但是我们同样采用varint编码的方式。</p>
+<p>接下来我们回到最开始的问题，会出现解析错误的问题吗？</p>
+<p>我们来尝试推导一下解析过程 : 如果一开始是要传输一个数字，我们拿到了第一个Tag，解析出它的fieldNumber和wireType，因为采用的是varint的编码方式（zigzag后也是采用varint再次进行编码的），高位为1表示下一个字节还是数字，如果为0则表示下一个字节就是Tag了。如果一开始传输的是一个字符串，那么拿到Tag后就知道接下来的是一个字符串，那么下一个字节就开始解析Length，Length同样还是使用varint编码，遇到高位为0后表示该Length解析完毕，我们就能拿到value的长度了，接下来按照长度取完字符串后，下一个字节就是Tag了。以此类推，pb永远都清楚的知道哪一个字节是Tag，所以现在还疑惑吗？</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>Protobuf确实是目前最好的数据传输协议没有之一，当然我们不仅是要会用也要知道为啥要用～</p>
+<img src="/2022/03/17/20220313-protobuf/5.jpg" style="zoom: 100%;">
+          
+        
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+    
+      
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
     <link itemprop="mainEntityOfPage" href="http://stevenhoukai.github.io/2022/02/19/20220219-pulsar-sub/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -1961,156 +2269,6 @@
 
 
     
-      
-
-  
-
-  
-  
-  
-
-  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
-  
-  
-  
-  <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="http://stevenhoukai.github.io/2021/09/03/20210903-goroutinepool/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="name" content="史蒂芬猴">
-      <meta itemprop="description" content>
-      <meta itemprop="image" content="/upload/images/avatar.jpg">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="迷途小书童">
-    </span>
-
-    
-      <header class="post-header">
-
-        
-        
-          <h1 class="post-title" itemprop="name headline">
-                
-                <a class="post-title-link" href="/2021/09/03/20210903-goroutinepool/" itemprop="url">简易协程池</a></h1>
-        
-
-        <div class="post-meta">
-          <span class="post-time">
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">发表于</span>
-              
-              <time title="创建于" itemprop="dateCreated datePublished" datetime="2021-09-03T00:00:01+08:00">
-                2021-09-03
-              </time>
-            
-
-            
-
-            
-          </span>
-
-          
-            <span class="post-category">
-            
-              <span class="post-meta-divider">|</span>
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-folder-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">分类于</span>
-              
-              
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/Golang/" itemprop="url" rel="index">
-                    <span itemprop="name">Golang</span>
-                  </a>
-                </span>
-
-                
-                
-              
-            </span>
-          
-
-          
-            
-          
-
-          
-          
-
-          
-
-          
-
-          
-
-        </div>
-      </header>
-    
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-      
-
-      
-        
-          
-            <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>Go 的 goroutine 提供了一种较线程而言更廉价的方式处理并发场景, go 使用二级线程的模式, 将 goroutine 以 M:N 的形式复用到系统线程上, 节省了 cpu 调度的开销, 也避免了用户级线程（协程）进行系统调用时阻塞整个系统线程的问题。</p>
-<p>但在实际的开发中如果待执行的tasks数量过多，可能带来的问题就是goroutine数量激增进而导致调度性能下降、GC 频繁、内存暴涨, 引发一系列问题。在面临这样的场景时, 限制 goroutine 的数量、重用 goroutine 显然很有价值。所以可以通过一个goroutine池来对所有的tasks进行排队执行，类似下面就是一个简单的goroutine池，通过定量的goroutine来进行任务的消费。设计下面的协程池有三个重点问题是需要重点考虑到的<br>1.如何确保任务全部都被消费完？<br>2.子goroutine发生panic如何处理？<br>3.子goroutine如果全部发生panic了怎么办？放任死锁吗？</p>
-<p>这里并没考虑子goroutine执行时间太长的问题，主要原因我们可以自定义子goroutine的数量，我更希望的是任务能够执行完全而不是任务什么时候执行完，任务执行时间太长应该是业务侧的问题。</p>
-<h2 id="代码展示"><a href="#代码展示" class="headerlink" title="代码展示"></a>代码展示</h2><figure class="highlight gcode"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br></pre></td><td class="code"><pre><span class="line">import <span class="comment">(</span></span><br><span class="line"><span class="comment">    "sync"</span></span><br><span class="line"><span class="comment">    "sync/atomic"</span></span><br><span class="line"><span class="comment"> </span></span><br><span class="line"><span class="comment">    "git.code.oa.com/trpc-go/trpc-go/errs"</span></span><br><span class="line"><span class="comment">    "git.code.oa.com/trpc-go/trpc-go/log"</span></span><br><span class="line"><span class="comment">)</span></span><br><span class="line"> </span><br><span class="line"><span class="comment">//自定义简单协程池 统一管理并发协程</span></span><br><span class="line"><span class="comment">//整体思路:定量的协程从同一个任务队列循环消费任务</span></span><br><span class="line"><span class="comment">//缺点:目前功能对协程超时情况存在缺陷 初始化函数中没有对初始化数量进行校验</span></span><br><span class="line">type Pool struct &#123;</span><br><span class="line">    TaskQueue      chan func() error //任务队列</span><br><span class="line">    WorkerNumber   int               //初始化worker数量</span><br><span class="line">    TaskNumber     int               //待消费任务数量</span><br><span class="line">    ResultQuene    chan error        //返回结果队列</span><br><span class="line">    FinishCallback func()            //全部任务消费完成的回调函数</span><br><span class="line">    runningWorkers int64             //运行中的worker数</span><br><span class="line">    sync.Mutex</span><br><span class="line">    <span class="comment">// PanicHandler   func(interface&#123;&#125;) //协程panic的处理函数 防止协程panic后导致主协程崩溃</span></span><br><span class="line">&#125;</span><br><span class="line"> </span><br><span class="line"><span class="comment">//初始化 根据自定义需求设定worker数量以及任务队列长度</span></span><br><span class="line">func (self *Pool) Init(WorkerNumber int, TaskNumber int) &#123;</span><br><span class="line">    self.WorkerNumber = WorkerNumber</span><br><span class="line">    self.TaskNumber = TaskNumber</span><br><span class="line">    self.TaskQueue = make(chan func() error, TaskNumber)</span><br><span class="line">    self.ResultQuene = make(chan error, TaskNumber)</span><br><span class="line">&#125;</span><br><span class="line"> </span><br><span class="line"><span class="comment">//开启worker的消费动作</span></span><br><span class="line">func (self *Pool) Start() &#123;</span><br><span class="line">    <span class="comment">//默认开启 WorkerNumber个goruntine</span></span><br><span class="line">    for i := 0; i &lt; self.WorkerNumber; i++ &#123;</span><br><span class="line">        self.runGroutine()</span><br><span class="line">    &#125;</span><br><span class="line"> </span><br><span class="line">    <span class="comment">//获取每个任务的处理结果</span></span><br><span class="line">    for j := 0; j &lt; self.TaskNumber; j++ &#123;</span><br><span class="line">        err, ok := &lt;-self.ResultQue<span class="symbol">ne</span></span><br><span class="line">        //这里可以通过自定义决定是否上报日志</span><br><span class="line">        <span class="keyword">if</span> !ok &#123;</span><br><span class="line">            break</span><br><span class="line">        &#125; else &#123;</span><br><span class="line">            if err != nil &#123;</span><br><span class="line">                log.Error<span class="comment">(err.Error()</span>)</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"> </span><br><span class="line">    <span class="comment">//结束时的回调函数 可以做一些通知操作等等</span></span><br><span class="line">    if self.FinishCallback != nil &#123;</span><br><span class="line">        self.FinishCallback()</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"> </span><br><span class="line"><span class="comment">//运行一个groutine 开始消费任务</span></span><br><span class="line">func (self *Pool) runGroutine() &#123; // runningWorkers + 1</span><br><span class="line">    self.incRunningWorkers() //worker运行ing数量原子自增1</span><br><span class="line">    go func() &#123;</span><br><span class="line">        defer func() &#123;</span><br><span class="line">            self.decRunningWorkers() //worker运行ing数量原子自减1</span><br><span class="line">            if r := recover(); r != nil &#123;</span><br><span class="line">                <span class="comment">// if self.PanicHandler != nil &#123;</span></span><br><span class="line">                <span class="comment">//  self.PanicHandler(r)</span></span><br><span class="line">                <span class="comment">// &#125; else &#123;</span></span><br><span class="line">                <span class="comment">//  log.Printf("Worker panic: %s\n", r)</span></span><br><span class="line">                <span class="comment">// &#125;</span></span><br><span class="line">                err := errs.New(Panic_Sub_Goroutine, "子协程panic") //子协程panic是会导致主协程挂掉的，这一步也是必须进行捕获处理</span><br><span class="line">                self.ResultQuene &lt;- err</span><br><span class="line">            &#125;</span><br><span class="line">            self.checkWorker<span class="comment">()</span> <span class="comment">// 兜底机制，避免worker全部panic后没有worker消费队列中的数据,理论上这一步非常重要！否则有可能出现死锁状态</span></span><br><span class="line">        &#125;<span class="comment">()</span></span><br><span class="line">        for &#123;</span><br><span class="line">            select &#123;</span><br><span class="line">            case task, ok := &lt;-self.TaskQueue:</span><br><span class="line">                <span class="keyword">if</span> !ok &#123;</span><br><span class="line">                    <span class="comment">//break 这里用break导致线上遇到了一个cpu被打满的bug 下一篇文章中进行说明</span></span><br><span class="line">                    retur<span class="symbol">n</span></span><br><span class="line">                &#125;</span><br><span class="line">                err := task<span class="comment">()</span></span><br><span class="line">                self.ResultQuene &lt;- err</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;<span class="comment">()</span></span><br><span class="line">&#125;</span><br><span class="line"> </span><br><span class="line">func (self *Pool) incRunningWorkers() &#123; // runningWorkers + 1</span><br><span class="line">    atomic.AddI<span class="symbol">nt64</span><span class="comment">(&amp;self.runningWorkers, 1)</span></span><br><span class="line">&#125;</span><br><span class="line"> </span><br><span class="line">func (self *Pool) decRunningWorkers() &#123; // runningWorkers - 1</span><br><span class="line">    atomic.AddI<span class="symbol">nt64</span><span class="comment">(&amp;self.runningWorkers, -1)</span></span><br><span class="line">&#125;</span><br><span class="line"> </span><br><span class="line">func (self *Pool) GetRunningWorkers() int64 &#123;</span><br><span class="line">    return atomic.LoadInt64(&amp;self.runningWorkers)</span><br><span class="line">&#125;</span><br><span class="line"> </span><br><span class="line">func (self *Pool) checkWorker() &#123;</span><br><span class="line">    self.Lock<span class="comment">()</span></span><br><span class="line">    defer self.Unlock()</span><br><span class="line"> </span><br><span class="line">    if self.GetRunningWorkers() == 0 &amp;&amp; len(self.TaskQueue) &gt; 0 &#123;</span><br><span class="line">        self.runGroutine()</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"> </span><br><span class="line"><span class="comment">//关闭通道避免内存泄漏</span></span><br><span class="line">func (self *Pool) Stop() &#123;</span><br><span class="line">    close<span class="comment">(self.TaskQueue)</span></span><br><span class="line">    close<span class="comment">(self.ResultQuene)</span></span><br><span class="line">&#125;</span><br><span class="line"> </span><br><span class="line"><span class="comment">//任务入队</span></span><br><span class="line">func (self *Pool) AddTask(task func() error) &#123;</span><br><span class="line">    self.TaskQueue &lt;- task</span><br><span class="line">&#125;</span><br><span class="line"> </span><br><span class="line"><span class="comment">//执行结束后的回调</span></span><br><span class="line">func (self *Pool) SetFinishCallback(fun func()) &#123;</span><br><span class="line">    self.FinishCallback = fun</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<h2 id="使用方法"><a href="#使用方法" class="headerlink" title="使用方法"></a>使用方法</h2><figure class="highlight gcode"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line">ctx := context.Background()</span><br><span class="line">ids := make<span class="comment">([]int32, 0)</span></span><br><span class="line">var pool comm.Pool</span><br><span class="line">pool.Init(50, len(ids))</span><br><span class="line">count := int32(0)</span><br><span class="line">for _, id := range ids &#123;</span><br><span class="line">    idValue := id</span><br><span class="line">    pool.AddTask<span class="comment">(func()</span> error &#123;</span><br><span class="line">        return func(innerId int32) error &#123;</span><br><span class="line">            err := DoSomething(innerId)</span><br><span class="line">            if err != nil &#123;</span><br><span class="line">                log.ErrorContextf(ctx, "DoSomething failed, id:%d err:%s", innerId, err.Error())</span><br><span class="line">                return nil</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="comment">//以上执行无问题，完成数就+1</span></span><br><span class="line">            atomic.AddI<span class="symbol">nt32</span><span class="comment">(&amp;count, 1)</span></span><br><span class="line">            return nil</span><br><span class="line">        &#125;<span class="comment">(int32(idValue)</span>)</span><br><span class="line">    &#125;)</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">//回调</span></span><br><span class="line">pool.SetFinishCallback(func() &#123;</span><br><span class="line">    <span class="comment">//自定义通知操作</span></span><br><span class="line">    fmt.Println("all done")</span><br><span class="line">&#125;)</span><br><span class="line"><span class="comment">//开始执行</span></span><br><span class="line">pool.Start<span class="comment">()</span></span><br><span class="line"><span class="comment">//关闭资源</span></span><br><span class="line">pool.Stop<span class="comment">()</span></span><br></pre></td></tr></table></figure>
-
-<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>池化管理自己的goroutine是非常有必要的，可以帮助我们提升开发效率降低异常风险！所以赶紧把你的goroutine管理起来吧</p>
-<p><img src="/2021/09/03/20210903-goroutinepool/6.jpg" alt></p>
-
-          
-        
-      
-    </div>
-    
-    
-    
-
-    
-
-    
-
-    
-
-    <footer class="post-footer">
-      
-
-      
-
-      
-
-      
-      
-        <div class="post-eof"></div>
-      
-    </footer>
-  </div>
-  
-  
-  
-  </article>
-
-
-    
   </section>
 
   
@@ -2163,7 +2321,7 @@
               
                 <a href="/archives/">
               
-                  <span class="site-state-item-count">41</span>
+                  <span class="site-state-item-count">42</span>
                   <span class="site-state-item-name">日志</span>
                 </a>
               </div>
@@ -2174,7 +2332,7 @@
               
               <div class="site-state-item site-state-categories">
                 <a href="/categories/index.html">
-                  <span class="site-state-item-count">23</span>
+                  <span class="site-state-item-count">24</span>
                   <span class="site-state-item-name">分类</span>
                 </a>
               </div>
@@ -2185,7 +2343,7 @@
               
               <div class="site-state-item site-state-tags">
                 <a href="/tags/index.html">
-                  <span class="site-state-item-count">34</span>
+                  <span class="site-state-item-count">35</span>
                   <span class="site-state-item-name">标签</span>
                 </a>
               </div>
