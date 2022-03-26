@@ -295,6 +295,195 @@
   
   
   <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://stevenhoukai.github.io/2019/08/05/20190805/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="史蒂芬猴">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/upload/images/avatar.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="迷途小书童">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+                
+                <a class="post-title-link" href="/2019/08/05/20190805/" itemprop="url">java提升篇--1(简单模拟NC服务端客户端通讯模型---RMI)</a></h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2019-08-05T00:00:01+08:00">
+                2019-08-05
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/java高级篇/" itemprop="url" rel="index">
+                    <span itemprop="name">java高级篇</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          
+            <h2 id="第一节-RMI-Remote-Mothed-invoke-是什么？"><a href="#第一节-RMI-Remote-Mothed-invoke-是什么？" class="headerlink" title="第一节 RMI(Remote Mothed invoke)是什么？"></a>第一节 RMI(Remote Mothed invoke)是什么？</h2><p>一句话简单总结，我个人认为RMI就是RPC的java版本实现，当然他们本身底层也有很大的区别，比如序列化协议，网络通讯模型等等，今天我们就来简单的学习一下NC使用的RMI技术；</p>
+<h2 id="第二节-RMI简单实现"><a href="#第二节-RMI简单实现" class="headerlink" title="第二节 RMI简单实现"></a>第二节 RMI简单实现</h2><p>废话不多说我们直接上代码，我这里区分了服务端与客户端，见下图:<br><img src="/2019/08/05/20190805/p1.png" alt="图p1"></p>
+<center>图p1、整体概况</center>
+- 服务端代码:        
+
+
+<ol>
+<li><p>HelloService接口存根</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">package RPC;</span><br><span class="line"></span><br><span class="line">public interface HelloService &#123;</span><br><span class="line">	public String hello(String  name);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>上述接口的实现类HelloServiceImpl</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">package RPC;</span><br><span class="line"></span><br><span class="line">public class HelloServiceImpl implements HelloService &#123;</span><br><span class="line"></span><br><span class="line">	@Override</span><br><span class="line">	public String hello(String name) &#123;</span><br><span class="line">		return name+&quot;:from hkserver!&quot;;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>服务器启动接口类</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">package RPC;</span><br><span class="line"></span><br><span class="line">import java.lang.reflect.InvocationTargetException;</span><br><span class="line">import java.util.HashMap;</span><br><span class="line">import java.util.Map;</span><br><span class="line"></span><br><span class="line">public interface Server &#123;</span><br><span class="line">	</span><br><span class="line">    //启动服务器</span><br><span class="line">	public void start() ;</span><br><span class="line">	//停止服务器</span><br><span class="line">	public void stop();</span><br><span class="line">	//往服务容器中注册服务</span><br><span class="line">	public void register() throws ClassNotFoundException;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>服务器实现类</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br></pre></td><td class="code"><pre><span class="line">package RPC;</span><br><span class="line"></span><br><span class="line">import java.io.IOException;</span><br><span class="line">import java.io.InputStream;</span><br><span class="line">import java.io.ObjectInputStream;</span><br><span class="line">import java.io.ObjectOutputStream;</span><br><span class="line">import java.io.OutputStream;</span><br><span class="line">import java.lang.reflect.InvocationTargetException;</span><br><span class="line">import java.lang.reflect.Method;</span><br><span class="line">import java.lang.reflect.TypeVariable;</span><br><span class="line">import java.net.InetSocketAddress;</span><br><span class="line">import java.net.ServerSocket;</span><br><span class="line">import java.net.Socket;</span><br><span class="line">import java.net.SocketAddress;</span><br><span class="line">import java.util.HashMap;</span><br><span class="line">import java.util.Map;</span><br><span class="line"></span><br><span class="line">public class ServerImpl implements Server &#123;</span><br><span class="line"></span><br><span class="line">	//注册中心用于处理</span><br><span class="line">	private Map&lt;String,Class&gt; serviceRegister = new HashMap&lt;String,Class&gt;();</span><br><span class="line">	</span><br><span class="line">	private static final int PORT = 9999;</span><br><span class="line">	</span><br><span class="line">	</span><br><span class="line">	//开放端口提供给client进行调用</span><br><span class="line">	@Override</span><br><span class="line">	public void start() &#123;</span><br><span class="line">		ServerSocket ss = null;</span><br><span class="line">		OutputStream os = null;</span><br><span class="line">		InputStream is = null;</span><br><span class="line">		Socket sk = null;</span><br><span class="line">		try &#123;</span><br><span class="line">			ss = new ServerSocket();</span><br><span class="line">			ss.bind(new InetSocketAddress(PORT));</span><br><span class="line">			sk = ss.accept();</span><br><span class="line">			//阻塞等待</span><br><span class="line">			is = sk.getInputStream();</span><br><span class="line">			ObjectInputStream ois = new ObjectInputStream(is);</span><br><span class="line">			String servicename = ois.readUTF();</span><br><span class="line">			String methodname = ois.readUTF();</span><br><span class="line">			Class[] paraTypes = (Class[])ois.readObject();</span><br><span class="line">			Object[] args= (Object[])ois.readObject();</span><br><span class="line">			Class serviceClass = serviceRegister.get(servicename);</span><br><span class="line">			@SuppressWarnings(&quot;unchecked&quot;)</span><br><span class="line">			Method invokeMethod = serviceClass.getMethod(methodname, paraTypes);</span><br><span class="line">			Object result = invokeMethod.invoke(serviceClass.newInstance(), args);</span><br><span class="line">			os = sk.getOutputStream();</span><br><span class="line">			ObjectOutputStream oos = new ObjectOutputStream(os);</span><br><span class="line">			oos.writeObject(result);</span><br><span class="line">			oos.flush();</span><br><span class="line">		&#125; catch (IOException e) &#123;</span><br><span class="line">			// TODO Auto-generated catch block</span><br><span class="line">			e.printStackTrace();</span><br><span class="line">		&#125; catch (ClassNotFoundException e) &#123;</span><br><span class="line">			// TODO Auto-generated catch block</span><br><span class="line">			e.printStackTrace();</span><br><span class="line">		&#125; catch (NoSuchMethodException e) &#123;</span><br><span class="line">			// TODO Auto-generated catch block</span><br><span class="line">			e.printStackTrace();</span><br><span class="line">		&#125; catch (SecurityException e) &#123;</span><br><span class="line">			// TODO Auto-generated catch block</span><br><span class="line">			e.printStackTrace();</span><br><span class="line">		&#125; catch (IllegalAccessException e) &#123;</span><br><span class="line">			// TODO Auto-generated catch block</span><br><span class="line">			e.printStackTrace();</span><br><span class="line">		&#125; catch (IllegalArgumentException e) &#123;</span><br><span class="line">			// TODO Auto-generated catch block</span><br><span class="line">			e.printStackTrace();</span><br><span class="line">		&#125; catch (InvocationTargetException e) &#123;</span><br><span class="line">			// TODO Auto-generated catch block</span><br><span class="line">			e.printStackTrace();</span><br><span class="line">		&#125; catch (InstantiationException e) &#123;</span><br><span class="line">			// TODO Auto-generated catch block</span><br><span class="line">			e.printStackTrace();</span><br><span class="line">		&#125;finally&#123;</span><br><span class="line">			if(os!=null)&#123;</span><br><span class="line">				try &#123;</span><br><span class="line">					os.close();</span><br><span class="line">				&#125; catch (IOException e) &#123;</span><br><span class="line">					e.printStackTrace();</span><br><span class="line">				&#125;</span><br><span class="line">			&#125;</span><br><span class="line">			if(is!=null)&#123;</span><br><span class="line">				try &#123;</span><br><span class="line">					is.close();</span><br><span class="line">				&#125; catch (IOException e) &#123;</span><br><span class="line">					e.printStackTrace();</span><br><span class="line">				&#125;</span><br><span class="line">			&#125;</span><br><span class="line">			try &#123;</span><br><span class="line">				ss.close();</span><br><span class="line">				sk.close();</span><br><span class="line">			&#125; catch (IOException e) &#123;</span><br><span class="line">				// TODO Auto-generated catch block</span><br><span class="line">				e.printStackTrace();</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line">		</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	@Override</span><br><span class="line">	public void stop() &#123;</span><br><span class="line"></span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	@Override</span><br><span class="line">	public void register() throws ClassNotFoundException &#123;</span><br><span class="line">		serviceRegister.put(&quot;HelloService&quot;, Class.forName(&quot;RPC.HelloServiceImpl&quot;));</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+</li>
+</ol>
+<p>5.服务端main方法</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">package RPC;</span><br><span class="line"></span><br><span class="line">public class ServerMain &#123;</span><br><span class="line">	public static void main(String[] args)&#123;</span><br><span class="line">		ServerImpl center = new ServerImpl();</span><br><span class="line">		try &#123;</span><br><span class="line">			center.register();</span><br><span class="line">			center.start();</span><br><span class="line">		&#125; catch (Exception e) &#123;</span><br><span class="line">			// TODO Auto-generated catch block</span><br><span class="line">			e.printStackTrace();</span><br><span class="line">		&#125;</span><br><span class="line">		</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>以上我们服务端代码就完成了，简单而言就是通过一个main方法来启动我们的服务器，服务器启动的时候回向服务容器中注册我们的服务；（tips:这里我只是注册了一个服务实现类本身，如果结合之前我说过的日志记录以及事务处理等等，需要将服务实现类本身换成动态代理类）,我这里并没有实现服务器的多线程处理，如果需要同时为多个客户端服务，需要将sk = ss.accept();获取到的Socket对象放进一个新的Thread进行操作,也就是说每当有一个client连接到服务器，服务器就新建一个Thread对该客户端进行服务！NC服务端就是采用的这种方式，同步阻塞IO，伪异步线程池；</p>
+<ul>
+<li>客户端代码: </li>
+</ul>
+<ol>
+<li><p>HClient</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br></pre></td><td class="code"><pre><span class="line">package rpcclient;</span><br><span class="line"></span><br><span class="line">import java.io.IOException;</span><br><span class="line">import java.io.InputStream;</span><br><span class="line">import java.io.ObjectInputStream;</span><br><span class="line">import java.io.ObjectOutputStream;</span><br><span class="line">import java.io.OutputStream;</span><br><span class="line">import java.lang.reflect.InvocationHandler;</span><br><span class="line">import java.lang.reflect.Method;</span><br><span class="line">import java.lang.reflect.Proxy;</span><br><span class="line">import java.net.InetSocketAddress;</span><br><span class="line">import java.net.Socket;</span><br><span class="line"></span><br><span class="line">public class Client &#123;</span><br><span class="line"></span><br><span class="line">	// 获取代表服务端接口HelloService的动态代理对象</span><br><span class="line">	/*</span><br><span class="line">	 * @param</span><br><span class="line">	 */</span><br><span class="line">	public static &lt;T&gt; T getRemoteProxyObj(final String serviceName, final InetSocketAddress addr) throws ClassNotFoundException &#123;</span><br><span class="line">		final Class&lt;?&gt; forName = Class.forName(serviceName);</span><br><span class="line">		@SuppressWarnings(&quot;unchecked&quot;)</span><br><span class="line">		T newProxyInstance = (T) Proxy.newProxyInstance(forName.getClassLoader(), new Class[] &#123; forName &#125;,</span><br><span class="line">				new InvocationHandler() &#123;</span><br><span class="line">					@Override</span><br><span class="line">					public Object invoke(Object proxy, Method method, Object[] args) &#123;</span><br><span class="line">						Socket sk = new Socket();</span><br><span class="line">						OutputStream os = null;</span><br><span class="line">						InputStream is = null;</span><br><span class="line">						try&#123;</span><br><span class="line">					    sk.connect(addr);</span><br><span class="line">						os = sk.getOutputStream();</span><br><span class="line">						ObjectOutputStream oos = new ObjectOutputStream(os);</span><br><span class="line">						oos.writeUTF(forName.getSimpleName());</span><br><span class="line">						oos.writeUTF(method.getName());</span><br><span class="line">						oos.writeObject(method.getParameterTypes());</span><br><span class="line">						oos.writeObject(args);</span><br><span class="line">						oos.flush();</span><br><span class="line">						is = sk.getInputStream();</span><br><span class="line">						ObjectInputStream ois = new ObjectInputStream(is);</span><br><span class="line">						Object result = ois.readObject();</span><br><span class="line">						return result;</span><br><span class="line">						&#125;catch(Exception e)&#123;</span><br><span class="line">							return null;</span><br><span class="line">						&#125;finally&#123;</span><br><span class="line">							if(os!=null)&#123;</span><br><span class="line">								try &#123;</span><br><span class="line">									os.close();</span><br><span class="line">								&#125; catch (IOException e) &#123;</span><br><span class="line">									// TODO Auto-generated catch block</span><br><span class="line">									e.printStackTrace();</span><br><span class="line">								&#125;</span><br><span class="line">							&#125;</span><br><span class="line">							if(is!=null)&#123;</span><br><span class="line">								try &#123;</span><br><span class="line">									is.close();</span><br><span class="line">								&#125; catch (IOException e) &#123;</span><br><span class="line">									// TODO Auto-generated catch block</span><br><span class="line">									e.printStackTrace();</span><br><span class="line">								&#125;</span><br><span class="line">							&#125;</span><br><span class="line">							try &#123;</span><br><span class="line">								sk.close();</span><br><span class="line">							&#125; catch (IOException e) &#123;</span><br><span class="line">								// TODO Auto-generated catch block</span><br><span class="line">								e.printStackTrace();</span><br><span class="line">							&#125;</span><br><span class="line">						&#125;</span><br><span class="line">						</span><br><span class="line">					&#125;</span><br><span class="line">				&#125;);</span><br><span class="line">		return newProxyInstance;</span><br><span class="line">	&#125;</span><br><span class="line">	</span><br><span class="line">	public static void main(String[] args) throws ClassNotFoundException&#123;</span><br><span class="line">        /*由于我这里演示是本机演示，没有通过ngrok外网映射，如果你打通了外网映射，你就可以实现你的对外服务器啦*/</span><br><span class="line">		/*HelloService remoteProxyObj = (HelloService)getRemoteProxyObj(&quot;rpcclient.HelloService&quot;,new InetSocketAddress(&quot;free.idcfengye.com&quot;,18034));*/</span><br><span class="line">        HelloService remoteProxyObj = (HelloService)getRemoteProxyObj(&quot;rpcclient.HelloService&quot;,new InetSocketAddress(&quot;127.0.0.1&quot;,9999));</span><br><span class="line">		String result = remoteProxyObj.hello(&quot;hahaha&quot;);</span><br><span class="line">		System.out.println(result);</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>客户端服务存根HelloService(这也就解释了我们的NC的接口代码为什么要放在public下面，因为客户端需要这个类的信息)</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">package rpcclient;</span><br><span class="line"></span><br><span class="line">public interface HelloService &#123;</span><br><span class="line">	public String hello(String  name);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+</li>
+</ol>
+<p>以上就是我们的客户端代码，我们客户端只放了一个服务方法存根HelloService，那么我们是如何做到向服务端发送请求的了？答案就是动态代理，我们在获取HelloService对象的时候其实就是对该接口的匿名内部类实现进行了动态代理，然后再通过动态代理去向服务端发送请求，服务端拿到我们的请求方法名和请求参数等等去容器中寻找实现类并将执行结果返回到客户端，至此一次完整的RMI请求结束；</p>
+<h2 id="第三节-运行结果演示"><a href="#第三节-运行结果演示" class="headerlink" title="第三节 运行结果演示"></a>第三节 运行结果演示</h2><p>1、启动服务端main方法如下图：</p>
+<p><img src="/2019/08/05/20190805/p2.png" alt="图p2"></p>
+<center>图p2、服务启动等待客户端连接</center>
+
+<p>2、启动客户端连接服务器，发出请求得到结果:</p>
+<p><img src="/2019/08/05/20190805/p3.png" alt="图p3"></p>
+<center>图p3、客户端启动结果</center>
+
+
+<p>Slogan:学过几年技术，尘世间一枚不起眼的迷途小书童</p>
+
+          
+        
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+    
+      
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
     <link itemprop="mainEntityOfPage" href="http://stevenhoukai.github.io/2019/07/24/20190724/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -747,7 +936,7 @@
               
                 <a href="/archives/">
               
-                  <span class="site-state-item-count">42</span>
+                  <span class="site-state-item-count">43</span>
                   <span class="site-state-item-name">日志</span>
                 </a>
               </div>

@@ -1,6 +1,51 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
+    <title>go的string</title>
+    <url>/2022/03/24/20220324-gostring/</url>
+    <content><![CDATA[<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>从java转golang已经一年多了，过去的一年确实也挺坎坷的，国家打压部门解散，刚在支付组有一点感觉然后就没然后了，也没事后面活水到新部门继续肝，这不刚用go重构完一个十年前的c++系统，过程之痛苦一言难尽，但是痛苦归痛苦从中还是学到了不少，例如redis，pulsar这个之前已经写过好几篇基本的文章了，后续会更新一些自己在用法上的硬核知识，啊哦跑题了，本系列的核心是golang，用了一年多的golang是时候该总结一下了，俗话说的好学而时习之才能逆水行舟， 今天的主题是string～</p>
+<h2 id="string"><a href="#string" class="headerlink" title="string"></a><strong>string</strong></h2><h3 id="比特与字节"><a href="#比特与字节" class="headerlink" title="比特与字节"></a><strong>比特与字节</strong></h3><p>一个bit或者是0或者是1，8个bit组成一个字节，全部为0代表0，全部为1代表数字255，相信这个不必多说大家都知道了，一个字节可以表示256个数字，两个字节就是65536个数字了，更多的字节就可以表示更大的数字，如下图所示 :</p>
+<img src="/2022/03/24/20220324-gostring/1.png" style="zoom: 80%;">
+
+
+
+<h3 id="字符集"><a href="#字符集" class="headerlink" title="字符集"></a><strong>字符集</strong></h3><p>以上我们说的都是整数，那字符是怎样存储的了？一堆二进制是怎么转换成字符的了？不能直接展示那就通过数字中转一下，如下图 : 存储保持不变，多添加一层映射关系就能解决这个问题啦，尽可能多的将世界上出现的字符收录进来然后一一进行编号构建一张映射表，这个映射表就叫做字符集，下面展示了字符集的进化旅程，其实就是一个字符映射表不断完善的过程，直到最后被unicode统一规范。</p>
+<img src="/2022/03/24/20220324-gostring/2.png" style="zoom: 80%;">
+
+<h3 id="字符串存储（UTF-8）"><a href="#字符串存储（UTF-8）" class="headerlink" title="字符串存储（UTF-8）"></a><strong>字符串存储（UTF-8）</strong></h3><p>上面说明字符集，但是真的只是有了字符集就万事大吉了吗？来思考下该怎么存储 “世界aABb” ？</p>
+<p>最直接的想法是不是根据字符集找到每一个字符的编号存成二进制完事儿？来看看是不是就像下面这样，乍一看没有问题，但是仔细一看不对啊有的占一个字节有的占了三个字节，那我咋知道那一长串玩意儿要怎么划分了？这个方案显然不行…</p>
+<img src="/2022/03/24/20220324-gostring/3.png" style="zoom: 80%;">
+
+<p>于是我们应该能想到第一种方案 : 定长编码</p>
+<img src="/2022/03/24/20220324-gostring/4.png" style="zoom: 80%;">
+
+<p>这个方案，乍一看没有问题，然后再仔细一看确实也没有啥问题，就是浪费的字节稍微有点多……那可以怎么解决了？这里就引出了另外一种方案 : 变长编码，如下图所示：</p>
+<img src="/2022/03/24/20220324-gostring/5.png" style="zoom: 80%;">
+
+<p>这个图看着是不是有点懵逼，没关系，容我来稍微解释一下，每个字节分为标示位和实际数据两部分，例如第一行的0??? ????,如果数据在0～127之间，对应的编码模版就是以0标示开头后7位表示实际数据，如果数据在128～2047之间数据就占两字节，每个字节分别以固定的110和10两个固定标示开头，后面的也一样，其实就是通过固定的标示位来重新组装原来的二进制数据从而降低对内存的浪费。看到这里现在应该知道最开始的那个字符串该怎么存储了吧？</p>
+<img src="/2022/03/24/20220324-gostring/6.png" style="zoom: 80%;">
+
+<p>这其实就是我们熟知的UTF-8编码，也就是golang默认的编码方式，字符集和编码方式是需要相互配合才能达到最优方案的。接下来我们就可以来了解下golang的string是如何实现的了。</p>
+<h3 id="go的string"><a href="#go的string" class="headerlink" title="go的string"></a><strong>go的string</strong></h3><p>碰巧了前段时间重构c++，也了解了一下c++的string是如何实现的，来我们先来看看C语言是如何实现的，如下图 : </p>
+<img src="/2022/03/24/20220324-gostring/7.png" style="zoom: 80%;">
+
+<p>C语言如是说，会在结尾处通过 \0 的特殊字符来标示结尾，那这也就意味着存放的字符串中是无法出现 \0 这样的字符的，-_-!!!本人很坦诚的说一句这方案忒差了，所以golang并没有采用这种方案，来看看golang是如何处理的:</p>
+<img src="/2022/03/24/20220324-gostring/8.png" style="zoom: 80%;">
+
+<p>golang通过添加一个len变量来存储字符串中字节的长度，还是上面的例子”世界aABb”就应该是这样 : </p>
+<img src="/2022/03/24/20220324-gostring/9.png" style="zoom: 80%;">
+
+<p>好了关于golang的string今天就介绍到这里，对了，最后非常值得注意的一点是，无论是java或是golang，string都会被认为是不可变变量，是不允许修改的，golang编译器会把 s1:= “世界aABb”这样的变量分配到只读内存中，多个str是可以共享底层同一个数组变量的，可以重新复制这时会重新开辟一个数组空间，但是绝对不允许修改，完结撒花。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>今天属于是golang系列的开篇，后续的该系列也会不断完善，下一篇我们讲slice。</p>
+<img src="/2022/03/24/20220324-gostring/5.jpg" style="zoom: 100%;">]]></content>
+      <categories>
+        <category>Golang</category>
+      </categories>
+      <tags>
+        <tag>Golang</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>为什么要用protobuf？</title>
     <url>/2022/03/17/20220313-protobuf/</url>
     <content><![CDATA[<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>之前做java开发，服务间相互调用用的最多的就是java原生序列化和json序列化协议，然而后面去了大厂做golang开发基本都是采用pb了，刚开始以为只是规范使然，然而通过后面的学习发现pb确实是全方位领先于其他各种序列化协议的，简单来说就是pb不仅更快而且更小，下面就来细细的探讨一番。</p>
