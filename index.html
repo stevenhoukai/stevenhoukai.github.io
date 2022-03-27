@@ -295,6 +295,180 @@
   
   
   <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://stevenhoukai.github.io/2022/03/26/20220326-goslice/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="史蒂芬猴">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/upload/images/avatar.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="迷途小书童">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+                
+                <a class="post-title-link" href="/2022/03/26/20220326-goslice/" itemprop="url">slice</a></h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2022-03-26T00:00:01+08:00">
+                2022-03-26
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Golang/" itemprop="url" rel="index">
+                    <span itemprop="name">Golang</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          
+            <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>上一篇我们了解了golang的string是如何玩转的，趁热打铁今天就来学习常用的slice结构，这个slice跟我们以前做java的时候用到的动态数组(List)很相似，但是又有区别，那么今天就来探究下它的原理。</p>
+<h2 id="slice"><a href="#slice" class="headerlink" title="slice"></a><strong>slice</strong></h2><h3 id="三要素"><a href="#三要素" class="headerlink" title="三要素"></a><strong>三要素</strong></h3><p>slice包含以下图示的三个核心元素，数据、已存放数据长度以及容量 :</p>
+<img src="/2022/03/26/20220326-goslice/1.png" style="zoom: 80%;">
+
+<p>举个例子如下 : </p>
+<p>我们声明了一个变量intSlice，实际上这只是一个声明，底层并没有分配对应的数组进行支持，所以指向底层数组的指针data就是nil，而长度和容量都是0值。</p>
+<img src="/2022/03/26/20220326-goslice/2.png" style="zoom: 80%;"> 
+
+<p>在golang中有两种初始化slice的方式分别是make 和 new</p>
+<h4 id="make"><a href="#make" class="headerlink" title="make"></a><strong>make</strong></h4><p>从下图中我们可以看到通过make的方式声明变量intSlice<strong><u>就会在底层分配一个对应的数据类型的数组</u></strong>，并将data指向底层数组的起始地址，操作1就是向slice中添加一个元素，操作2就是改变slice已经存在元素的值，操作3就是访问超过len的数据这种情况会直接panic。</p>
+<img src="/2022/03/26/20220326-goslice/3.png" style="zoom: 80%;">
+
+<h4 id="new"><a href="#new" class="headerlink" title="new"></a><strong>new</strong></h4><p>接下来就是通过new关键字声明变量，可以知道并未在底层初始化对应的数组，所以操作1直接给slice下标为0的元素赋值会直接panic，这时只有通过操作2 append操作才会在底层初始化对应的数组并将data指向底层数组的起始位置，其实这里有一点绕，slice的data指向底层的一个字符串数组，上一篇中我们讲过string的结构不记得的可以回去再看一遍，所以字符串的data还会指向另外一个底层实际存储字符编码的数组。</p>
+<img src="/2022/03/26/20220326-goslice/4.png" style="zoom: 80%;">
+
+<p>通过以上对比我们发现其实两者还是有很大区别的，两者虽然都可以用来声明slice变量，但是前者会在声明变量的同时在底层分配好对应类型的数组结构而后者则不会，实际上我本人在实际的开发过程中也只会用make。make不仅可以初始化slice，还可以用在map和chan的初始化上面。</p>
+<h3 id="底层数组"><a href="#底层数组" class="headerlink" title="底层数组"></a><strong>底层数组</strong></h3><p>上面一直在说底层数组，那么底层数组究竟是什么？数组其实就是一段连续的内存空间，在这一段连续的内存空间内一个挨着一个的存储着同种类型的数据，int型的slice底层其实就是一个int数组，string型的slice底层就是一个string数组，从上面说明的例子我们可以看到slice都是指向了底层数组的起始地址，但这是必须的吗？我们来看接下来的一个列子 : </p>
+<p>我们先来声明一个int类型的数组arr，容量为10，数组的容量一旦声明就不能再变了，我们可以通过下面s1和s2的声明方式（左闭右开原则）将slice变量关联到同一个arr数组，可以看到s1的指向地址其实是底层数组第二个元素的地址位置，而s2的指向地址其实是底层数组第八个元素的地址位置，这其实不难理解，那么本文的核心来了，请仔细看操作 s2 = append(s2,11)（<strong><u>这个动作并不是线程安全的后面我们会细聊</u></strong>），该操作会触发扩容动作？那么什么是扩容了？slice又是怎么扩容的了？</p>
+<img src="/2022/03/26/20220326-goslice/6.png" style="zoom: 80%;">
+
+<h3 id="扩容"><a href="#扩容" class="headerlink" title="扩容"></a><strong>扩容</strong></h3><p>上面提出了一个扩容的概念，其实这个也很好理解s2指向的底层数组已经满了无法将11存放，这时s2就需要另谋高去开辟另外的一片内存空间将自己原来的数据复制过去后再将11添加的末尾，最后s2就指向了该新内存空间的起始地址。在这个过程中我们其实会有几个疑问的，第一个我怎么知道那片新的内存空间要多大了，随便还是无限的？我能想到golang当然也能想到，扩容整体来说就是下面的三个步骤。</p>
+<h4 id="步骤1-预估扩容后的容量"><a href="#步骤1-预估扩容后的容量" class="headerlink" title="步骤1 : 预估扩容后的容量"></a><strong>步骤1 : 预估扩容后的容量</strong></h4><p>这个规则其实没啥好说的，源码总结规则如下：</p>
+<img src="/2022/03/26/20220326-goslice/7.png" style="zoom: 80%;">
+
+<h4 id="步骤2-扩容后需要多大内存"><a href="#步骤2-扩容后需要多大内存" class="headerlink" title="步骤2 : 扩容后需要多大内存"></a><strong>步骤2 : 扩容后需要多大内存</strong></h4><p>这个其实跟我们的元素类型是息息相关的，但是真的就是按照下图的方式直接分配至么多内存吗？答案是否定的。</p>
+<img src="/2022/03/26/20220326-goslice/8.png" style="zoom: 80%;">
+
+<h4 id="步骤3-匹配合适的内存规格"><a href="#步骤3-匹配合适的内存规格" class="headerlink" title="步骤3 : 匹配合适的内存规格"></a><strong>步骤3 : 匹配合适的内存规格</strong></h4><p>上面这个问题简单来说就是编程语言(c除外)去申请内存并不是直接向操作系统申请的，中间还夹着一层代理人(内存管理模块)，系统启动时代理人先向os提前申请好一批内存，分成常用的规格管理起来，当golang向其申请内存空间时，代理人就会挑选对应刚大于申请空间大小的内存块并分配给申请人，这样就完成了整个的扩容动作。</p>
+<img src="/2022/03/26/20220326-goslice/9.png" style="zoom: 80%;">
+
+
+
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>今天我们聊了聊slice的相关原理，是不是很有趣，现在只是开篇稍微简单一点，后面会逐步深入，难度也会逐步增大，下一篇我们聊聊内存对齐哈，slice完结撒花～。</p>
+<img src="/2022/03/26/20220326-goslice/5.jpg" style="zoom: 100%;">
+          
+        
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+    
+      
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
     <link itemprop="mainEntityOfPage" href="http://stevenhoukai.github.io/2022/03/24/20220324-gostring/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -2110,152 +2284,6 @@
 
 
     
-      
-
-  
-
-  
-  
-  
-
-  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
-  
-  
-  
-  <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="http://stevenhoukai.github.io/2021/09/14/20210914-goroutinepoolcpubug/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="name" content="史蒂芬猴">
-      <meta itemprop="description" content>
-      <meta itemprop="image" content="/upload/images/avatar.jpg">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="迷途小书童">
-    </span>
-
-    
-      <header class="post-header">
-
-        
-        
-          <h1 class="post-title" itemprop="name headline">
-                
-                <a class="post-title-link" href="/2021/09/14/20210914-goroutinepoolcpubug/" itemprop="url">自定义简易协程池踩坑记录</a></h1>
-        
-
-        <div class="post-meta">
-          <span class="post-time">
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">发表于</span>
-              
-              <time title="创建于" itemprop="dateCreated datePublished" datetime="2021-09-14T00:00:01+08:00">
-                2021-09-14
-              </time>
-            
-
-            
-
-            
-          </span>
-
-          
-            <span class="post-category">
-            
-              <span class="post-meta-divider">|</span>
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-folder-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">分类于</span>
-              
-              
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/Golang/" itemprop="url" rel="index">
-                    <span itemprop="name">Golang</span>
-                  </a>
-                </span>
-
-                
-                
-              
-            </span>
-          
-
-          
-            
-          
-
-          
-          
-
-          
-
-          
-
-          
-
-        </div>
-      </header>
-    
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-      
-
-      
-        
-          
-            <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>上一篇文章中完善了一个自定义协程池，正所谓不改就没事，哈哈，果然上周测试环境发版后就出问题了，本人的服务的健康检查一发新版本之后就会立马unhealthy，然后先是观察容器cpu负载竟然是100%，好家伙，登陆容器通过top命令确定了就是自己的服务导致的，然后检查了自己修改过的代码，经过半天的排查果然找到了这个病因。</p>
-<h2 id="代码展示（问题代码部分）"><a href="#代码展示（问题代码部分）" class="headerlink" title="代码展示（问题代码部分）"></a>代码展示（问题代码部分）</h2><figure class="highlight gcode"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//运行一个groutine 开始消费任务 核心的问题就出在了下面这个方法内 </span></span><br><span class="line"><span class="comment">//for循环中嵌套了select 然后通过关闭通道进行跳出</span></span><br><span class="line"><span class="comment">//然而我之前的跳出用的是break，这里就是关键了</span></span><br><span class="line"><span class="comment">//break只能是跳出当前select，外层的for循环还是继续走的，然后就进入了死循环了</span></span><br><span class="line">func (self *Pool) runGroutine() &#123; // runningWorkers + 1</span><br><span class="line">	self.incRunningWorkers() //worker运行ing数量原子自增1</span><br><span class="line">	go func() &#123;</span><br><span class="line">		defer func() &#123;</span><br><span class="line">			self.decRunningWorkers() //worker运行ing数量原子自减1</span><br><span class="line">			if r := recover(); r != nil &#123;</span><br><span class="line">				<span class="comment">// if self.PanicHandler != nil &#123;</span></span><br><span class="line">				<span class="comment">// 	self.PanicHandler(r)</span></span><br><span class="line">				<span class="comment">// &#125; else &#123;</span></span><br><span class="line">				<span class="comment">// 	log.Printf("Worker panic: %s\n", r)</span></span><br><span class="line">				<span class="comment">// &#125;</span></span><br><span class="line">				err := errs.New(Panic_Sub_Goroutine, "子协程panic") //子协程panic是会导致主协程挂掉的，这一步也是必须进行捕获处理</span><br><span class="line">				self.ResultQuene &lt;- err</span><br><span class="line">			&#125;</span><br><span class="line">			self.checkWorker<span class="comment">()</span> <span class="comment">// 兜底机制，避免worker全部panic后没有worker消费队列中的数据,理论上这一步非常重要！否则有可能出现死锁状态</span></span><br><span class="line">		&#125;<span class="comment">()</span></span><br><span class="line">		for &#123;</span><br><span class="line">			select &#123;</span><br><span class="line">			case task, ok := &lt;-self.TaskQueue:</span><br><span class="line">				<span class="keyword">if</span> !ok &#123;</span><br><span class="line">				  <span class="comment">//break</span></span><br><span class="line">					return //这里不要用break  break只能跳出一层第二层的for循环还会继续 会直接把cpu打满</span><br><span class="line">				&#125;</span><br><span class="line">				err := task<span class="comment">()</span></span><br><span class="line">				self.ResultQuene &lt;- err</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;<span class="comment">()</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>好在是在测试环境发布时发现了这样的问题，如果是线上出现该问题还是比较麻烦的，总结就是对select的一些用法还是不够熟悉，下一篇文章就来对golang中的select用法进行一下总结<a href="https://stevenhoukai.github.io/2021/09/14/20210914-goroutineselect/"><strong>（点此处了解select用法总结）</strong></a>。</p>
-<p><img src="/2021/09/14/20210914-goroutinepoolcpubug/6.jpg" alt></p>
-
-          
-        
-      
-    </div>
-    
-    
-    
-
-    
-
-    
-
-    
-
-    <footer class="post-footer">
-      
-
-      
-
-      
-
-      
-      
-        <div class="post-eof"></div>
-      
-    </footer>
-  </div>
-  
-  
-  
-  </article>
-
-
-    
   </section>
 
   
@@ -2308,7 +2336,7 @@
               
                 <a href="/archives/">
               
-                  <span class="site-state-item-count">43</span>
+                  <span class="site-state-item-count">44</span>
                   <span class="site-state-item-name">日志</span>
                 </a>
               </div>

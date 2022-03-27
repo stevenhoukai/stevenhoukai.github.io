@@ -1,6 +1,50 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
+    <title>slice</title>
+    <url>/2022/03/26/20220326-goslice/</url>
+    <content><![CDATA[<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>上一篇我们了解了golang的string是如何玩转的，趁热打铁今天就来学习常用的slice结构，这个slice跟我们以前做java的时候用到的动态数组(List)很相似，但是又有区别，那么今天就来探究下它的原理。</p>
+<h2 id="slice"><a href="#slice" class="headerlink" title="slice"></a><strong>slice</strong></h2><h3 id="三要素"><a href="#三要素" class="headerlink" title="三要素"></a><strong>三要素</strong></h3><p>slice包含以下图示的三个核心元素，数据、已存放数据长度以及容量 :</p>
+<img src="/2022/03/26/20220326-goslice/1.png" style="zoom: 80%;">
+
+<p>举个例子如下 : </p>
+<p>我们声明了一个变量intSlice，实际上这只是一个声明，底层并没有分配对应的数组进行支持，所以指向底层数组的指针data就是nil，而长度和容量都是0值。</p>
+<img src="/2022/03/26/20220326-goslice/2.png" style="zoom: 80%;"> 
+
+<p>在golang中有两种初始化slice的方式分别是make 和 new</p>
+<h4 id="make"><a href="#make" class="headerlink" title="make"></a><strong>make</strong></h4><p>从下图中我们可以看到通过make的方式声明变量intSlice<strong><u>就会在底层分配一个对应的数据类型的数组</u></strong>，并将data指向底层数组的起始地址，操作1就是向slice中添加一个元素，操作2就是改变slice已经存在元素的值，操作3就是访问超过len的数据这种情况会直接panic。</p>
+<img src="/2022/03/26/20220326-goslice/3.png" style="zoom: 80%;">
+
+<h4 id="new"><a href="#new" class="headerlink" title="new"></a><strong>new</strong></h4><p>接下来就是通过new关键字声明变量，可以知道并未在底层初始化对应的数组，所以操作1直接给slice下标为0的元素赋值会直接panic，这时只有通过操作2 append操作才会在底层初始化对应的数组并将data指向底层数组的起始位置，其实这里有一点绕，slice的data指向底层的一个字符串数组，上一篇中我们讲过string的结构不记得的可以回去再看一遍，所以字符串的data还会指向另外一个底层实际存储字符编码的数组。</p>
+<img src="/2022/03/26/20220326-goslice/4.png" style="zoom: 80%;">
+
+<p>通过以上对比我们发现其实两者还是有很大区别的，两者虽然都可以用来声明slice变量，但是前者会在声明变量的同时在底层分配好对应类型的数组结构而后者则不会，实际上我本人在实际的开发过程中也只会用make。make不仅可以初始化slice，还可以用在map和chan的初始化上面。</p>
+<h3 id="底层数组"><a href="#底层数组" class="headerlink" title="底层数组"></a><strong>底层数组</strong></h3><p>上面一直在说底层数组，那么底层数组究竟是什么？数组其实就是一段连续的内存空间，在这一段连续的内存空间内一个挨着一个的存储着同种类型的数据，int型的slice底层其实就是一个int数组，string型的slice底层就是一个string数组，从上面说明的例子我们可以看到slice都是指向了底层数组的起始地址，但这是必须的吗？我们来看接下来的一个列子 : </p>
+<p>我们先来声明一个int类型的数组arr，容量为10，数组的容量一旦声明就不能再变了，我们可以通过下面s1和s2的声明方式（左闭右开原则）将slice变量关联到同一个arr数组，可以看到s1的指向地址其实是底层数组第二个元素的地址位置，而s2的指向地址其实是底层数组第八个元素的地址位置，这其实不难理解，那么本文的核心来了，请仔细看操作 s2 = append(s2,11)（<strong><u>这个动作并不是线程安全的后面我们会细聊</u></strong>），该操作会触发扩容动作？那么什么是扩容了？slice又是怎么扩容的了？</p>
+<img src="/2022/03/26/20220326-goslice/6.png" style="zoom: 80%;">
+
+<h3 id="扩容"><a href="#扩容" class="headerlink" title="扩容"></a><strong>扩容</strong></h3><p>上面提出了一个扩容的概念，其实这个也很好理解s2指向的底层数组已经满了无法将11存放，这时s2就需要另谋高去开辟另外的一片内存空间将自己原来的数据复制过去后再将11添加的末尾，最后s2就指向了该新内存空间的起始地址。在这个过程中我们其实会有几个疑问的，第一个我怎么知道那片新的内存空间要多大了，随便还是无限的？我能想到golang当然也能想到，扩容整体来说就是下面的三个步骤。</p>
+<h4 id="步骤1-预估扩容后的容量"><a href="#步骤1-预估扩容后的容量" class="headerlink" title="步骤1 : 预估扩容后的容量"></a><strong>步骤1 : 预估扩容后的容量</strong></h4><p>这个规则其实没啥好说的，源码总结规则如下：</p>
+<img src="/2022/03/26/20220326-goslice/7.png" style="zoom: 80%;">
+
+<h4 id="步骤2-扩容后需要多大内存"><a href="#步骤2-扩容后需要多大内存" class="headerlink" title="步骤2 : 扩容后需要多大内存"></a><strong>步骤2 : 扩容后需要多大内存</strong></h4><p>这个其实跟我们的元素类型是息息相关的，但是真的就是按照下图的方式直接分配至么多内存吗？答案是否定的。</p>
+<img src="/2022/03/26/20220326-goslice/8.png" style="zoom: 80%;">
+
+<h4 id="步骤3-匹配合适的内存规格"><a href="#步骤3-匹配合适的内存规格" class="headerlink" title="步骤3 : 匹配合适的内存规格"></a><strong>步骤3 : 匹配合适的内存规格</strong></h4><p>上面这个问题简单来说就是编程语言(c除外)去申请内存并不是直接向操作系统申请的，中间还夹着一层代理人(内存管理模块)，系统启动时代理人先向os提前申请好一批内存，分成常用的规格管理起来，当golang向其申请内存空间时，代理人就会挑选对应刚大于申请空间大小的内存块并分配给申请人，这样就完成了整个的扩容动作。</p>
+<img src="/2022/03/26/20220326-goslice/9.png" style="zoom: 80%;">
+
+
+
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>今天我们聊了聊slice的相关原理，是不是很有趣，现在只是开篇稍微简单一点，后面会逐步深入，难度也会逐步增大，下一篇我们聊聊内存对齐哈，slice完结撒花～。</p>
+<img src="/2022/03/26/20220326-goslice/5.jpg" style="zoom: 100%;">]]></content>
+      <categories>
+        <category>Golang</category>
+      </categories>
+      <tags>
+        <tag>Golang</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>go的string</title>
     <url>/2022/03/24/20220324-gostring/</url>
     <content><![CDATA[<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>从java转golang已经一年多了，过去的一年确实也挺坎坷的，国家打压部门解散，刚在支付组有一点感觉然后就没然后了，也没事后面活水到新部门继续肝，这不刚用go重构完一个十年前的c++系统，过程之痛苦一言难尽，但是痛苦归痛苦从中还是学到了不少，例如redis，pulsar这个之前已经写过好几篇基本的文章了，后续会更新一些自己在用法上的硬核知识，啊哦跑题了，本系列的核心是golang，用了一年多的golang是时候该总结一下了，俗话说的好学而时习之才能逆水行舟， 今天的主题是string～</p>
