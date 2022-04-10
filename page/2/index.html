@@ -295,6 +295,383 @@
   
   
   <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://stevenhoukai.github.io/2021/10/08/20211008-cdk/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="史蒂芬猴">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/upload/images/avatar.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="迷途小书童">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+                
+                <a class="post-title-link" href="/2021/10/08/20211008-cdk/" itemprop="url">如何搭建一个高性能cdk系统</a></h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2021-10-08T00:00:01+08:00">
+                2021-10-08
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/工作沉淀/" itemprop="url" rel="index">
+                    <span itemprop="name">工作沉淀</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          
+            <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>本人前不久稍稍改进了一个cdkey系统，来总结下是如何设计一个cdkey(兑换码)系统的，本文打算从以下三个方面来说。</p>
+<ul>
+<li>cdkey兑换</li>
+<li>如何生成cdkey以及如何存储</li>
+<li>如何保证高可用</li>
+</ul>
+<h2 id="cdkey兑换"><a href="#cdkey兑换" class="headerlink" title="cdkey兑换"></a>cdkey兑换</h2><p>cdkey本身只是一种推广售卖方式，其实不用也是可以的，不过市面上的商品一般除了正常的收费购买之外一定会伴随有cdkey售卖这样的方式。一个cdkey就对应着一个具体的商品，这也意味着cdkey是需要与商品以及订进行绑定的，举个例子，类似这样的一串字符串XXX3XXXNLMX1YEXXX就是cdkey的一个样式，是一个36进制构成的16位表达式，一般先由系统提前生成好然后下发出去售卖或者活动赠送等，兑换的时候做一些校验工作然后是生成订单流程，订单流程走完之后最后将订单号与cdkey绑定并将其状态更改成已兑换。流程如下图:</p>
+<p>流程图因涉及到公司的业务流转 不方便在此贴出</p>
+<h2 id="如何生成cdkey以及如何存储"><a href="#如何生成cdkey以及如何存储" class="headerlink" title="如何生成cdkey以及如何存储"></a>如何生成cdkey以及如何存储</h2><p>上一节提到目前系统的cdkey是一个36进制的16位表达式，针对36进制我们可以预先定义一个数组：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">myVal = []<span class="keyword">string</span>&#123;<span class="string">"A"</span>, <span class="string">"B"</span>, <span class="string">"C"</span>, <span class="string">"D"</span>, <span class="string">"E"</span>, <span class="string">"F"</span>, <span class="string">"G"</span>, <span class="string">"H"</span>, <span class="string">"I"</span>, <span class="string">"J"</span>, <span class="string">"K"</span>, <span class="string">"L"</span>, <span class="string">"M"</span>, <span class="string">"N"</span>, <span class="string">"O"</span>, <span class="string">"P"</span>,<span class="string">"Q"</span>, <span class="string">"R"</span>, <span class="string">"S"</span>, <span class="string">"T"</span>, <span class="string">"U"</span>, <span class="string">"V"</span>, <span class="string">"W"</span>, <span class="string">"X"</span>, <span class="string">"Y"</span>, <span class="string">"Z"</span>,<span class="string">"0"</span>, <span class="string">"1"</span>, <span class="string">"2"</span>, <span class="string">"3"</span>, <span class="string">"4"</span>, <span class="string">"5"</span>, <span class="string">"6"</span>, <span class="string">"7"</span>, <span class="string">"8"</span>, <span class="string">"9"</span>&#125;</span><br><span class="line"><span class="comment">//生成一个cdk的代码，所以是有可能一批cdk里面产生重复的，必须做好本地去重</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">genOneKey</span><span class="params">()</span> <span class="title">string</span></span> &#123;</span><br><span class="line">	buf.Reset()</span><br><span class="line">	<span class="keyword">for</span> j := <span class="number">0</span>; j &lt; <span class="number">16</span>; j++ &#123;</span><br><span class="line">		val := rand.Intn(<span class="built_in">len</span>(myVal))</span><br><span class="line">		buf.WriteString(myVal[val])</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">return</span> buf.String()</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>当然为了安全我们也可以将上述的数组顺序随意打乱，这种方式在上一篇短链系统设计的时候已经用过一次了，只不过短链用的是64进制而已。我们也可以使用64进制来降低cdkey生成时的碰撞率，不过就cdkey而言为了美观一般就不掺杂小写字母了。本人目前的需求是需要支持大批量cdk申请的，单批次申请需要支持10w，所以我这边cdkey的生成实际是按批次生成的，这样的好处就是可以减少与数据库的网络IO，每次生成一批cdkey然后去数据库校验是否存在，存在了就重试生成一批新cdkey再校验，直到校验不存在就插入数据库然后生成下一批，反复执行直到申请数量全部生成完毕。</p>
+<p>总体流程图如下：</p>
+<p><img src="/2021/10/08/20211008-cdk/2.png" alt></p>
+<p>接下来是单批次生成cdk详细逻辑:</p>
+<p><img src="/2021/10/08/20211008-cdk/3.png" alt></p>
+<p>给出表设计方案 : </p>
+<p>下面的表中很多字段都是与具体业务相关的，不必过于关心，但是核心的字段在一个cdk系统中基本上都是不变的。</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">//因为表设计也有相关敏感信息不方便在此处贴出具体字段</span><br><span class="line">//cdk订单申请表</span><br><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TABLE</span> <span class="string">`cdk_order`</span> (</span><br><span class="line">) <span class="keyword">ENGINE</span>=<span class="keyword">InnoDB</span> <span class="keyword">DEFAULT</span> <span class="keyword">CHARSET</span>=utf8mb4 <span class="keyword">COMMENT</span>=<span class="string">'cdk申请单表'</span></span><br><span class="line"></span><br><span class="line">//cdk详情表</span><br><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TABLE</span> <span class="string">`cdk_detail`</span> (</span><br><span class="line">) <span class="keyword">ENGINE</span>=<span class="keyword">InnoDB</span> <span class="keyword">DEFAULT</span> <span class="keyword">CHARSET</span>=utf8mb4 <span class="keyword">COMMENT</span>=<span class="string">'cdk明细表'</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="如何保证高可用"><a href="#如何保证高可用" class="headerlink" title="如何保证高可用"></a>如何保证高可用</h2><p>一般来说通过集群部署可解决系统高可用问题，但是集群部署就会导致新的问题，可能两个服务节点同时工作产生的cdkey就有可能会出现交集本地去重并不能解决问题，这里我列出了两种方案来解决这个问题，就当前情况而言本人采用了第一种方案:</p>
+<ul>
+<li><p>方案一：通过数据库自身来解决该问题</p>
+<p>上一节介绍的方案就是了，通过数据库校验 + 事务 + 重试来解决</p>
+</li>
+<li><p>方案二：通过分布式锁+bloomfilter来解决这个问题</p>
+<p>见方案设计图:</p>
+<p><img src="/2021/10/08/20211008-cdk/4.png" alt></p>
+</li>
+</ul>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>本文对cdk系统设计方案作了一点总结，整体的思路就是要减少碰撞，保证申请数量与实际生成数量一致，并且要防止一次性提交数据量过大，具体最后的高可用方案哪种更合适还是依据实际情况再做定夺为佳。</p>
+<p><img src="/2021/10/08/20211008-cdk/5.jpg" alt></p>
+
+          
+        
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+    
+      
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://stevenhoukai.github.io/2021/09/27/20210927-shorturl/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="史蒂芬猴">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/upload/images/avatar.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="迷途小书童">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+                
+                <a class="post-title-link" href="/2021/09/27/20210927-shorturl/" itemprop="url">高性能短链系统的一些设计思考</a></h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2021-09-27T00:00:01+08:00">
+                2021-09-27
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/工作沉淀/" itemprop="url" rel="index">
+                    <span itemprop="name">工作沉淀</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          
+            <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>最近遇到一个需求，需要短时间内将大量的长链转换成短链然后再转成二维码，由于我们的短链服务是通过接口外部进行调用的，而且不能批量转换，所以这里就会出现一个情况就是短时间的大量请求接口会以失败告终，如果能自己设计一个短链系统，这个问题就能解决了。那么今天就来谈谈如何设计一个高性能短链系统。</p>
+<p>本文将会从以下几个方面来进行探讨 </p>
+<ul>
+<li>为啥要用短链 长链存在哪些问题</li>
+<li>短链是如何实现跳转的</li>
+<li>如何生成短链以及如何存储</li>
+<li>如何保证高性能高可用</li>
+</ul>
+<h2 id="为啥要用短链-长链存在哪些问题"><a href="#为啥要用短链-长链存在哪些问题" class="headerlink" title="为啥要用短链 长链存在哪些问题"></a>为啥要用短链 长链存在哪些问题</h2><p>下面是自如给我发的推送短信，点击下方蓝色的链接（短链）</p>
+<p><img src="/2021/09/27/20210927-shorturl/1.png" alt="img"></p>
+<p>浏览器接着会跳转到一个确认跳转页面。</p>
+<p><img src="/2021/09/27/20210927-shorturl/2.jpeg" alt="img"></p>
+<p>那么为啥要用短链表示，直接用长链不行吗，用短链的话有如下好外</p>
+<p>1、链接变短，在对内容长度有限制的平台发文，可编辑的文字就变多了</p>
+<p>最典型的就是微博，限定了只能发 140 个字，如果一串长链直接怼上去，其他可编辑的内容就所剩无几了，用短链的话，链接长度大大减少，自然可编辑的文字多了不少。</p>
+<p>再比如上面的短信如果一个长链直接怼上去满屏都是一个链接，非常不美观。</p>
+<p>2、像我前言中的需求需要将链接转成二维码，如果是长链的话二维码非常密集而且很难识别，短链的话就会清爽很多,如下图所示</p>
+<p><img src="/2021/09/27/20210927-shorturl/3.png" alt="img"></p>
+<p>3、链接太长在有些平台上无法自动识别为超链接</p>
+<h2 id="短链是如何实现跳转的"><a href="#短链是如何实现跳转的" class="headerlink" title="短链是如何实现跳转的"></a>短链是如何实现跳转的</h2><p>从上文可知，短链好处多多，那么它是如何工作的呢。我们在浏览器抓下包看看</p>
+<p><img src="/2021/09/27/20210927-shorturl/10.png" alt="img"></p>
+<p>可以看到请求后，返回了状态码 302（重定向）与 location 值为长链的响应，然后浏览器会再请求这个长链以得到最终的响应,整个交互流程图如下</p>
+<p><img src="/2021/09/27/20210927-shorturl/11.png" alt="img"></p>
+<p>主要步骤就是访问短网址后重定向访问 B，那么问题来了，301 和 302 都是重定向，到底该用哪个，这里需要注意一下 301 和 302 的区别</p>
+<ul>
+<li>301，代表 <strong>永久重定向</strong>，也就是说第一次请求拿到长链接后，下次浏览器再去请求短链的话，不会向短网址服务器请求了，而是直接从浏览器的缓存里拿，这样在 server 层面就无法获取到短网址的点击数了，如果这个链接刚好是某个活动的链接，也就无法分析此活动的效果。所以我们一般不采用 301。</li>
+<li><strong>302</strong>，代表 <strong>临时重定向</strong>，也就是说每次去请求短链都会去请求短网址服务器（除非响应中用 Cache-Control 或 Expired 暗示浏览器缓存）,这样就便于 server 统计点击数，所以虽然用 302 会给 server 增加一点压力，但在数据异常重要的今天，这点代码是值得的，所以推荐使用 302！</li>
+</ul>
+<h2 id="如何生成短链以及如何存储"><a href="#如何生成短链以及如何存储" class="headerlink" title="如何生成短链以及如何存储"></a>如何生成短链以及如何存储</h2><h3 id="1、Hash"><a href="#1、Hash" class="headerlink" title="1、Hash"></a>1、Hash</h3><p>短链怎么生成，我的第一反应,这不就是以不定长输入(长链)转换成定长输出(短链)【哈希的定义】，观察上面的短链很明显可以看到短链是由固定短链域名 + 长链映射成的一串字母组成(不定长输入–&gt;定长输出)，那么这个哈希函数该怎么取呢，相信肯定有很多人说用 MD5，SHA 等算法，网上确实有很多是用md5先生成32位串，然后均分4段做hash处理，最后再随机取其中之一作为最后结果，只是我在想这个md5先生成32位串是否一定有必要，而且既然是加密就意味着性能上会有损失，其实我觉得这里的重点应该是hash并不是加解密，如何提升哈希的运算速度和减少冲突概率才是重点。以下属于借鉴内容了这里推荐 Google 出品的 <strong>MurmurHash 算法</strong>，MurmurHash 是一种<strong>非加密型</strong>哈希函数，适用于一般的哈希检索操作。与其它流行的哈希函数相比，对于规律性较强的 key，MurmurHash 的随机分布特征表现更良好。非加密意味着着相比 MD5，SHA 这些函数它的性能肯定更高（实际上性能是 MD5 等加密算法的十倍以上），也正是由于它的这些优点，所以虽然它出现于 2008，但目前已经广泛应用到 Redis、MemCache、Cassandra、HBase、Lucene 等众多著名的软件中。</p>
+<p>MurmurHash 提供了两种长度的哈希值，32 bit，128 bit，为了让网址尽可通地短，我们选择 32 bit 的哈希值，<strong>32 bit 能表示的最大值近 43 亿</strong>，对于中小型公司的业务而言绰绰有余。对上文提到的极客长链做 MurmurHash 计算，得到的哈希值为 3002604296，于是我们现在得到的短链为 固定短链域名+哈希值 = <a href="http://xxx.com/a/3002604296" target="_blank" rel="noopener">http://xxx.com/a/3002604296</a></p>
+<p><strong>上述结果还是有点长？</strong></p>
+<p>觉得10位的短链还是有点长怎么办？首先3002604296 这个结果是10进制数字，有一种方案就是将它转为 62 进制就可以缩短它的长度，10 进制转 62 进制如下，也就是按62取模，对应的余数在下面的字符串中取对应值：</p>
+<p>62进制思路 : 0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ</p>
+<p><img src="/2021/09/27/20210927-shorturl/7.png" alt="img"></p>
+<p>经过上面的取模运算然后取映射值，就可以将(3002604296)10进制数字转换成 (3hcCxy)62进制，立马又缩短了4位，因此最终的短链为 <a href="http://xxx.com/a/3hcCxy，6" target="_blank" rel="noopener">http://xxx.com/a/3hcCxy，6</a> 位 62 进制数可表示 568 亿的数，应付长链转换绰绰有余，如果需要更短一点也是可以的，根据实际需求进行取舍吧，我们公司目前用的是8位<a href="https://xxx.com/r8CpSjCN" target="_blank" rel="noopener">https://xxx.com/r8CpSjCN</a></p>
+<p><strong>hash冲突了怎么办？</strong></p>
+<p>既然是哈希函数，那么很有可能两个不同的长链经过hash之后生成的短链是一样的，那么这个问题要怎么解决？这里给出的思路就是在长链的基础上添加随机字符串然后重试生成短链。</p>
+<p>由上文知道访问短链能跳转到长链，那么长短链的关系一定是有一个地方存储的， <strong>Redis 或 Mysql</strong> ？，一般来说 Mysql 存储首选，redis缓存首选。表结构如下所示</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TABLE</span> <span class="string">`long_short_url_map`</span> (</span><br><span class="line">  <span class="string">`id`</span> <span class="built_in">int</span>(<span class="number">11</span>) <span class="keyword">unsigned</span> <span class="keyword">NOT</span> <span class="literal">NULL</span> AUTO_INCREMENT,</span><br><span class="line">  <span class="string">`long_url`</span> <span class="built_in">varchar</span>(<span class="number">160</span>) <span class="keyword">DEFAULT</span> <span class="literal">NULL</span> <span class="keyword">COMMENT</span> <span class="string">'长链'</span>,</span><br><span class="line">  <span class="string">`short_url`</span> <span class="built_in">varchar</span>(<span class="number">10</span>) <span class="keyword">DEFAULT</span> <span class="literal">NULL</span> <span class="keyword">COMMENT</span> <span class="string">'短链'</span>,</span><br><span class="line">  <span class="string">`created_at`</span> datetime <span class="keyword">NOT</span> <span class="literal">NULL</span> <span class="keyword">DEFAULT</span> <span class="keyword">CURRENT_TIMESTAMP</span> <span class="keyword">COMMENT</span> <span class="string">'创建时间'</span></span><br><span class="line">  PRIMARY <span class="keyword">KEY</span> (<span class="string">`id`</span>)</span><br><span class="line">) <span class="keyword">ENGINE</span>=<span class="keyword">InnoDB</span> <span class="keyword">DEFAULT</span> <span class="keyword">CHARSET</span>=utf8;</span><br></pre></td></tr></table></figure>
+
+<p>基于上面的组件可以做出如下的设计。</p>
+<ol>
+<li>长链（longurl）经过 MurmurHash 后取模62得到最终短链。</li>
+<li>再根据短链去 long_short_url_map 表中查找看是否存在相关记录，如果不存在，将长链与短链对应关系插入数据库中，存储。</li>
+<li><strong>如果存在，说明已经有相关记录了，此时在长串上拼接一个自定义好的字段，比如「duplicate+RandomNum」，「longurl + duplicate+RandomNum」去重试第一步操作，如果最后还是重复就继续重拾，如果没有重复了就把原longurl和短链的关系存储即可</strong>。</li>
+</ol>
+<p>上面的步骤是没有加入缓存的，插入一条记录是需要经过两次(甚至三次(概率微乎其微)) sql 查询（1.根据短链查记录是否存在 2.将长短链对应关系插入数据库中），像我前言中的需求在高并发下，明显还是会有瓶颈出现的。一般数据库和应用服务（只做计算不做存储）会部署在两台不同的 server 上，执行两条 sql 就需要两次网络通信，<strong>这两次网络通信与两次 sql 执行是整个短链系统的性能瓶颈所在</strong>！</p>
+<p>引入缓存减少第一次的sql查询？</p>
+<p>很显然插入数据那一次的sql肯定没跑了，无论怎样那一次的sql都是要执行的</p>
+<ol>
+<li>方案一 : 给短链字段 short_url 加上<strong>唯一索引</strong>，把唯一性校验直接交给数据库去做，可行但是数据库压力很大（唯一索引懂的都懂）</li>
+<li>方案二 : 数据量很大的情况下，冲突的概率会增大，此时我们可以使用加<strong>Bloomfilter</strong>(缓存)来进行优化。</li>
+</ol>
+<p><strong>用所有生成的短网址构建布隆过滤器</strong>，当一个新的长链生成短链后，先将此短链在Bloomfilter中进行查找，如果不存在，说明 db 里不存在此短网址，可以插入，插入db之前先将短链放入Bloomfilter。Bloomfilter是一种非常省内存的数据结构，长度为 10 亿的布隆过滤器，只需要 125 M 的内存空间。</p>
+<p>综上，如果用哈希函数来设计，总体的设计思路如下</p>
+<p><img src="/2021/09/27/20210927-shorturl/5.png" alt="img"></p>
+<p>用哈希算法生成的短链其实已经能满足我们的业务需求，本人目前工作中遇到的短链就是用hash生成的只不过保留的是8位。其实还有另外一种是通过自增序列</p>
+<h3 id="2、Sequence"><a href="#2、Sequence" class="headerlink" title="2、Sequence"></a>2、Sequence</h3><p>待完善</p>
+<h2 id="高性能短链的架构设计"><a href="#高性能短链的架构设计" class="headerlink" title="高性能短链的架构设计"></a>高性能短链的架构设计</h2><p>在电商公司，经常有很多活动，秒杀，抢红包等等，在某个时间点的 QPS 会很高，考虑到这种情况，可以引入了 <strong>openResty</strong>，它是一个基于 Nginx 与 Lua 的高性能 Web 平台，由于 Nginx 的非阻塞 IO 模型，使用 openResty 可以轻松支持 100 w + 的并发数，一般情况下你只要部署一台即可，不过为了避免单点故障，两台为宜，同时 openResty 也自带了缓存机制，集成了 redis 这些缓存模块，也可以直接连 mysql。不需要再通过业务层连这些中间件，性能自然会高不少</p>
+<p><img src="/2021/09/27/20210927-shorturl/6.png" alt="img"></p>
+<p>上图所示，使用 openResty 可以直接跳过了业务层这一步，直达缓存层与数据库层，对性能也有大量提升。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>本文对短链设计方案作了一点总结，文中涉及到像Bloomfilter，openResty 等技术，后续再去详细讨论。值得说明的是Bloomfilter的确是一个强大的缓存层有必要好好学习一番。</p>
+<p><img src="/2021/09/27/20210927-shorturl/6.jpg" alt></p>
+
+          
+        
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+    
+      
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
     <link itemprop="mainEntityOfPage" href="http://stevenhoukai.github.io/2021/09/14/20210914-goroutinepoolcpubug/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -1670,331 +2047,6 @@
 
 
     
-      
-
-  
-
-  
-  
-  
-
-  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
-  
-  
-  
-  <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="http://stevenhoukai.github.io/2020/12/29/20201229-goroutine2/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="name" content="史蒂芬猴">
-      <meta itemprop="description" content>
-      <meta itemprop="image" content="/upload/images/avatar.jpg">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="迷途小书童">
-    </span>
-
-    
-      <header class="post-header">
-
-        
-        
-          <h1 class="post-title" itemprop="name headline">
-                
-                <a class="post-title-link" href="/2020/12/29/20201229-goroutine2/" itemprop="url">goroutine与线程的关系</a></h1>
-        
-
-        <div class="post-meta">
-          <span class="post-time">
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">发表于</span>
-              
-              <time title="创建于" itemprop="dateCreated datePublished" datetime="2020-12-29T00:00:01+08:00">
-                2020-12-29
-              </time>
-            
-
-            
-
-            
-          </span>
-
-          
-            <span class="post-category">
-            
-              <span class="post-meta-divider">|</span>
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-folder-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">分类于</span>
-              
-              
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/Golang并发编程/" itemprop="url" rel="index">
-                    <span itemprop="name">Golang并发编程</span>
-                  </a>
-                </span>
-
-                
-                
-              
-            </span>
-          
-
-          
-            
-          
-
-          
-          
-
-          
-
-          
-
-          
-
-        </div>
-      </header>
-    
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-      
-
-      
-        
-          
-            <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a><strong>前言</strong></h2><p>学到这里，我们需要了解一下OS线程一般都是有属于自己的线程栈内存（通常为2MB）。一个goroutine栈在刚启动的时候确实很小的（通常是2KB），所以一次性创建10w个goroutine也是没有问题的，随着运行goroutine栈最大可达到1GB。goroutine属于用户态线程，go语言在runtime层面通过实现了一个GPM机制来对goroutine进行调度。</p>
-<h2 id="goroutine的调度机制"><a href="#goroutine的调度机制" class="headerlink" title="goroutine的调度机制"></a><strong>goroutine的调度</strong>机制</h2><p>首先来大致解释下什么是GPM</p>
-<p><strong>G：就是goroutine，包含goroutine信息以及与所在P的绑定等信息</strong></p>
-<p><strong>P：管理着一组goroutine的队列，P里面会存储当前goroutine运行的上下文环境（函数指针，堆栈地址以及地址边界），P内部对自己管理的一些列G进行调度，当自己管理的队列消费完了还会去全局队列中取，如果全局队列也消费完了还会去其他的P中取任务</strong></p>
-<p><strong>M：是Golang中对os内核线程的抽象，M与内核线程一般就是11对应的关系，goroutine最终都是会在M上进行执行的</strong></p>
-<p>我们来稍微理解一下这个GPM模型，本人会觉得与java中的线程池模型还是很相似的，只是本人研究的java线程池中并无全局队列以及去其他队列抢任务的概念出现，了解j<strong><a href="https://www.baidu.com" target="_blank" rel="noopener">JAVA中线程池工作原理</a></strong>戳这里。在GPM中，P和M通常也是11对应的，但这并不是绝对的，可以这么通俗的来理解一个队列P对应一个os线程M，os线程由操作系统cpu运行，然后P来对队列中的任务goroutine进行调度，让每一个goroutine在os线程上不停的来回切换运行（准确一点的表达：P管理着一组G挂载在M上运行，当一个G长久阻塞在一个M上时，runtime会新建一个M，阻塞G所在的P会把其他的G挂载在新建的M上去。当旧的G阻塞完成或者认为其已经死掉时那么就会回收旧的M）。</p>
-<h2 id="GOMAXPROCS"><a href="#GOMAXPROCS" class="headerlink" title="GOMAXPROCS"></a><strong>GOMAXPROCS</strong></h2><p>​    在前言中我们说了G的内存大小以及创建数量等问题，那么P由这方面的限制吗？P的个数是通过runtime.GOMAXPROCS设定（最大256），Go1.5版本之后默认为物理线程数。在并发量大的时候会适当增加一些P和M，但是也不会太多，切换太频繁也没有太多必要。</p>
-<h3 id="实例查看效果"><a href="#实例查看效果" class="headerlink" title="实例查看效果"></a>实例查看效果</h3><p>Go运行时的调度器使用<code>GOMAXPROCS</code>参数来确定需要使用多少个OS线程来同时执行Go代码。默认值是机器上的CPU核心数。例如在一个8核cpu上，调度器会把Go代码同时调度到8个OS线程上（GOMAXPROCS是m:n调度中的n）。</p>
-<p>Go语言中可以通过<code>runtime.GOMAXPROCS()</code>函数设置当前程序并发时占用的CPU逻辑核心数。</p>
-<p>Go1.5版本之前，默认使用的是单核心执行。Go1.5版本之后，默认使用全部的CPU逻辑核心数。</p>
-<p>我们可以通过将任务分配到不同的CPU逻辑核心上实现并行的效果，这里我们来举个例子看看。</p>
-<h4 id="例1"><a href="#例1" class="headerlink" title="例1:"></a>例1:</h4><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> main</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> (</span><br><span class="line">	<span class="string">"fmt"</span></span><br><span class="line">	<span class="string">"runtime"</span></span><br><span class="line">	<span class="string">"time"</span></span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">a</span><span class="params">()</span></span> &#123;</span><br><span class="line">	<span class="keyword">for</span> i := <span class="number">1</span>; i &lt; <span class="number">10</span>; i++ &#123;</span><br><span class="line">		fmt.Println(<span class="string">"A:"</span>, i)</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">b</span><span class="params">()</span></span> &#123;</span><br><span class="line">	<span class="keyword">for</span> i := <span class="number">1</span>; i &lt; <span class="number">10</span>; i++ &#123;</span><br><span class="line">		fmt.Println(<span class="string">"B:"</span>, i)</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">main</span><span class="params">()</span></span> &#123;</span><br><span class="line">	runtime.GOMAXPROCS(<span class="number">1</span>)</span><br><span class="line">	<span class="keyword">go</span> a()</span><br><span class="line">	<span class="keyword">go</span> b()</span><br><span class="line">	time.Sleep(time.Second)</span><br><span class="line">&#125;</span><br><span class="line">运行结果：</span><br><span class="line">modora#: <span class="keyword">go</span> run ./main.<span class="keyword">go</span></span><br><span class="line">B: <span class="number">1</span></span><br><span class="line">B: <span class="number">2</span></span><br><span class="line">B: <span class="number">3</span></span><br><span class="line">B: <span class="number">4</span></span><br><span class="line">B: <span class="number">5</span></span><br><span class="line">B: <span class="number">6</span></span><br><span class="line">B: <span class="number">7</span></span><br><span class="line">B: <span class="number">8</span></span><br><span class="line">B: <span class="number">9</span></span><br><span class="line">A: <span class="number">1</span></span><br><span class="line">A: <span class="number">2</span></span><br><span class="line">A: <span class="number">3</span></span><br><span class="line">A: <span class="number">4</span></span><br><span class="line">A: <span class="number">5</span></span><br><span class="line">A: <span class="number">6</span></span><br><span class="line">A: <span class="number">7</span></span><br><span class="line">A: <span class="number">8</span></span><br><span class="line">A: <span class="number">9</span></span><br></pre></td></tr></table></figure>
-
-<p>上面例子中我们设置了runtime.GOMAXPROCS()为1，也就是说GPM模型中最多一个OS线程在运行，可以很明显的看到Agoroutine和Bgoroutine是串行打印，原因也很简单，两个goroutine在一个OS线程上进行调度的。下面我们将runtime.GOMAXPROCS()设置成2，两个goroutine在两个OS线程上进行调度，这里其实可以理解在OS线程层面并行。</p>
-<h4 id="例2"><a href="#例2" class="headerlink" title="例2:"></a>例2:</h4><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> main</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> (</span><br><span class="line">	<span class="string">"fmt"</span></span><br><span class="line">	<span class="string">"runtime"</span></span><br><span class="line">	<span class="string">"time"</span></span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">a</span><span class="params">()</span></span> &#123;</span><br><span class="line">	<span class="keyword">for</span> i := <span class="number">1</span>; i &lt; <span class="number">10</span>; i++ &#123;</span><br><span class="line">		fmt.Println(<span class="string">"A:"</span>, i)</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">b</span><span class="params">()</span></span> &#123;</span><br><span class="line">	<span class="keyword">for</span> i := <span class="number">1</span>; i &lt; <span class="number">10</span>; i++ &#123;</span><br><span class="line">		fmt.Println(<span class="string">"B:"</span>, i)</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">main</span><span class="params">()</span></span> &#123;</span><br><span class="line">	runtime.GOMAXPROCS(<span class="number">2</span>)</span><br><span class="line">	<span class="keyword">go</span> a()</span><br><span class="line">	<span class="keyword">go</span> b()</span><br><span class="line">	time.Sleep(time.Second)</span><br><span class="line">&#125;</span><br><span class="line">执行结果：</span><br><span class="line">modora#: <span class="keyword">go</span> run ./main.<span class="keyword">go</span></span><br><span class="line">A: <span class="number">1</span></span><br><span class="line">A: <span class="number">2</span></span><br><span class="line">A: <span class="number">3</span></span><br><span class="line">A: <span class="number">4</span></span><br><span class="line">A: <span class="number">5</span></span><br><span class="line">A: <span class="number">6</span></span><br><span class="line">A: <span class="number">7</span></span><br><span class="line">A: <span class="number">8</span></span><br><span class="line">B: <span class="number">1</span></span><br><span class="line">B: <span class="number">2</span></span><br><span class="line">B: <span class="number">3</span></span><br><span class="line">B: <span class="number">4</span></span><br><span class="line">B: <span class="number">5</span></span><br><span class="line">B: <span class="number">6</span></span><br><span class="line">B: <span class="number">7</span></span><br><span class="line">B: <span class="number">8</span></span><br><span class="line">B: <span class="number">9</span></span><br><span class="line">A: <span class="number">9</span></span><br></pre></td></tr></table></figure>
-
-<p>再次运行上述代码，发现AB变成了交替打印。各种意味自行理解哈～</p>
-<p><img src="/2020/12/29/20201229-goroutine2/6.jpg" alt></p>
-
-          
-        
-      
-    </div>
-    
-    
-    
-
-    
-
-    
-
-    
-
-    <footer class="post-footer">
-      
-
-      
-
-      
-
-      
-      
-        <div class="post-eof"></div>
-      
-    </footer>
-  </div>
-  
-  
-  
-  </article>
-
-
-    
-      
-
-  
-
-  
-  
-  
-
-  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
-  
-  
-  
-  <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="http://stevenhoukai.github.io/2020/12/18/20201218-HexoTransferWindowsToMac/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="name" content="史蒂芬猴">
-      <meta itemprop="description" content>
-      <meta itemprop="image" content="/upload/images/avatar.jpg">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="迷途小书童">
-    </span>
-
-    
-      <header class="post-header">
-
-        
-        
-          <h1 class="post-title" itemprop="name headline">
-                
-                <a class="post-title-link" href="/2020/12/18/20201218-HexoTransferWindowsToMac/" itemprop="url">hexo迁移（Windows -> Mac）</a></h1>
-        
-
-        <div class="post-meta">
-          <span class="post-time">
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">发表于</span>
-              
-              <time title="创建于" itemprop="dateCreated datePublished" datetime="2020-12-18T00:00:01+08:00">
-                2020-12-18
-              </time>
-            
-
-            
-
-            
-          </span>
-
-          
-            <span class="post-category">
-            
-              <span class="post-meta-divider">|</span>
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-folder-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">分类于</span>
-              
-              
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/Hexo/" itemprop="url" rel="index">
-                    <span itemprop="name">Hexo</span>
-                  </a>
-                </span>
-
-                
-                
-              
-            </span>
-          
-
-          
-            
-          
-
-          
-          
-
-          
-
-          
-
-          
-
-        </div>
-      </header>
-    
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-      
-
-      
-        
-          
-            <h2 id="Hexo迁移（Windows-gt-Mac）"><a href="#Hexo迁移（Windows-gt-Mac）" class="headerlink" title="Hexo迁移（Windows -&gt; Mac）"></a>Hexo迁移（Windows -&gt; Mac）</h2><p>最近因工作需要换了台mac，需要将windows上面的hexo全数转移至新机，记录一下整个过程。</p>
-<h3 id="1-找到自己Windows的hexo根目录"><a href="#1-找到自己Windows的hexo根目录" class="headerlink" title="1.找到自己Windows的hexo根目录"></a>1.找到自己Windows的hexo根目录</h3><h3 id="2-在-Mac-安装git和node-js"><a href="#2-在-Mac-安装git和node-js" class="headerlink" title="2.在 Mac 安装git和node.js"></a>2.在 Mac 安装git和node.js</h3><p>首先在自己电脑上装好node和git（首先确保brew安装好了） </p>
-<p><code>brew install git</code></p>
-<p><code>brew install node</code></p>
-<h3 id="3-安装hexo"><a href="#3-安装hexo" class="headerlink" title="3.安装hexo"></a>3.安装hexo</h3><p><em>用node.js来安装，这里可能会安装失败，我这里是切换npm源才成功</em></p>
-<p><code>npm config set registry https://registry.npm.taobao.org</code></p>
-<p><code>npm install -g hexo-cli</code> </p>
-<h3 id="4-初始化hexo目录"><a href="#4-初始化hexo目录" class="headerlink" title="4.初始化hexo目录"></a><strong>4.初始化hexo目录</strong></h3><p>新建一个hexo目录，mkdir blog，cd blog</p>
-<p><code>hexo init</code><br>在用<code>hexo s</code></p>
-<p>测试是否成功，打开<code>localhost:4000</code>查看本地 </p>
-<h3 id="5-生成SSH密钥，关联github"><a href="#5-生成SSH密钥，关联github" class="headerlink" title="5.生成SSH密钥，关联github"></a>5.生成SSH密钥，关联github</h3><p>先查看本地的SSH key: <code>cd ~/.ssh</code><br>(我是新买的mac，这一步需要直接先走安装）<br>$ssh-keygen -t rsa -C “<a href="mailto:youremail@example.com" target="_blank" rel="noopener">youremail@example.com</a>“  后面那个是注册邮箱</p>
-<p>进入.ssh文件夹： <code>cd ~/.ssh</code>，然后打开里面的 id_rsa.pub文件，里面的内容就是 SSH key，复制全部内容；</p>
-<p>网页打开 github 的设置：Settings -&gt; SSH and GPG keys，点击绿色的按钮 New SSH key，然后在输入框中输入刚才复制的内容；</p>
-<p>保存后，github 会向你的邮箱发送一个验证链接（记得要去登录邮箱验证，不然之后的 hexo d 部署会一直不成功的！）；</p>
-<p>可以先测试一下是否成功：ssh <a href="mailto:git@github.com" target="_blank" rel="noopener">git@github.com</a>，<br>看到以下即成功：</p>
-<blockquote>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">&gt; PTY allocation request failed on channel 0</span><br><span class="line">&gt; Hi gjincai! You&apos;ve successfully authenticated, but GitHub does not provide shell access.</span><br><span class="line">&gt; Connection to github.com closed.</span><br><span class="line">&gt;</span><br></pre></td></tr></table></figure>
-</blockquote>
-<h3 id="6-文件配置转移"><a href="#6-文件配置转移" class="headerlink" title="6.文件配置转移"></a>6.文件配置转移</h3><p>windows 下的博客根目录 hexo，复制该目录下的：<code>_config.yml</code>, <code>scaffolds</code>, <code>source</code>, <code>themes</code>；<br>mac 下的博客根目录 hexo，把刚才复制的内容，直接覆盖替换相同的文件文件夹。</p>
-<h3 id="7-设置个人信息"><a href="#7-设置个人信息" class="headerlink" title="7.设置个人信息"></a>7.设置个人信息</h3><p><code>git config --global user.name &quot;yourname&quot;</code></p>
-<p><code>git config --global user.email youremail@example.com</code></p>
-<p>到这就好了，和往常一样hexo g   hexo d(或者直接hexo g -d)发布文章吧！结果会提示ERROR Deployer not found: git</p>
-<p>安装以下再尝试：<code>npm install hexo-deployer-git --save（若提示有关权限不足的，加sudo，反正我是遇到了）</code></p>
-<h3 id="8-最重要！！！！！！！"><a href="#8-最重要！！！！！！！" class="headerlink" title="8.最重要！！！！！！！"></a>8.最重要！！！！！！！</h3><p>以上是通常情况下的解决方案，本人遇到这个问题其实比较棘手并没有那么的顺利：本人旧机Window安装的node是v10.15.3，hexo版本是v3.9.0；要知道hexo最新版本已经是v5.2.0，跟旧版本相比有了很大的改动，比如主题安装，变化还是比较多的。所以最好是确定node版本在12或13或者以下版本，hexo版本最好也保持一致，否则会出现deploy d失败的情况，可以通过nvm安装多版本node解决即可</p>
-<p><img src="/2020/12/18/20201218-HexoTransferWindowsToMac/6.jpg" alt></p>
-
-          
-        
-      
-    </div>
-    
-    
-    
-
-    
-
-    
-
-    
-
-    <footer class="post-footer">
-      
-
-      
-
-      
-
-      
-      
-        <div class="post-eof"></div>
-      
-    </footer>
-  </div>
-  
-  
-  
-  </article>
-
-
-    
   </section>
 
   
@@ -2047,7 +2099,7 @@
               
                 <a href="/archives/">
               
-                  <span class="site-state-item-count">44</span>
+                  <span class="site-state-item-count">46</span>
                   <span class="site-state-item-name">日志</span>
                 </a>
               </div>
@@ -2058,7 +2110,7 @@
               
               <div class="site-state-item site-state-categories">
                 <a href="/categories/index.html">
-                  <span class="site-state-item-count">24</span>
+                  <span class="site-state-item-count">25</span>
                   <span class="site-state-item-name">分类</span>
                 </a>
               </div>
@@ -2069,7 +2121,7 @@
               
               <div class="site-state-item site-state-tags">
                 <a href="/tags/index.html">
-                  <span class="site-state-item-count">35</span>
+                  <span class="site-state-item-count">36</span>
                   <span class="site-state-item-name">标签</span>
                 </a>
               </div>

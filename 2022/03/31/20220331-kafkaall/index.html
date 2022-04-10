@@ -1,0 +1,1248 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next muse use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="Kafka,">
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="前言其实写这篇文章主要有两个目的，第一个还是学而时习之巩固总结一下之前学过的东西，第二个为后面的pulsar介绍做个铺垫，因为本人最近就是用pulsar对系统进行了重构，作为时下最流行的两款MQ，kafka具有广大的群众基础属于是老牌明星，而pulsar就属于是后起之秀，各有千秋，话不多说进入今天的正题~  消息队列能做什么什么是消息队列举个简单的例子吧，最近也看了新闻了听说某地的疫情十分严重，想">
+<meta name="keywords" content="Kafka">
+<meta property="og:type" content="article">
+<meta property="og:title" content="kafka是个啥？">
+<meta property="og:url" content="http://stevenhoukai.github.io/2022/03/31/20220331-kafkaall/index.html">
+<meta property="og:site_name" content="迷途小书童">
+<meta property="og:description" content="前言其实写这篇文章主要有两个目的，第一个还是学而时习之巩固总结一下之前学过的东西，第二个为后面的pulsar介绍做个铺垫，因为本人最近就是用pulsar对系统进行了重构，作为时下最流行的两款MQ，kafka具有广大的群众基础属于是老牌明星，而pulsar就属于是后起之秀，各有千秋，话不多说进入今天的正题~  消息队列能做什么什么是消息队列举个简单的例子吧，最近也看了新闻了听说某地的疫情十分严重，想">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://stevenhoukai.github.io/2022/03/31/20220331-kafkaall/1.png">
+<meta property="og:image" content="http://stevenhoukai.github.io/2022/03/31/20220331-kafkaall/2.png">
+<meta property="og:image" content="http://stevenhoukai.github.io/2022/03/31/20220331-kafkaall/3.png">
+<meta property="og:image" content="http://stevenhoukai.github.io/2022/03/31/20220331-kafkaall/4.png">
+<meta property="og:image" content="http://stevenhoukai.github.io/2022/03/31/20220331-kafkaall/5.png">
+<meta property="og:image" content="http://stevenhoukai.github.io/2022/03/31/20220331-kafkaall/6.png">
+<meta property="og:image" content="http://stevenhoukai.github.io/2022/03/31/20220331-kafkaall/7.png">
+<meta property="og:image" content="http://stevenhoukai.github.io/2022/03/31/20220331-kafkaall/8.png">
+<meta property="og:image" content="http://stevenhoukai.github.io/2022/03/31/20220331-kafkaall/9.png">
+<meta property="og:image" content="http://stevenhoukai.github.io/2022/03/31/20220331-kafkaall/10.png">
+<meta property="og:image" content="http://stevenhoukai.github.io/2022/03/31/20220331-kafkaall/21.jpeg">
+<meta property="og:updated_time" content="2022-04-10T10:11:43.022Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="kafka是个啥？">
+<meta name="twitter:description" content="前言其实写这篇文章主要有两个目的，第一个还是学而时习之巩固总结一下之前学过的东西，第二个为后面的pulsar介绍做个铺垫，因为本人最近就是用pulsar对系统进行了重构，作为时下最流行的两款MQ，kafka具有广大的群众基础属于是老牌明星，而pulsar就属于是后起之秀，各有千秋，话不多说进入今天的正题~  消息队列能做什么什么是消息队列举个简单的例子吧，最近也看了新闻了听说某地的疫情十分严重，想">
+<meta name="twitter:image" content="http://stevenhoukai.github.io/2022/03/31/20220331-kafkaall/1.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Muse',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://stevenhoukai.github.io/2022/03/31/20220331-kafkaall/">
+
+
+
+
+
+  <title>kafka是个啥？ | 迷途小书童</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">迷途小书童</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">读过几年书，尘世间一枚不起眼的小书童</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br>
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br>
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br>
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off" placeholder="搜索..." spellcheck="false" type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://stevenhoukai.github.io/2022/03/31/20220331-kafkaall/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="史蒂芬猴">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/upload/images/avatar.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="迷途小书童">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">kafka是个啥？</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2022-03-31T00:00:01+08:00">
+                2022-03-31
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/MQ/" itemprop="url" rel="index">
+                    <span itemprop="name">MQ</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+            <span class="post-meta-divider">|</span>
+            <span class="page-pv"><i class="fa fa-file-o">阅读次数</i>
+            <span class="busuanzi-value" id="busuanzi_value_page_pv"></span>次
+            </span>
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>其实写这篇文章主要有两个目的，第一个还是学而时习之巩固总结一下之前学过的东西，第二个为后面的pulsar介绍做个铺垫，因为本人最近就是用pulsar对系统进行了重构，作为时下最流行的两款MQ，kafka具有广大的群众基础属于是老牌明星，而pulsar就属于是后起之秀，各有千秋，话不多说进入今天的正题~ </p>
+<h2 id="消息队列能做什么"><a href="#消息队列能做什么" class="headerlink" title="消息队列能做什么"></a><strong>消息队列能做什么</strong></h2><h3 id="什么是消息队列"><a href="#什么是消息队列" class="headerlink" title="什么是消息队列"></a><strong>什么是消息队列</strong></h3><p>举个简单的例子吧，最近也看了新闻了听说某地的疫情十分严重，想着就提前在家屯点货已备不时之需吧，毕竟现在这个世界一切都很难说了，晚上kuakuakua的在网上买了很多应急食材，隔天快递小哥就打电话来了 : “喂，你好，是xxx吗，下午几点在家吗，我给你送东西过来”，我这边的回复是:”你好，我是xxx，我今天不在家哦，晚上下班我在家，你晚上再过来？”，快递员：”啊？不行哦，我晚上下班了，我只有下午是送货时间，要不周末再给您送？”，我：”不行不行，今晚必须送来！”，好家伙然后双方就像下面一样僵住了，来看下面的图 ：</p>
+<img src="/2022/03/31/20220331-kafkaall/1.png" style="zoom: 80%;">
+
+<p>其实我们完全可以把上面的例子中我和山姆配送员当作是两个需要交互的系统来看，我有空的时候配送员没空，配送员有空的时候我没空，也就导致了上面僵住的局面，双方内心无数mmp，那怎么解决这个问题了？来看看下面的方案：</p>
+<img src="/2022/03/31/20220331-kafkaall/2.png" style="zoom: 80%;">
+
+<p>咋们每个小区不都有保安亭嘛l…山姆配送员在他有空的时候把东西放置在保安亭，然后他就可以去忙别的事情了，我咧等晚上下班了就去保安亭拿自己的东西，完事儿，两者皆大欢喜，如果当作系统来看，这个保安亭就是今天要介绍的消息队列MQ，那么有了这个消息队列有啥好处作用了？</p>
+<h3 id="消息队列的作用"><a href="#消息队列的作用" class="headerlink" title="消息队列的作用"></a><strong>消息队列的作用</strong></h3><ol>
+<li><h4 id="异步"><a href="#异步" class="headerlink" title="异步"></a>异步</h4><p>山姆小哥打电话给我后需要一直在你楼下等着，直到我下楼面对面拿走快递再去配送其他人的。山姆小哥将快递放在保安亭后，立马可以去配送其他人的快递，不需要一直在楼下矗着等待我下楼。提高的效率不止一点半点。</p>
+</li>
+<li><h4 id="解耦"><a href="#解耦" class="headerlink" title="解耦"></a>解耦</h4><p>山姆小哥手上有很多人的快递都需要配送，他每次都需要先电话一一确认收货人是否有空、哪个时间段有空，然后再确定好送货的方案。这样完全依赖收货人了！</p>
+<p>如果快递一多，山姆小哥估计的忙疯了……如果有了保安亭，山姆小哥只需要将同一个片区的货物统一放置在对应保安亭然后一一通知收货人，然后通知收货人收到通知来取货就可以了，这时候山姆小哥和收货人就实现了完全解耦，谁都不需要依赖谁的时间是否有空。</p>
+</li>
+<li><h4 id="削峰"><a href="#削峰" class="headerlink" title="削峰"></a>削峰</h4><p>这点的体现在每年的电商节都是能看到的，每年双11都会有大量的订单产生，然后发货却如细水长流般，这便是削峰，先通过mq接收大流量的订单，然后后续再慢慢处理每一个订单。</p>
+</li>
+</ol>
+<p>所以我们能看到在系统需要交互的场景中，使用消息队列中间件真的是有很多好处的，但是任何一个东西有利便有弊，比如滥用mq也会增加系统复杂度，你的系统是否可以承受这样复杂度的维护，所以我们的原则应该是在合适的场景选择合适的组建来解决我们的问题才是正解。</p>
+<h2 id="通信模式"><a href="#通信模式" class="headerlink" title="通信模式"></a><strong>通信模式</strong></h2><p>正所谓无规矩不成方圆，消息队列也有自己的行规，总体就有以下两种模式：</p>
+<h3 id="点对点模式"><a href="#点对点模式" class="headerlink" title="点对点模式"></a>点对点模式</h3><p>如下图所示，点对点模式通常是基于拉取或者轮询的消息传送模型，这个模型的特点是发送到队列的消息被一个且只有一个消费者进行处理。生产者将消息放入消息队列后，由消费者主动的去拉取消息进行消费。它的优点是消费者拉取消息的频率可以由自己控制。但是消息队列是否有消息需要消费，在消费者端无法感知，所以在消费者端需要额外的线程去监控。</p>
+<img src="/2022/03/31/20220331-kafkaall/3.png" style="zoom: 80%;">
+
+<h3 id="发布订阅模式"><a href="#发布订阅模式" class="headerlink" title="发布订阅模式"></a>发布订阅模式</h3><p>如下图所示，发布订阅模式是一个基于消息送的消息传送模型，该模型可以有多种不同的订阅者。生产者将消息放入消息队列后，队列会将消息推送给订阅过该类消息的消费者(比如关注了公众号，关注了主播你会第一时间接收到他们的发布内容)由于是消费者被动接收推送，所以无需感知消息队列是否有待消费的消息！但是consumer1、consumer2、consumer3由于机器性能不一样，所以处理消息的能力也会不一样，但消息队列却无法感知消费者消费的速度！所以推送的速度成了发布订阅模模式的一个问题！假设三个消费者处理速度分别是10M/s、5M/s、2M/s，如果队列推送的速度为6M/s，则consumer2和consumer3无法正常处理该队列的消息内容的，如果队列推送的速度为1M/s，这时三者都能正常处理但是咧consumer1、consumer2又会出现资源的极大浪费！</p>
+<img src="/2022/03/31/20220331-kafkaall/4.png" style="zoom: 80%;">
+
+<h2 id="Kafka"><a href="#Kafka" class="headerlink" title="Kafka"></a>Kafka</h2><p>上面我们对消息队列有了一个大体的认识，了解了它的一些作用和工作模式，那么接下来就轮到今天的主角登场了<kafka>~</kafka></p>
+<p>Kafka是一种高吞吐量的分布式发布订阅消息系统，它可以处理消费者规模的网站中的所有动作流数据，具有高性能、持久化、多副本备份、横向扩展能力（虽然它的横向扩展能力不太得劲儿）……</p>
+<h3 id="基础架构及术语"><a href="#基础架构及术语" class="headerlink" title="基础架构及术语"></a>基础架构及术语</h3><p>先来看本人整理的一张结构图，来大致了解一下kafka的整体架构，看不懂没关系，我们先来听个响 : </p>
+<img src="/2022/03/31/20220331-kafkaall/5.png" style="zoom: 80%;">
+
+<p>有点懵逼是正常的，容我先来对里面的这些概念进行一下解释，应该就会有一个清晰的理解了：</p>
+<p><strong>Producer</strong>：生产者，消息的产生者也可以叫投递者，这个角色就是开局例子里的山姆小哥，是消息的起源。</p>
+<p><strong>Broker</strong>：Broker是kafka实例，每个服务器上有一个或多个kafka的实例，我们暂且认为每个broker对应一台服务器。每个kafka集群内的broker都有一个不重复的编号，如图中的broker-0、broker-1、broker-2等</p>
+<p><strong>kafka cluster</strong>：kafka集群，由上面的broker组成，主要就是为了系统的高可用，消息不丢失。</p>
+<p><strong>Topic</strong>：消息的主题，可以理解为消息的分类，kafka的数据就保存在topic。在每个broker上都可以创建多个topic。开局的例子中我们可以理解多个临近的小区构成一个topic。</p>
+<p><strong>Partition</strong>：Topic的分区，每个topic可以有多个分区，分区的作用是做负载，提高kafka的吞吐量。同一个topic在不同的分区的数据是不重复的，partition的表现形式就是一个一个的文件夹！开局的例子中我们可以理解我所在的小区就是一个partition</p>
+<p><strong>Replication</strong>:每一个分区都有多个副本，副本的作用是做备胎。当主分区（Leader）故障的时候会选择一个备胎（Follower）上位，成为Leader。在kafka中默认副本的最大数量是10个，且副本的数量不能大于Broker的数量，follower和leader绝对是在不同的机器，同一机器对同一个分区也只可能存放一个副本（包括自己）。这个在开局的例子中并没有很好的对应的对象，这属于是kafka为了实现高可用的一种兜底机制。</p>
+<p><strong>Message</strong>：每一条发送的消息主体。可以理解就是我买的应急物资。</p>
+<p><strong>Consumer</strong>：消费者，即消息的消费方，可以理解就是开局例子里面的我，是消息的终点。</p>
+<p><strong>Consumer Group</strong>：我们可以将多个消费组组成一个消费者组，在kafka的设计中同一个分区的数据只能被消费者组中的某一个消费者消费。同一个消费者组的消费者可以消费同一个topic的不同分区的数据，这也是为了提高kafka的吞吐量！这个也很好理解我所在的那个小区的其他Consumer，我们共同组建了一个Consumer Group！</p>
+<p><strong>Zookeeper</strong>：kafka集群依赖zookeeper来保存集群的的元信息，来保证系统的可用性。它内部通过zab协议来实现，有兴趣的朋友可以自行去了解下。</p>
+<p>通过本人这样一类比介绍，相信各位一定对上图有了一定的理解了吧，其实说的简单一点，消息队列无非就是三个核心：写消息、存消息、消费消息。那么下面就来一一介绍一下:</p>
+<h3 id="怎么写消息"><a href="#怎么写消息" class="headerlink" title="怎么写消息"></a>怎么写消息</h3><p>请看下图为本人整理的写入流程，producer其实只会与Leader进行直接交互，他并不关心Follower的状态，换句话说producer只关注Leader的状态和地址，至于kafka内部是如何选处leader的它并不关心，反正他发送之前会先去集群拉取对应leader的信息</p>
+<img src="/2022/03/31/20220331-kafkaall/6.png" style="zoom: 80%;">
+
+<p>整个的发送的流程就在上图中展示的很明显了，我就不再重述一遍了，值得注意的是第四点消息写入leader后，follower是主动的去leader进行同步的！producer使用的是push模式将数据发送给broker，每条消息追加到分区中，顺序写入磁盘，注意了这一点是kafka之所以那么快的一项保证，kafka在写入的过程中采用了mmap+顺序写（减少了磁盘旋转与寻道的时间，这并不是本文的终点所以不会展开说），所以保证<strong>同一分区</strong>内的数据是有序的！写入示意图如下：</p>
+<img src="/2022/03/31/20220331-kafkaall/7.png" style="zoom: 80%;">
+
+<p>细心的小伙伴其实应该也发现问题了，不是有了topic了嘛，为啥还要搞一个partition出来了？其实分区的主要目的是：</p>
+<p><strong>1、 方便扩展</strong>。因为一个topic可以有多个partition，所以我们可以通过扩展机器去轻松的应对日益增长的数据量。</p>
+<p><strong>2、 提高并发</strong>。以partition为读写单位，可以多个消费者同时消费数据，提高了消息的处理效率。一台机器的性能是有限的，当一个机器处理不了当前消息量的时候，我们就可以水平扩展出多台机器同时进行处理。</p>
+<p>诶，细心的朋友这时候又会提问了，既然可以扩展出多台机器，那我咋知道哪台机器应该去处理哪个partition里面的消息了？这样其实就是一个负载均衡的问题了，在kafka里面其实这里是有一些约定原则的，如下 :</p>
+<p><strong>kafka中有几个原则：</strong></p>
+<p>1、 partition在写入的时候可以指定需要写入的partition，如果有指定，则写入对应的partition。</p>
+<p>2、 如果没有指定partition，但是设置了数据的key，则会根据key的值hash出一个partition。</p>
+<p>3、 如果既没指定partition，又没有设置key，则会轮询选出一个partition。</p>
+<p><strong>kafka如何保证消息不丢失：</strong></p>
+<p>安全性是每个mq首当其冲应该保证的问题，如果连投递的消息安全送达到消费者手中都无法保证那这个消息队列存在也就毫无意义，就好像你买了应急物资却一直收不到货但是商场那边显示是已送达～，<strong>那kafka是怎么做到消息发送后不丢失的了</strong>？</p>
+<p>上图中的的写入流程其实有写出来哈，其实就是通过ACK应答机制～！在生产者向队列写入数据的时候可以设置参数来确定是否确认kafka接收到数据，这个参数可设置的值为<strong>0</strong>、<strong>1</strong>、<strong>all</strong>。</p>
+<p>0代表producer往集群发送数据不需要等到集群的返回，不确保消息发送成功。安全性最低但是效率最高。</p>
+<p>1代表producer往集群发送数据只要leader应答就可以发送下一条，只确保leader发送成功。</p>
+<p>all代表producer往集群发送数据需要所有的follower都完成从leader的同步才会发送下一条，确保leader发送成功和所有的副本都完成备份。安全性最高，但是效率最低。总体而言，安全和效率并不能两全其美，就像鱼与熊掌不可兼得一般，应该有所取舍。</p>
+<p>最后要注意的是，如果往不存在的topic写数据，能不能写入成功呢？kafka会自动创建topic，分区和副本的数量根据默认配置都是1。</p>
+<h3 id="怎么存消息"><a href="#怎么存消息" class="headerlink" title="怎么存消息"></a>怎么存消息</h3><p>好，上面我们讲述了消息写入的全过程，那写入后的消息是如何存放的了，山姆小哥将我购买的应急物资难道就是随手一扔？答案肯定是否哈，生产者将数据写入broker后，此时cluster就需要对数据进行存储了，毫无疑问数据是被存在硬盘里的，只有这样才能保证数据在broker发生异常时不丢失数据，可能在我们的一般的认知里，写入磁盘是比较耗时的操作，不适合这种高并发的组件。但是上面写消息的时候已经讲过了 MMAP + 顺序写 是kafka高性能的保证之一，在消费消息的时候其实还有一个sendfile的零拷贝方案也是其高性能的保证之一，这个我们后面有机会再说。<strong>Partition 结构</strong>前面说过了每个topic都可以分为一个或多个partition，如果觉得topic比较抽象，那partition就是实实在在的东西！Partition在服务器上的表现形式就是一个一个的文件夹，每个partition的文件夹下面会有多组segment文件，每组segment文件又包含.index文件、.log文件、.timeindex文件（早期版本中没有）三个文件， log文件就实际是存储message的地方，而index和timeindex文件为索引文件，用于检索消息。</p>
+<img src="/2022/03/31/20220331-kafkaall/8.png" style="zoom: 60%;">
+
+<p>来看上图，这个partition 0有三组segment文件，每个log文件的大小是一样的，但是存储的message数量是不一定相等的（每条的message大小不一致）。文件的命名是以该segment最小offset来命名的，如000.index存储offset为0~555555的消息，kafka就是利用分段+索引的方式来解决查找效率的问题。</p>
+<p><strong>Message结构</strong>上面说到log文件就实际是存储message的地方，我们在producer往kafka写入的也是一条一条的message，那存储在log中的message是什么样子的呢？消息主要包含消息体、消息大小、offset、压缩类型……等等！</p>
+<p><strong>名词解释</strong></p>
+<p>1、 offset：又叫偏移量是一个占8byte的有序id号，它可以唯一确定每条消息在parition内的位置！通过起始位置+偏移量可以迅速获取到对应消息的起始位置。bingo～</p>
+<p>2、 消息大小：消息大小占用xxbyte，用于描述消息内容实际占用的空间大小。</p>
+<p>3、 消息体：消息体存放的是实际的消息数据（被压缩过，后面有时间我也会出一篇关于压缩算法的文章十分有趣哈），占用的空间根据具体的消息而不一样。</p>
+<p><strong>存储策略</strong></p>
+<p>写到这里，醒目的小伙伴应该会有一个疑问了，生产者发了那么多消息到broker集群，先不管有没有consumer对其进行消费处理，那这些消息会一直存在吗？如果一直存在broker总有撑爆的一天吧？那kafka也是有对应的策略去处理过期消息的，kafka会在以下两种方案中择其一来对数据进行删除：</p>
+<p>1、 基于时间，默认配置是168小时（7天）。也就是说kafka的内部线程会对存在超过168小时的数据进行删除。</p>
+<p>2、 基于大小，默认配置是1073741824。需要注意的是，kafka读取特定消息的时间复杂度是O(1)，所以这里删除过期的文件并不会提高kafka的性能！</p>
+<h3 id="如何消费消息"><a href="#如何消费消息" class="headerlink" title="如何消费消息"></a>如何消费消息</h3><p>上面我们讲解了消息是如何发送和存储的，那么接下来就是最后的消费重头戏了，消息存储在log文件后，consumer们就可以对其进行消费了。kafka的consumer会主动的去kafka集群拉取消息，消费者在拉取消息的时候也是只会关注Leader的，这点与producer完全一致，consumer通常也不是孤军奋战的，它们通常都是结伴而行，多个consumer可以组成一个消费者组（consumer group），每个消费者组都有一个组id(唯一id)！同一个消费组者的消费者可以消费同一topic下不同分区的数据，但是永远不会出现一个组内多个消费者对同一分区的数据进行消费～，来看我整理的下图进行加深理解 ：</p>
+<img src="/2022/03/31/20220331-kafkaall/9.png" style="zoom: 60%;">
+
+<p>图中一个的topic有4个partition，但是对应的消费者组中只有3个消费者，这时就会出现上图中出现的情况，最后的consumer2承担了两个partition的消费工作，那如果是消费者组的消费者多于partition的数量，那会不会出现多个消费者消费同一个partition的数据呢？答案是不会的，多出来的消费者不消费任何partition的数据，它就像一个废人一样存在的毫无意义，所以在实际的应用中，应该将<strong>消费者组的consumer的数量与partition的数量保持一致</strong>！在保存数据的小节里面，我们聊到了partition划分为多组segment，每个segment又包含.log、.index、.timeindex文件，存放的每条message包含offset、消息大小、消息体。</p>
+<p>其实我们已经不止一次的提到segment和offset，那么我们最后就来看看kafka是如何通过这两个参数快速定位到对应消息的。</p>
+<img src="/2022/03/31/20220331-kafkaall/10.png" style="zoom: 80%;">
+
+<p><strong>消息查找策略</strong></p>
+<p>1、 先找到offset为555560的message所在的segment文件（利用二分法查找），这里找到的就是segment 2文件夹。</p>
+<p>2、 打开找到的segment中的.index文件（也就是555555.index文件，该文件起始偏移量为55555+1，我们要查找的offset为555560的message在该index内的偏移量为55555+5=555560，所以这里要查找的<strong>相对offset</strong>为5）。由于该文件采用的是稀疏索引的方式存储着相对offset及对应message物理偏移量的关系，所以直接找相对offset为5的索引找不到，这里同样利用二分法查找相对offset小于或者等于指定的相对offset的索引条目中最大的那个相对offset，所以找到的是相对offset为4的这个索引。</p>
+<p>3、 根据找到的相对offset为4的索引确定message存储的物理偏移位置为256。打开数据文件，从位置为256的那个地方开始顺序扫描直到找到offset为555560的那条Message。</p>
+<p>这整套机制是建立在offset为有序的基础上，如果offset无序那这套机制也就毫无卵用了，利用<strong>segment</strong>+<strong>有序offset</strong>+<strong>稀疏索引</strong>+<strong>二分查找</strong>+<strong>顺序查找</strong>等多种手段来高效的查找数据！</p>
+<p>Ok，通过以上三步consumer就能准确的拿到需要处理的message进行处理了。接下来就只需要记录下这个位置然后下次继续从此处往后进行消费就可以了，那最后的问题又来了到底该如何存放这个offset位置的值了？直接公布答案，其实在早期的版本中，消费者将消费到的offset维护zookeeper中，consumer每间隔一段时间上报一次，这里容易导致重复消费，且性能不好！在新的版本中消费者消费到的offset已经直接维护在kafka集群的_consumeroffsets这个topic中！</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>噗，终于讲完了～，希望本文能让你对kafka有一个全面且深刻的了解，其实kafka里面还有很多知识这里篇幅有限不能一一讲解，譬如rebalance又譬如零拷贝等等，有兴趣的可以自行去学习了解一下哈，毕竟本人是为了分享pulsar才拿kafka做铺垫的哈，后面pulsar见，完结撒花～。</p>
+<img src="/2022/03/31/20220331-kafkaall/21.jpeg" style="zoom: 100%;">
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/Kafka/" rel="tag"># Kafka</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2022/03/26/20220326-goslice/" rel="next" title="slice">
+                <i class="fa fa-chevron-left"></i> slice
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+    <div class="comments" id="comments">
+      <div id="lv-container" data-id="city" data-uid="MTAyMC81MjAzNC8yODUxNQ=="></div>
+    </div>
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image" src="/upload/images/avatar.jpg" alt="史蒂芬猴">
+            
+              <p class="site-author-name" itemprop="name">史蒂芬猴</p>
+              <p class="site-description motion-element" itemprop="description">dora is my precious</p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">46</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">25</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">36</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+
+          
+            <div class="links-of-author motion-element">
+                
+                  <span class="links-of-author-item">
+                    <a href="https://github.com/stevenhoukai" target="_blank" title="GitHub">
+                      
+                        <i class="fa fa-fw fa-github"></i>GitHub</a>
+                  </span>
+                
+            </div>
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#前言"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#消息队列能做什么"><span class="nav-number">2.</span> <span class="nav-text">消息队列能做什么</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#什么是消息队列"><span class="nav-number">2.1.</span> <span class="nav-text">什么是消息队列</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#消息队列的作用"><span class="nav-number">2.2.</span> <span class="nav-text">消息队列的作用</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#异步"><span class="nav-number">2.2.1.</span> <span class="nav-text">异步</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#解耦"><span class="nav-number">2.2.2.</span> <span class="nav-text">解耦</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#削峰"><span class="nav-number">2.2.3.</span> <span class="nav-text">削峰</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#通信模式"><span class="nav-number">3.</span> <span class="nav-text">通信模式</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#点对点模式"><span class="nav-number">3.1.</span> <span class="nav-text">点对点模式</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#发布订阅模式"><span class="nav-number">3.2.</span> <span class="nav-text">发布订阅模式</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Kafka"><span class="nav-number">4.</span> <span class="nav-text">Kafka</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#基础架构及术语"><span class="nav-number">4.1.</span> <span class="nav-text">基础架构及术语</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#怎么写消息"><span class="nav-number">4.2.</span> <span class="nav-text">怎么写消息</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#怎么存消息"><span class="nav-number">4.3.</span> <span class="nav-text">怎么存消息</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#如何消费消息"><span class="nav-number">4.4.</span> <span class="nav-text">如何消费消息</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#总结"><span class="nav-number">5.</span> <span class="nav-text">总结</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2022</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">史蒂芬猴</span>
+
+  
+</div>
+
+
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Muse</a> v5.1.4</div>
+
+
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="site-uv">
+      <i class="fa fa-user">访客数</i>
+      <span class="busuanzi-value" id="busuanzi_value_site_uv"></span>
+      人
+    </span>
+  
+
+  
+    <span class="site-pv">
+      <i class="fa fa-eye">总访问量</i>
+      <span class="busuanzi-value" id="busuanzi_value_site_pv"></span>
+      次
+    </span>
+  
+</div>
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+  
+  
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/three/three.min.js"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/three/canvas_sphere.min.js"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+    <script type="text/javascript">
+      (function(d, s) {
+        var j, e = d.getElementsByTagName(s)[0];
+        if (typeof LivereTower === 'function') { return; }
+        j = d.createElement(s);
+        j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+        j.async = true;
+        e.parentNode.insertBefore(j, e);
+      })(document, 'script');
+    </script>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

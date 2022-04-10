@@ -295,6 +295,342 @@
   
   
   <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://stevenhoukai.github.io/2020/01/28/20200127springioc/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="史蒂芬猴">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/upload/images/avatar.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="迷途小书童">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+                
+                <a class="post-title-link" href="/2020/01/28/20200127springioc/" itemprop="url">springIOC---1、手工简单实现基于xml的IOC框架</a></h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2020-01-28T00:00:01+08:00">
+                2020-01-28
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/spring相关框架原理/" itemprop="url" rel="index">
+                    <span itemprop="name">spring相关框架原理</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          
+            <h1 id="如何自己实现一个IOC容器"><a href="#如何自己实现一个IOC容器" class="headerlink" title="如何自己实现一个IOC容器"></a>如何自己实现一个IOC容器</h1><p>……这里我并不想多做关于spring的相关介绍，大家可自行去官网了解相关内容，我们直接进入正题，假如让你自己去做开发，并且spring开始收取高额的费用了，这里只是假设，你该如何去开发？思考一分钟……稍微有点框架基础的人应该都会说自己开发一个IOC框架进行容器管理不就得了，确实，容器管理是本文的重点，今天就来讲解一下第一种方式，通过xml文件的方式来实现IOC容器。</p>
+<h2 id="代码结构"><a href="#代码结构" class="headerlink" title="代码结构"></a>代码结构</h2><p>……整体的代码结构如下图，下面就逐一解析<br><img src="/2020/01/28/20200127springioc/1.png" alt="图p1"></p>
+<center>**代码结构**</center>
+
+<h3 id="入口类TestMain"><a href="#入口类TestMain" class="headerlink" title="入口类TestMain"></a>入口类TestMain</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">package com.hk.springioc;</span><br><span class="line"></span><br><span class="line">public class TestMain &#123;</span><br><span class="line">	public static void main(String[] args) &#123;</span><br><span class="line">		MyXmlClassPathApplicationContext fac = new MyXmlClassPathApplicationContext(&quot;myspring.xml&quot;);</span><br><span class="line">		Person bean1 = (Person) fac.getBean(&quot;person&quot;);</span><br><span class="line">		Person bean2 = (Person) fac.getBean(&quot;person&quot;);</span><br><span class="line">		bean1.printAll();</span><br><span class="line">		bean2.printAll();</span><br><span class="line">		System.out.print(bean1 == bean2 ? &quot;同一个对象&quot; : &quot;非同一个对象&quot;);</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>整个程序的main方法中我们new了一个MyXmlClassPathApplicationContext这样的一个对象，这也是整个稍后IOC构建过程中的核心类，介绍该类之前，先说明两个接口<br>ApplicationContext用于IOC容器构建  </p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">package com.hk.springioc;</span><br><span class="line"></span><br><span class="line">public interface ApplicationContext &#123;</span><br><span class="line">	public void springIOC();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>BeanFactory用于对象实例管理与获取</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">package com.hk.springioc;</span><br><span class="line"></span><br><span class="line">public interface BeanFactory &#123;</span><br><span class="line">	public Object getBean(String name);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="MyXmlClassPathApplicationContext"><a href="#MyXmlClassPathApplicationContext" class="headerlink" title="MyXmlClassPathApplicationContext"></a>MyXmlClassPathApplicationContext</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br></pre></td><td class="code"><pre><span class="line">package com.hk.springioc;</span><br><span class="line"></span><br><span class="line">import java.lang.reflect.Field;</span><br><span class="line">import java.util.HashMap;</span><br><span class="line">import java.util.List;</span><br><span class="line">import java.util.Map;</span><br><span class="line">import java.util.Map.Entry;</span><br><span class="line">import java.util.Set;</span><br><span class="line"></span><br><span class="line">public class MyXmlClassPathApplicationContext implements BeanFactory,ApplicationContext &#123;</span><br><span class="line"></span><br><span class="line">	private ConfigManager configManager;</span><br><span class="line">	</span><br><span class="line">	private Map&lt;String,Bean&gt; beanContainer;</span><br><span class="line">	</span><br><span class="line">	private Map&lt;String,Object&gt; instanceContainer ;</span><br><span class="line">	</span><br><span class="line">	public MyXmlClassPathApplicationContext(String path)&#123;</span><br><span class="line">		configManager = new ConfigManager();</span><br><span class="line">		instanceContainer = new HashMap&lt;String,Object&gt;();</span><br><span class="line">		beanContainer = configManager.parseXML(path);</span><br><span class="line">		springIOC();</span><br><span class="line">	&#125;</span><br><span class="line">	</span><br><span class="line">	</span><br><span class="line">	</span><br><span class="line">	//依賴注入的關鍵</span><br><span class="line">	@Override</span><br><span class="line">	public void springIOC() &#123;</span><br><span class="line">		Set&lt;Entry&lt;String, Bean&gt;&gt; entrySet = beanContainer.entrySet();</span><br><span class="line">		for(Entry&lt;String, Bean&gt; entry : entrySet)&#123;</span><br><span class="line">//			String name = entry.getKey();</span><br><span class="line">			Bean bean = entry.getValue();</span><br><span class="line">			Object instance = createBean(bean);</span><br><span class="line">//			instanceContainer.put(name, instance);</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	private Object createBean(Bean bean) &#123;</span><br><span class="line">		if(instanceContainer.get(bean.getName())!=null)&#123;</span><br><span class="line">			return instanceContainer.get(bean.getName());</span><br><span class="line">		&#125;</span><br><span class="line">		String className = bean.getClassName();</span><br><span class="line">		List&lt;Property&gt; props = bean.getProps();</span><br><span class="line">		Object newInstance = null;</span><br><span class="line">		try &#123;</span><br><span class="line">			Class&lt;?&gt; forName = Class.forName(className);</span><br><span class="line">			newInstance = forName.newInstance();</span><br><span class="line">			for(Property pro : props)&#123;</span><br><span class="line">				String name = pro.getName();</span><br><span class="line">				Field field = forName.getDeclaredField(name);</span><br><span class="line">				field.setAccessible(true);</span><br><span class="line">				if(pro.getRef()!=null)&#123;</span><br><span class="line">					String ref = pro.getRef();</span><br><span class="line">					Object existBean = getBean(ref);</span><br><span class="line">					if(existBean==null)&#123;</span><br><span class="line">						Object createBean = createBean(beanContainer.get(ref));</span><br><span class="line">						field.set(newInstance,createBean);</span><br><span class="line">					&#125;else&#123;</span><br><span class="line">						field.set(newInstance,existBean);</span><br><span class="line">					&#125;</span><br><span class="line">				&#125;else&#123;</span><br><span class="line">					Class&lt;?&gt; type = field.getType();</span><br><span class="line">					if(type==int.class)&#123;</span><br><span class="line">						field.set(newInstance,Integer.parseInt(pro.getValue()));</span><br><span class="line">					&#125;else&#123;</span><br><span class="line">						field.set(newInstance,pro.getValue());</span><br><span class="line">					&#125;</span><br><span class="line">					</span><br><span class="line">				&#125;</span><br><span class="line">			&#125;</span><br><span class="line">			if(bean.getSingleton().equals(&quot;1&quot;))&#123;</span><br><span class="line">				instanceContainer.put(bean.getName(), newInstance);</span><br><span class="line">			&#125;</span><br><span class="line">			</span><br><span class="line">		&#125; catch (ClassNotFoundException e) &#123;</span><br><span class="line">			e.printStackTrace();</span><br><span class="line">		&#125; catch (InstantiationException e) &#123;</span><br><span class="line">			e.printStackTrace();</span><br><span class="line">		&#125; catch (IllegalAccessException e) &#123;</span><br><span class="line">			e.printStackTrace();</span><br><span class="line">		&#125; catch (NoSuchFieldException e) &#123;</span><br><span class="line">			e.printStackTrace();</span><br><span class="line">		&#125; catch (SecurityException e) &#123;</span><br><span class="line">			e.printStackTrace();</span><br><span class="line">		&#125;</span><br><span class="line">		return newInstance;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"></span><br><span class="line">	@Override</span><br><span class="line">	public Object getBean(String name) &#123;</span><br><span class="line">		return instanceContainer.get(name);</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>解释一下这个类主要做了什么：<br>1、new了一个ConfigManager对象<br>2、构建了一个HashMap类型的实例化容器instanceContainer<br>3、用第一步的ConfigManager对象解析XML文件，获取一个Bean容器，这里的Bean就是XML文件中配置的相关bean信息，后面会有一个类进行封装<br>4、对Bean容器进行解析，构建最终的IOC实例容器，也就是第二步中的instanceContainer<br>下面就是xml文件以及对应封装类Bean</p>
+<h3 id="myspring-xml"><a href="#myspring-xml" class="headerlink" title="myspring.xml"></a>myspring.xml</h3><p>配置文件结构如下</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br><span class="line">146</span><br><span class="line">147</span><br><span class="line">148</span><br><span class="line">149</span><br><span class="line">150</span><br><span class="line">151</span><br><span class="line">152</span><br><span class="line">153</span><br><span class="line">154</span><br><span class="line">155</span><br><span class="line">156</span><br><span class="line">157</span><br><span class="line">158</span><br><span class="line">159</span><br><span class="line">160</span><br><span class="line">161</span><br><span class="line">162</span><br><span class="line">163</span><br><span class="line">164</span><br><span class="line">165</span><br><span class="line">166</span><br><span class="line">167</span><br><span class="line">168</span><br><span class="line">169</span><br><span class="line">170</span><br><span class="line">171</span><br><span class="line">172</span><br><span class="line">173</span><br><span class="line">174</span><br><span class="line">175</span><br><span class="line">176</span><br><span class="line">177</span><br><span class="line">178</span><br><span class="line">179</span><br></pre></td><td class="code"><pre><span class="line">&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;</span><br><span class="line">&lt;beans&gt;</span><br><span class="line">&lt;bean name=&quot;person&quot; class=&quot;com.hk.springioc.Person&quot;&gt;</span><br><span class="line">&lt;property name=&quot;boy&quot; ref=&quot;boy&quot; /&gt;</span><br><span class="line">&lt;property name=&quot;girl&quot; ref=&quot;girl&quot; /&gt;</span><br><span class="line">&lt;/bean&gt;</span><br><span class="line"></span><br><span class="line">&lt;bean name=&quot;boy&quot; class=&quot;com.hk.springioc.Boy&quot;&gt;</span><br><span class="line">&lt;property name=&quot;age&quot; value=&quot;2&quot; /&gt;</span><br><span class="line">&lt;property name=&quot;name&quot; value=&quot;lilei&quot; /&gt;</span><br><span class="line">&lt;/bean&gt;</span><br><span class="line"></span><br><span class="line">&lt;bean name=&quot;girl&quot; class=&quot;com.hk.springioc.Girl&quot;&gt;</span><br><span class="line">&lt;property name=&quot;age&quot; value=&quot;1&quot; /&gt;</span><br><span class="line">&lt;property name=&quot;name&quot; value=&quot;lily&quot; /&gt;</span><br><span class="line">&lt;/bean&gt;</span><br><span class="line">&lt;/beans&gt;</span><br><span class="line"></span><br><span class="line">封装Person信息，依赖注入Boy和Girl</span><br><span class="line">package com.hk.springioc;</span><br><span class="line"></span><br><span class="line">public class Person &#123;</span><br><span class="line">	private Boy boy;</span><br><span class="line">	private Girl girl;</span><br><span class="line">	public Boy getBoy() &#123;</span><br><span class="line">		return boy;</span><br><span class="line">	&#125;</span><br><span class="line">	public void setBoy(Boy boy) &#123;</span><br><span class="line">		this.boy = boy;</span><br><span class="line">	&#125;</span><br><span class="line">	public Girl getGirl() &#123;</span><br><span class="line">		return girl;</span><br><span class="line">	&#125;</span><br><span class="line">	public void setGirl(Girl girl) &#123;</span><br><span class="line">		this.girl = girl;</span><br><span class="line">	&#125;</span><br><span class="line">	</span><br><span class="line">	public Person()&#123;</span><br><span class="line">		</span><br><span class="line">	&#125;</span><br><span class="line">	public void printAll()&#123;</span><br><span class="line">		System.out.println(boy.getName()+&quot;:&quot;+boy.getAge());</span><br><span class="line">		System.out.println(girl.getName()+&quot;:&quot;+girl.getAge());</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">类封装girl信息  </span><br><span class="line">package com.hk.springioc;</span><br><span class="line"></span><br><span class="line">public class Girl &#123;</span><br><span class="line">	private String name;</span><br><span class="line">	private int age;</span><br><span class="line"></span><br><span class="line">	public String getName() &#123;</span><br><span class="line">		return name;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	public void setName(String name) &#123;</span><br><span class="line">		this.name = name;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	public int getAge() &#123;</span><br><span class="line">		return age;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	public void setAge(int age) &#123;</span><br><span class="line">		this.age = age;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	public Girl()&#123;</span><br><span class="line">		</span><br><span class="line">	&#125;</span><br><span class="line">	public void printAll()&#123;</span><br><span class="line">		System.out.println(name+&quot;:&quot;+age);</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">封装boy的信息  </span><br><span class="line">package com.hk.springioc;</span><br><span class="line"></span><br><span class="line">public class Boy &#123;</span><br><span class="line"></span><br><span class="line">	private String name;</span><br><span class="line">	private int age;</span><br><span class="line"></span><br><span class="line">	public String getName() &#123;</span><br><span class="line">		return name;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	public void setName(String name) &#123;</span><br><span class="line">		this.name = name;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	public int getAge() &#123;</span><br><span class="line">		return age;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	public void setAge(int age) &#123;</span><br><span class="line">		this.age = age;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	public Boy()&#123;</span><br><span class="line">		</span><br><span class="line">	&#125;</span><br><span class="line">	public void printAll()&#123;</span><br><span class="line">		System.out.println(name+&quot;:&quot;+age);</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">类封装xml中的bean标签信息  </span><br><span class="line">package com.hk.springioc;</span><br><span class="line"></span><br><span class="line">import java.util.List;</span><br><span class="line"></span><br><span class="line">public class Bean &#123;</span><br><span class="line">	private String name;</span><br><span class="line">	private String className;</span><br><span class="line">	public String getName() &#123;</span><br><span class="line">		return name;</span><br><span class="line">	&#125;</span><br><span class="line">	public void setName(String name) &#123;</span><br><span class="line">		this.name = name;</span><br><span class="line">	&#125;</span><br><span class="line">	public String getClassName() &#123;</span><br><span class="line">		return className;</span><br><span class="line">	&#125;</span><br><span class="line">	public void setClassName(String className) &#123;</span><br><span class="line">		this.className = className;</span><br><span class="line">	&#125;</span><br><span class="line">	public String getSingleton() &#123;</span><br><span class="line">		return singleton;</span><br><span class="line">	&#125;</span><br><span class="line">	public void setSingleton(String singleton) &#123;</span><br><span class="line">		this.singleton = singleton;</span><br><span class="line">	&#125;</span><br><span class="line">	public List&lt;Property&gt; getProps() &#123;</span><br><span class="line">		return props;</span><br><span class="line">	&#125;</span><br><span class="line">	public void setProps(List&lt;Property&gt; props) &#123;</span><br><span class="line">		this.props = props;</span><br><span class="line">	&#125;</span><br><span class="line">	private String singleton = &quot;1&quot;;</span><br><span class="line">	private List&lt;Property&gt; props;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">类封装xml文件中的property信息  </span><br><span class="line"></span><br><span class="line">package com.hk.springioc;</span><br><span class="line"></span><br><span class="line">public class Property &#123;</span><br><span class="line">	private String name;</span><br><span class="line">	private String value;</span><br><span class="line">	private String ref;</span><br><span class="line"></span><br><span class="line">	public String getName() &#123;</span><br><span class="line">		return name;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	public void setName(String name) &#123;</span><br><span class="line">		this.name = name;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	public String getValue() &#123;</span><br><span class="line">		return value;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	public void setValue(String value) &#123;</span><br><span class="line">		this.value = value;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	public String getRef() &#123;</span><br><span class="line">		return ref;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	public void setRef(String ref) &#123;</span><br><span class="line">		this.ref = ref;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="ConfigManager"><a href="#ConfigManager" class="headerlink" title="ConfigManager"></a>ConfigManager</h3><p>我们可以使用dom4j或者SAXReader对xml文件进行解析，构建需要的Bean容器，这里需要重点说明一点！！！我们的xml配置文件中没有特殊说明的bean都是singleton，也只有单例的对象才需要IOC容器进行管理，非单例的对象IOC容器是不会管理的  </p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br></pre></td><td class="code"><pre><span class="line">package com.hk.springioc;</span><br><span class="line"></span><br><span class="line">import java.io.InputStream;</span><br><span class="line">import java.util.ArrayList;</span><br><span class="line">import java.util.HashMap;</span><br><span class="line">import java.util.List;</span><br><span class="line">import java.util.Map;</span><br><span class="line"></span><br><span class="line">import org.dom4j.Document;</span><br><span class="line">import org.dom4j.DocumentException;</span><br><span class="line">import org.dom4j.Element;</span><br><span class="line">import org.dom4j.io.SAXReader;</span><br><span class="line"></span><br><span class="line">/**</span><br><span class="line"> * </span><br><span class="line"> * @ClassName: ConfigManager </span><br><span class="line"> * @Description: TODO(这里用一句话描述这个类的作用) </span><br><span class="line"> * @author A18ccms a18ccms_gmail_com </span><br><span class="line"> * @date 2019年4月9日 下午5:33:23 </span><br><span class="line"> * 解析xml組裝Bean容器</span><br><span class="line"> *</span><br><span class="line"> */</span><br><span class="line">public class ConfigManager &#123;</span><br><span class="line">	</span><br><span class="line">	public  Map&lt;String,Bean&gt; parseXML(String path)&#123;</span><br><span class="line">		Map&lt;String,Bean&gt; map = new HashMap&lt;String,Bean&gt;();</span><br><span class="line">		InputStream is = this.getClass().getResourceAsStream(path);</span><br><span class="line">		SAXReader reader = new SAXReader();</span><br><span class="line">		try &#123;</span><br><span class="line">			Document doc = reader.read(is);</span><br><span class="line">			List&lt;Element&gt; selectNodes = doc.selectNodes(&quot;//bean&quot;);</span><br><span class="line">			for(Element ele : selectNodes)&#123;</span><br><span class="line">				String nameValue = ele.attributeValue(&quot;name&quot;);</span><br><span class="line">				String classValue = ele.attributeValue(&quot;class&quot;);</span><br><span class="line">				String singtonValue = ele.attributeValue(&quot;singleton&quot;);</span><br><span class="line">				Bean bean = new Bean();</span><br><span class="line">				bean.setName(nameValue);</span><br><span class="line">				bean.setClassName(classValue);</span><br><span class="line">				if(singtonValue!=null)&#123;</span><br><span class="line">					bean.setSingleton(singtonValue);</span><br><span class="line">				&#125;</span><br><span class="line">				List&lt;Property&gt; list = new ArrayList&lt;Property&gt;();</span><br><span class="line">				List&lt;Element&gt; pros = ele.elements(&quot;property&quot;);</span><br><span class="line">				for(Element pro : pros)&#123;</span><br><span class="line">					Property prop = new Property();</span><br><span class="line">					prop.setName(pro.attributeValue(&quot;name&quot;));</span><br><span class="line">					prop.setValue(pro.attributeValue(&quot;value&quot;));</span><br><span class="line">					prop.setRef(pro.attributeValue(&quot;ref&quot;));</span><br><span class="line">					list.add(prop);</span><br><span class="line">				&#125;</span><br><span class="line">				bean.setProps(list);</span><br><span class="line">				map.put(bean.getName(), bean);</span><br><span class="line">			&#125;</span><br><span class="line">		&#125; catch (DocumentException e) &#123;</span><br><span class="line">			e.printStackTrace();</span><br><span class="line">		&#125;</span><br><span class="line">		</span><br><span class="line"></span><br><span class="line">		return map;</span><br><span class="line">	&#125;</span><br><span class="line">	</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="最后运行TestMain"><a href="#最后运行TestMain" class="headerlink" title="最后运行TestMain"></a>最后运行TestMain</h3><p>查看最终运行结果:<br><img src="/2020/01/28/20200127springioc/2.png" alt="图p2"></p>
+<center>**运行结果**</center>
+
+<h1 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h1><p>……好了，写到这里我们就简单的实现了一个基于xml配置文件方式的IOC容器，原理其实很简单，只需要你了解reflect以及java基础，难的在于实现，spring框架通过各种设计模式实现了方便大家使用的最终发版，这里我不多做讲解，因为本人也在研究和学习当中，设计模式也是本人的缺陷，本篇文章重点只是向大家介绍一个最基本的实现原理，理解这个原理对于以后的开发会有很大的帮助，下一篇文章中我们再来讨论一下基于annotation的IOC容器构建…谢谢</p>
+
+          
+        
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+    
+      
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://stevenhoukai.github.io/2019/11/25/20191125-springboot-actuator/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="史蒂芬猴">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/upload/images/avatar.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="迷途小书童">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+                
+                <a class="post-title-link" href="/2019/11/25/20191125-springboot-actuator/" itemprop="url">springboot添加actuator</a></h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2019-11-25T19:07:58+08:00">
+                2019-11-25
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/springboot/" itemprop="url" rel="index">
+                    <span itemprop="name">springboot</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          
+            <h1 id="springboot如何添加actuator"><a href="#springboot如何添加actuator" class="headerlink" title="springboot如何添加actuator"></a>springboot如何添加actuator</h1><h2 id="一、正常添加"><a href="#一、正常添加" class="headerlink" title="一、正常添加"></a>一、正常添加</h2><p>首先你需要引入相关jar包</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">dependencies &#123;</span><br><span class="line">        compile(&apos;org.springframework.boot:spring-boot-starter-actuator&apos;)</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+
+<p>接下来需要在yml添加如下配置，大致意思就是开放节点检查并且暴露出所有的endpoint以http的方式</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">management:</span><br><span class="line">  endpoint:</span><br><span class="line">    health:</span><br><span class="line">      show-details: always</span><br><span class="line">  endpoints:</span><br><span class="line">    web:</span><br><span class="line">      exposure:</span><br><span class="line">        include: &quot;*&quot;</span><br></pre></td></tr></table></figure>
+
+<p>其实到这一步就完成了配置了，你就可以在浏览器通过http:\ip:port\actuator进行访问了，但是这个东东还是个挺隐私的东西,我们不能让任何人通过url就能进行访问和操作，所以需要你对这个东西进行权限验证，<br>这里我们使用springsecurity，添加如下代码:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">@Configuration</span><br><span class="line">@EnableWebSecurity</span><br><span class="line">public class WebSecurityConfig extends WebSecurityConfigurerAdapter &#123;</span><br><span class="line">    @Override</span><br><span class="line">    protected void configure(HttpSecurity http) throws Exception &#123;</span><br><span class="line">        http.formLogin().and().authorizeRequests()</span><br><span class="line">                .antMatchers(&quot;/actuator/*&quot;).authenticated()</span><br><span class="line">                .and().csrf().disable();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>有没有发现我们配置了地址授权，但是我们要输入什么授权信息了？所以你还需要在yml中添加如下代码</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">spring:</span><br><span class="line">  security:</span><br><span class="line">    user:</span><br><span class="line">      roles: ACTUATOR_ADMIN</span><br><span class="line">      name: actuator</span><br><span class="line">      password: AA@4321,</span><br></pre></td></tr></table></figure>
+
+<p>到这里我们就真正完成了actuator的添加，我们来测试一下，但我访问：<br>http:\ip:port\actuator\info时，浏览器直接就跳转了：<br><img src="/2019/11/25/20191125-springboot-actuator/1.jpg" alt="图p1"></p>
+<center>**图p1**</center>
+当然这是一种简单的情况，应用本来就没有做任何的权限或加密动作，添加起来也是很简单，下面就说一种小猴我项目中遇到的特殊情况
+
+<h2 id="二、不正常情况添加"><a href="#二、不正常情况添加" class="headerlink" title="二、不正常情况添加"></a>二、不正常情况添加</h2><p>其实我说的这种不正常添加就是原本的项目你就已经添加了security，并且使用了加密检测。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">@Bean</span><br><span class="line">public BCryptPasswordEncoder bcryptPasswordEncoder()&#123;</span><br><span class="line">    return new BCryptPasswordEncoder();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>现在我们就用上述的方式启动项目然后访问http:\ip:port\actuator\info看看是什么情况，没错你会发现正常会跳转到授权页面<br><img src="/2019/11/25/20191125-springboot-actuator/2.jpg" alt="图p2"></p>
+<center>**图p2**</center>  
+但是你只要输入密码，  就会像下图一样显示这样的报错信息：  
+同时，  我们在控制台也能看到如下的警告：  
+![图p4](20191125-springboot-actuator/4.jpg)
+<center>**图p4**</center>
+很明显所有的问题都出在这个加密器上面，这时你只需要加入下面一行代码，所有的问题就可以得到解决：
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">@Value(&quot;$&#123;spring.security.user.roles&#125;&quot;)</span><br><span class="line">private String roles;</span><br><span class="line">@Value(&quot;$&#123;spring.security.user.name&#125;&quot;)</span><br><span class="line">private String name;</span><br><span class="line">@Value(&quot;$&#123;spring.security.user.password&#125;&quot;)</span><br><span class="line">private String password;</span><br><span class="line"></span><br><span class="line">@Override</span><br><span class="line">    protected void configure(AuthenticationManagerBuilder auth) throws Exception &#123;</span><br><span class="line">        auth.inMemoryAuthentication()</span><br><span class="line">                .withUser(name)</span><br><span class="line">                .password(new BCryptPasswordEncoder().encode(password))</span><br><span class="line">                .roles(roles);</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+
+<p>这行代码大致意思就是还是在配置文件yml里面配置相关信息，但是这些信息注册到授权时先用这个加密器把密码加密好，然后当你重启后再输入用户密码，就能看到以下页面了<br><img src="/2019/11/25/20191125-springboot-actuator/5.jpg" alt="图p5"></p>
+<center>**图p5**</center>
+          
+        
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+    
+      
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
     <link itemprop="mainEntityOfPage" href="http://stevenhoukai.github.io/2019/11/25/20191125-git-deletebranch/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -1634,321 +1970,6 @@ ok搭建完成。
 
 
     
-      
-
-  
-
-  
-  
-  
-
-  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
-  
-  
-  
-  <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="http://stevenhoukai.github.io/2019/11/05/20191105-01/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="name" content="史蒂芬猴">
-      <meta itemprop="description" content>
-      <meta itemprop="image" content="/upload/images/avatar.jpg">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="迷途小书童">
-    </span>
-
-    
-      <header class="post-header">
-
-        
-        
-          <h1 class="post-title" itemprop="name headline">
-                
-                <a class="post-title-link" href="/2019/11/05/20191105-01/" itemprop="url">笔记篇---Linux环境下安装JDK完整步骤</a></h1>
-        
-
-        <div class="post-meta">
-          <span class="post-time">
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">发表于</span>
-              
-              <time title="创建于" itemprop="dateCreated datePublished" datetime="2019-11-05T00:00:01+08:00">
-                2019-11-05
-              </time>
-            
-
-            
-
-            
-          </span>
-
-          
-            <span class="post-category">
-            
-              <span class="post-meta-divider">|</span>
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-folder-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">分类于</span>
-              
-              
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/环境笔记篇/" itemprop="url" rel="index">
-                    <span itemprop="name">环境笔记篇</span>
-                  </a>
-                </span>
-
-                
-                
-              
-            </span>
-          
-
-          
-            
-          
-
-          
-          
-
-          
-
-          
-
-          
-
-        </div>
-      </header>
-    
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-      
-
-      
-        
-          
-            <h2 id="1、检查一下系统中的jdk版本"><a href="#1、检查一下系统中的jdk版本" class="headerlink" title="1、检查一下系统中的jdk版本"></a>1、检查一下系统中的jdk版本</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">[root@localhost software]# java -version  </span><br><span class="line">显示：</span><br><span class="line"></span><br><span class="line">openjdk version &quot;1.8.0_102&quot;  </span><br><span class="line">OpenJDK Runtime Environment (build 1.8.0_102-b14)  </span><br><span class="line">OpenJDK 64-Bit Server VM (build 25.102-b14, mixed mode)</span><br></pre></td></tr></table></figure>
-
-<h2 id="2、检测jdk安装包"><a href="#2、检测jdk安装包" class="headerlink" title="2、检测jdk安装包"></a>2、检测jdk安装包</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">[root@localhost software]# rpm -qa | grep java</span><br><span class="line">显示：</span><br><span class="line"></span><br><span class="line">java-1.7.0-openjdk-1.7.0.111-2.6.7.8.el7.x86_64</span><br><span class="line">python-javapackages-3.4.1-11.el7.noarch</span><br><span class="line">tzdata-java-2016g-2.el7.noarch</span><br><span class="line">javapackages-tools-3.4.1-11.el7.noarch</span><br><span class="line">java-1.8.0-openjdk-1.8.0.102-4.b14.el7.x86_64</span><br><span class="line">java-1.8.0-openjdk-headless-1.8.0.102-4.b14.el7.x86_64</span><br><span class="line">java-1.7.0-openjdk-headless-1.7.0.111-2.6.7.8.el7.x86_64</span><br></pre></td></tr></table></figure>
-
-<h2 id="3、卸载openjdk"><a href="#3、卸载openjdk" class="headerlink" title="3、卸载openjdk"></a>3、卸载openjdk</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">[root@localhost software]# rpm -e --nodeps tzdata-java-2016g-2.el7.noarch</span><br><span class="line">[root@localhost software]# rpm -e --nodeps java-1.7.0-openjdk-1.7.0.111-2.6.7.8.el7.x86_64</span><br><span class="line">[root@localhost software]# rpm -e --nodeps java-1.7.0-openjdk-headless-1.7.0.111-2.6.7.8.el7.x86_64</span><br><span class="line">[root@localhost software]# rpm -e --nodeps java-1.8.0-openjdk-1.8.0.102-4.b14.el7.x86_64</span><br><span class="line">[root@localhost software]# rpm -e --nodeps java-1.8.0-openjdk-headless-1.8.0.102-4.b14.el7.x86_64</span><br></pre></td></tr></table></figure>
-
-<p>或者使用</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">[root@localhost jvm]# yum remove *openjdk*</span><br></pre></td></tr></table></figure>
-
-<p>之后再次输入rpm -qa | grep java 查看卸载情况：  </p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">[root@localhost software]# rpm -qa | grep java</span><br><span class="line">python-javapackages-3.4.1-11.el7.noarch</span><br><span class="line">javapackages-tools-3.4.1-11.el7.noarch</span><br></pre></td></tr></table></figure>
-
-<h2 id="4、安装新的jdk"><a href="#4、安装新的jdk" class="headerlink" title="4、安装新的jdk"></a>4、安装新的jdk</h2><p>首先到jdk官网上下载你想要的jdk版本，下载完成之后将需要安装的jdk安装包放到Linux系统指定的文件夹下，并且命令进入该文件夹下：</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">[root@localhost software]# ll</span><br><span class="line">total 252664</span><br><span class="line">-rw-r--r--. 1 root root  11830603 Jun  9 06:43 alibaba-rocketmq-3.2.6.tar.gz</span><br><span class="line">-rw-r--r--. 1 root root  43399561 Jun  9 06:42 apache-activemq-5.11.1-bin.tar.gz</span><br><span class="line">-rwxrw-rw-. 1 root root 185540433 Apr 21 09:06 jdk-8u131-linux-x64.tar.gz</span><br><span class="line">-rw-r--r--. 1 root root   1547695 Jun  9 06:44 redis-3.2.9.tar.gz</span><br><span class="line">-rw-r--r--. 1 root root  16402010 Jun  9 06:40 zookeeper-3.4.5.tar.gz</span><br></pre></td></tr></table></figure>
-
-<p>解压 jdk-8u131-linux-x64.tar.gz安装包</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">[root@localhost software]# mkdir -p /usr/lib/jvm</span><br><span class="line">[root@localhost software]# tar -zxvf jdk-8u131-linux-x64.tar.gz -C /usr/lib/jvm</span><br></pre></td></tr></table></figure>
-
-<h2 id="5、设置环境变量"><a href="#5、设置环境变量" class="headerlink" title="5、设置环境变量"></a>5、设置环境变量</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">[root@localhost software]# vim /etc/profile</span><br></pre></td></tr></table></figure>
-
-<p>在最前面添加：</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">export JAVA_HOME=/usr/lib/jvm/jdk1.8.0_131  </span><br><span class="line">export JRE_HOME=$&#123;JAVA_HOME&#125;/jre  </span><br><span class="line">export CLASSPATH=.:$&#123;JAVA_HOME&#125;/lib:$&#123;JRE_HOME&#125;/lib  </span><br><span class="line">export  PATH=$&#123;JAVA_HOME&#125;/bin:$PATH</span><br></pre></td></tr></table></figure>
-
-<h2 id="6、执行profile文件"><a href="#6、执行profile文件" class="headerlink" title="6、执行profile文件"></a>6、执行profile文件</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">[root@localhost software]# source /etc/profile</span><br></pre></td></tr></table></figure>
-
-<p>这样可以使配置不用重启即可立即生效。</p>
-<h2 id="7、检查新安装的jdk"><a href="#7、检查新安装的jdk" class="headerlink" title="7、检查新安装的jdk"></a>7、检查新安装的jdk</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">[root@localhost software]# java -version</span><br></pre></td></tr></table></figure>
-
-<p>显示：</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">java version &quot;1.8.0_131&quot;</span><br><span class="line">Java(TM) SE Runtime Environment (build 1.8.0_131-b11)</span><br><span class="line">Java HotSpot(TM) 64-Bit Server VM (build 25.131-b11, mixed mode)</span><br></pre></td></tr></table></figure>
-
-<p>到这里，整个安装过程就结束了。</p>
-
-          
-        
-      
-    </div>
-    
-    
-    
-
-    
-
-    
-
-    
-
-    <footer class="post-footer">
-      
-
-      
-
-      
-
-      
-      
-        <div class="post-eof"></div>
-      
-    </footer>
-  </div>
-  
-  
-  
-  </article>
-
-
-    
-      
-
-  
-
-  
-  
-  
-
-  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
-  
-  
-  
-  <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="http://stevenhoukai.github.io/2019/08/24/20190824-1/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="name" content="史蒂芬猴">
-      <meta itemprop="description" content>
-      <meta itemprop="image" content="/upload/images/avatar.jpg">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="迷途小书童">
-    </span>
-
-    
-      <header class="post-header">
-
-        
-        
-          <h1 class="post-title" itemprop="name headline">
-                
-                <a class="post-title-link" href="/2019/08/24/20190824-1/" itemprop="url">SpringBoot学习篇</a></h1>
-        
-
-        <div class="post-meta">
-          <span class="post-time">
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">发表于</span>
-              
-              <time title="创建于" itemprop="dateCreated datePublished" datetime="2019-08-24T12:17:03+08:00">
-                2019-08-24
-              </time>
-            
-
-            
-
-            
-          </span>
-
-          
-            <span class="post-category">
-            
-              <span class="post-meta-divider">|</span>
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-folder-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">分类于</span>
-              
-              
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/springboot相关/" itemprop="url" rel="index">
-                    <span itemprop="name">springboot相关</span>
-                  </a>
-                </span>
-
-                
-                
-              
-            </span>
-          
-
-          
-            
-          
-
-          
-          
-
-          
-
-          
-
-          
-
-        </div>
-      </header>
-    
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-      
-
-      
-        
-          
-            <p>to be continue</p>
-
-          
-        
-      
-    </div>
-    
-    
-    
-
-    
-
-    
-
-    
-
-    <footer class="post-footer">
-      
-
-      
-
-      
-
-      
-      
-        <div class="post-eof"></div>
-      
-    </footer>
-  </div>
-  
-  
-  
-  </article>
-
-
-    
   </section>
 
   
@@ -2001,7 +2022,7 @@ ok搭建完成。
               
                 <a href="/archives/">
               
-                  <span class="site-state-item-count">44</span>
+                  <span class="site-state-item-count">46</span>
                   <span class="site-state-item-name">日志</span>
                 </a>
               </div>
@@ -2012,7 +2033,7 @@ ok搭建完成。
               
               <div class="site-state-item site-state-categories">
                 <a href="/categories/index.html">
-                  <span class="site-state-item-count">24</span>
+                  <span class="site-state-item-count">25</span>
                   <span class="site-state-item-name">分类</span>
                 </a>
               </div>
@@ -2023,7 +2044,7 @@ ok搭建完成。
               
               <div class="site-state-item site-state-tags">
                 <a href="/tags/index.html">
-                  <span class="site-state-item-count">35</span>
+                  <span class="site-state-item-count">36</span>
                   <span class="site-state-item-name">标签</span>
                 </a>
               </div>
