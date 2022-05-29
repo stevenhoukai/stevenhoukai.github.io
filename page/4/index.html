@@ -295,6 +295,178 @@
   
   
   <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://stevenhoukai.github.io/2020/01/29/springioc-anno/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="史蒂芬猴">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/upload/images/avatar.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="迷途小书童">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+                
+                <a class="post-title-link" href="/2020/01/29/springioc-anno/" itemprop="url">springIOC---2、手工简单实现基于annotation的IOC框架</a></h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2020-01-29T00:00:01+08:00">
+                2020-01-29
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/spring相关框架原理/" itemprop="url" rel="index">
+                    <span itemprop="name">spring相关框架原理</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          
+            <h1 id="序言"><a href="#序言" class="headerlink" title="序言"></a>序言</h1><p>……上一篇中我们探讨了基于xml配置文件的方式如何实现一个IOC容器，然而实际情况是这种方式在现在的开发中应用场景已经不多了，如果你们公司还在使用这种方式那说明你们公司的技术是真的还挺落后的，在敏捷开发至上的时代，我们往往使用的是另外一种方式—基于annotation来实现IOC管理，springboot中就已经很少去使用xml文件的方式了，基本上都是采用注解的方式，下面我们就来看看，基于annotation我们该如何去实现一个IOC容器。</p>
+<h1 id="如何基于注解实现一个IOC容器"><a href="#如何基于注解实现一个IOC容器" class="headerlink" title="如何基于注解实现一个IOC容器"></a>如何基于注解实现一个IOC容器</h1><p>……这里我也不多做关于spring的相关介绍，大家可自行去官网了解相关内容，我们直接进入正题，承接上一篇文章，今天就来讲解一下第2种方式，通过annotation的方式来实现IOC容器。</p>
+<h2 id="代码结构"><a href="#代码结构" class="headerlink" title="代码结构"></a>代码结构</h2><p>……整体的代码结构如下图，下面就逐一解析<br><img src="/2020/01/29/springioc-anno/1.jpg" alt="图p1"></p>
+<center>**代码结构**</center>
+
+<h3 id="入口类TestMain"><a href="#入口类TestMain" class="headerlink" title="入口类TestMain"></a>入口类TestMain</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">package com.hk.annospringioc;</span><br><span class="line"></span><br><span class="line">public class TestMain &#123;</span><br><span class="line">	public static void main(String[] args) &#123;</span><br><span class="line">		MyAnnotationApplicationContext fac = new MyAnnotationApplicationContext(&quot;com.hk.annospringioc&quot;);</span><br><span class="line">		Boy bean1 = (Boy) fac.getBean(&quot;boy&quot;);</span><br><span class="line">		bean1.printAll();</span><br><span class="line">		Girl bean2 = (Girl) fac.getBean(&quot;girl&quot;);</span><br><span class="line">		bean2.printAll();</span><br><span class="line">		Person bean = (Person) fac.getBean(&quot;person&quot;);</span><br><span class="line">		Person beancopy = (Person) fac.getBean(&quot;person&quot;);</span><br><span class="line">		bean.printAll();</span><br><span class="line">		System.out.println(bean == beancopy ? &quot;是同一个person&quot; : &quot;不是同一个person&quot;);</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>整个程序的main方法中我们new了一个MyAnnotationApplicationContext这样的一个对象，并传入了一个类似包路径的参数，这里我们管它叫包扫描根目录，springboot就有这个概念，默认在主函数同级目录，这个类也是整个注解IOC构建过程中的核心类，介绍该类之前，先说明两个接口<br>ApplicationContext用于IOC容器构建  </p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">package com.hk.springioc;</span><br><span class="line"></span><br><span class="line">public interface ApplicationContext &#123;</span><br><span class="line">	public void springIOC();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>BeanFactory用于对象实例管理与获取</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">package com.hk.springioc;</span><br><span class="line"></span><br><span class="line">public interface BeanFactory &#123;</span><br><span class="line">	public Object getBean(String name);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="MyAnnotationApplicationContext"><a href="#MyAnnotationApplicationContext" class="headerlink" title="MyAnnotationApplicationContext"></a>MyAnnotationApplicationContext</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br></pre></td><td class="code"><pre><span class="line">package com.hk.annospringioc;</span><br><span class="line"></span><br><span class="line">import java.lang.reflect.Field;</span><br><span class="line">import java.util.HashMap;</span><br><span class="line">import java.util.List;</span><br><span class="line">import java.util.Map;</span><br><span class="line">import java.util.Map.Entry;</span><br><span class="line">import java.util.Set;</span><br><span class="line"></span><br><span class="line">public class MyAnnotationApplicationContext implements BeanFactory,ApplicationContext &#123;</span><br><span class="line"></span><br><span class="line">	private ConfigManager configManager;</span><br><span class="line">	</span><br><span class="line">	private Map&lt;String,AnnoBean&gt; beanContainer;</span><br><span class="line">	</span><br><span class="line">	private Map&lt;String,Object&gt; instanceContainer ;</span><br><span class="line">	</span><br><span class="line">	public MyAnnotationApplicationContext(String path)&#123;</span><br><span class="line">		configManager = new ConfigManager();</span><br><span class="line">		instanceContainer = new HashMap&lt;String,Object&gt;();</span><br><span class="line">		beanContainer = configManager.ScanPackage(path);</span><br><span class="line">		springIOC();</span><br><span class="line">	&#125;</span><br><span class="line">	</span><br><span class="line">	</span><br><span class="line">	</span><br><span class="line">	//依賴注入的關鍵</span><br><span class="line">	@Override</span><br><span class="line">	public void springIOC() &#123;</span><br><span class="line">		Set&lt;Entry&lt;String, AnnoBean&gt;&gt; entrySet = beanContainer.entrySet();</span><br><span class="line">		for(Entry&lt;String, AnnoBean&gt; entry : entrySet)&#123;</span><br><span class="line">//			String name = entry.getKey();</span><br><span class="line">			AnnoBean bean = entry.getValue();</span><br><span class="line">			Object instance = createBean(bean);</span><br><span class="line">//			instanceContainer.put(name, instance);</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	private Object createBean(AnnoBean bean) &#123;</span><br><span class="line">		if(instanceContainer.get(bean.getName())!=null)&#123;</span><br><span class="line">			return instanceContainer.get(bean.getName());</span><br><span class="line">		&#125;</span><br><span class="line">		String className = bean.getClassName();</span><br><span class="line">		List&lt;Property&gt; props = bean.getProps();</span><br><span class="line">		Object newInstance = null;</span><br><span class="line">		try &#123;</span><br><span class="line">			Class&lt;?&gt; forName = Class.forName(className);</span><br><span class="line">			newInstance = forName.newInstance();</span><br><span class="line">			for(Property pro : props)&#123;</span><br><span class="line">				String name = pro.getName();</span><br><span class="line">				Field field = forName.getDeclaredField(name);</span><br><span class="line">				field.setAccessible(true);</span><br><span class="line">				if(pro.getRef()!=null)&#123;</span><br><span class="line">					String ref = pro.getRef();</span><br><span class="line">					Object existBean = getBean(ref);</span><br><span class="line">					if(existBean==null)&#123;</span><br><span class="line">						Object createBean = createBean(beanContainer.get(ref));</span><br><span class="line">						field.set(newInstance,createBean);</span><br><span class="line">					&#125;else&#123;</span><br><span class="line">						field.set(newInstance,existBean);</span><br><span class="line">					&#125;</span><br><span class="line">				&#125;else&#123;</span><br><span class="line">					Class&lt;?&gt; type = field.getType();</span><br><span class="line">					if(type==int.class)&#123;</span><br><span class="line">						field.set(newInstance,Integer.parseInt(pro.getValue()));</span><br><span class="line">					&#125;else&#123;</span><br><span class="line">						field.set(newInstance,pro.getValue());</span><br><span class="line">					&#125;</span><br><span class="line">					</span><br><span class="line">				&#125;</span><br><span class="line">			&#125;</span><br><span class="line">			if(bean.getSingleton().equals(&quot;1&quot;))&#123;</span><br><span class="line">				instanceContainer.put(bean.getName(), newInstance);</span><br><span class="line">			&#125;</span><br><span class="line">			</span><br><span class="line">		&#125; catch (ClassNotFoundException e) &#123;</span><br><span class="line">			e.printStackTrace();</span><br><span class="line">		&#125; catch (InstantiationException e) &#123;</span><br><span class="line">			e.printStackTrace();</span><br><span class="line">		&#125; catch (IllegalAccessException e) &#123;</span><br><span class="line">			e.printStackTrace();</span><br><span class="line">		&#125; catch (NoSuchFieldException e) &#123;</span><br><span class="line">			e.printStackTrace();</span><br><span class="line">		&#125; catch (SecurityException e) &#123;</span><br><span class="line">			e.printStackTrace();</span><br><span class="line">		&#125;</span><br><span class="line">		return newInstance;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"></span><br><span class="line">	@Override</span><br><span class="line">	public Object getBean(String name) &#123;</span><br><span class="line">		return instanceContainer.get(name);</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>解释一下这个类主要做了什么：<br>1、new了一个ConfigManager对象<br>2、构建了一个HashMap类型的实例化容器instanceContainer<br>3、用第一步的ConfigManager对象对包扫描根目录下面的所有类进行扫描，获取一个Bean容器，这里的Bean就是annotation注解的相关bean信息，后面会有一个类进行封装<br>4、对Bean容器进行解析，构建最终的IOC实例容器，也就是第二步中的instanceContainer<br>下面就是我们相关自定义注解以及实体类中的注解表达方式</p>
+<h3 id="VO组装已经相关类和属相的注解信息"><a href="#VO组装已经相关类和属相的注解信息" class="headerlink" title="VO组装已经相关类和属相的注解信息"></a>VO组装已经相关类和属相的注解信息</h3><p>实体组装结构如下</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">封装Person信息，依赖注入Boy和Girl</span><br><span class="line">package com.hk.annospringioc;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">@MyComponent(value=&quot;person&quot;)</span><br><span class="line">public class Person &#123;</span><br><span class="line">	</span><br><span class="line">	@MyAutoWired(value = &quot;boy&quot;)</span><br><span class="line">	private Boy boy;</span><br><span class="line">	@MyAutoWired(value = &quot;girl&quot;)</span><br><span class="line">	private Girl girl;</span><br><span class="line"></span><br><span class="line">	public void printAll()&#123;</span><br><span class="line">		boy.printAll();</span><br><span class="line">		girl.printAll();</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">类封装girl信息  </span><br><span class="line">package com.hk.annospringioc;</span><br><span class="line"></span><br><span class="line">@MyComponent(&quot;girl&quot;)</span><br><span class="line">public class Girl &#123;</span><br><span class="line">	</span><br><span class="line">	@MyValue(&quot;lily&quot;)</span><br><span class="line">	private String name;</span><br><span class="line">	@MyValue(&quot;17&quot;)</span><br><span class="line">	private int age;</span><br><span class="line"></span><br><span class="line">	public void printAll()&#123;</span><br><span class="line">		System.out.println(name+&quot;:&quot;+age);</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">封装boy的信息  </span><br><span class="line">package com.hk.annospringioc;</span><br><span class="line"></span><br><span class="line">@MyComponent(&quot;boy&quot;)</span><br><span class="line">public class Boy &#123;</span><br><span class="line"></span><br><span class="line">	@MyValue(&quot;lilei&quot;)</span><br><span class="line">	private String name;</span><br><span class="line">	</span><br><span class="line">	@MyValue(&quot;12&quot;)</span><br><span class="line">	private int age;</span><br><span class="line"></span><br><span class="line">	public void printAll()&#123;</span><br><span class="line">		System.out.println(name+&quot;:&quot;+age);</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">封装在类级别打上了注解的bean信息  </span><br><span class="line">package com.hk.annospringioc;</span><br><span class="line"></span><br><span class="line">import java.util.List;</span><br><span class="line"></span><br><span class="line">public class AnnoBean &#123;</span><br><span class="line">	private String name;</span><br><span class="line">	private String className;</span><br><span class="line">	public String getName() &#123;</span><br><span class="line">		return name;</span><br><span class="line">	&#125;</span><br><span class="line">	public void setName(String name) &#123;</span><br><span class="line">		this.name = name;</span><br><span class="line">	&#125;</span><br><span class="line">	public String getClassName() &#123;</span><br><span class="line">		return className;</span><br><span class="line">	&#125;</span><br><span class="line">	public void setClassName(String className) &#123;</span><br><span class="line">		this.className = className;</span><br><span class="line">	&#125;</span><br><span class="line">	public String getSingleton() &#123;</span><br><span class="line">		return singleton;</span><br><span class="line">	&#125;</span><br><span class="line">	public void setSingleton(String singleton) &#123;</span><br><span class="line">		this.singleton = singleton;</span><br><span class="line">	&#125;</span><br><span class="line">	public List&lt;Property&gt; getProps() &#123;</span><br><span class="line">		return props;</span><br><span class="line">	&#125;</span><br><span class="line">	public void setProps(List&lt;Property&gt; props) &#123;</span><br><span class="line">		this.props = props;</span><br><span class="line">	&#125;</span><br><span class="line">	private String singleton = &quot;1&quot;;</span><br><span class="line">	private List&lt;Property&gt; props;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">封装在属性级别打上了注解的property的bean信息  </span><br><span class="line">package com.hk.annospringioc;</span><br><span class="line"></span><br><span class="line">public class Property &#123;</span><br><span class="line">	private String name;</span><br><span class="line">	private String value;</span><br><span class="line">	private String ref;</span><br><span class="line"></span><br><span class="line">	public String getName() &#123;</span><br><span class="line">		return name;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	public void setName(String name) &#123;</span><br><span class="line">		this.name = name;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	public String getValue() &#123;</span><br><span class="line">		return value;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	public void setValue(String value) &#123;</span><br><span class="line">		this.value = value;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	public String getRef() &#123;</span><br><span class="line">		return ref;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	public void setRef(String ref) &#123;</span><br><span class="line">		this.ref = ref;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="ConfigManager"><a href="#ConfigManager" class="headerlink" title="ConfigManager"></a>ConfigManager</h3><p>……这里我们只需要对包扫描根路径下的所有类进行扫描，通过类以及属性的注解扫描组装好对应bean容器即可，其实跟xml配置文件的整个流程是一样一样的，只是在实际实现上面，我们不用去解析xml文件，而是通过reflect对每一个类进行扫描解析，扫描到对应的注解就做对应的操作，仅此而已，大家稍看代码自己体会一下。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br></pre></td><td class="code"><pre><span class="line">package com.hk.annospringioc;</span><br><span class="line"></span><br><span class="line">import java.io.File;</span><br><span class="line">import java.io.InputStream;</span><br><span class="line">import java.lang.annotation.Annotation;</span><br><span class="line">import java.lang.reflect.Field;</span><br><span class="line">import java.net.URL;</span><br><span class="line">import java.util.ArrayList;</span><br><span class="line">import java.util.HashMap;</span><br><span class="line">import java.util.List;</span><br><span class="line">import java.util.Map;</span><br><span class="line"></span><br><span class="line">import org.dom4j.Document;</span><br><span class="line">import org.dom4j.DocumentException;</span><br><span class="line">import org.dom4j.Element;</span><br><span class="line">import org.dom4j.io.SAXReader;</span><br><span class="line"></span><br><span class="line">/**</span><br><span class="line"> * </span><br><span class="line"> * @ClassName: ConfigManager </span><br><span class="line"> * @Description: TODO(这里用一句话描述这个类的作用) </span><br><span class="line"> * @author A18ccms a18ccms_gmail_com </span><br><span class="line"> * @date 2019年4月9日 下午5:33:23 </span><br><span class="line"> *</span><br><span class="line"> */</span><br><span class="line">public class ConfigManager &#123;</span><br><span class="line">	</span><br><span class="line">	public  Map&lt;String,AnnoBean&gt; ScanPackage(String basePackage)&#123;</span><br><span class="line">		List&lt;String&gt; list = new ArrayList&lt;String&gt;();</span><br><span class="line">		Map&lt;String,AnnoBean&gt; map = new HashMap&lt;String,AnnoBean&gt;();</span><br><span class="line">		final URL url = this.getClass().getClassLoader().getResource(basePackage.replaceAll(&quot;\\.&quot;, &quot;/&quot;));</span><br><span class="line">        final File basePackageFile = new File(url.getPath());</span><br><span class="line">        File[] listFiles = basePackageFile.listFiles();</span><br><span class="line">        for(File file : listFiles)&#123;</span><br><span class="line">        	if(file.isFile())&#123;</span><br><span class="line">        		list.add(basePackage+&quot;.&quot;+file.getName().split(&quot;\\.&quot;)[0]);</span><br><span class="line">        	&#125;</span><br><span class="line">        &#125;</span><br><span class="line">        </span><br><span class="line">        for(String strr : list)&#123;</span><br><span class="line">        	String className = strr;</span><br><span class="line">        	try &#123;</span><br><span class="line">				Class&lt;?&gt; forName = Class.forName(className);</span><br><span class="line">				if(forName.isAnnotationPresent(MyComponent.class))&#123;</span><br><span class="line">					MyComponent annotation = forName.getAnnotation(MyComponent.class);</span><br><span class="line">					String value = annotation.value();</span><br><span class="line">					AnnoBean bean = new AnnoBean();</span><br><span class="line">					bean.setName(value);</span><br><span class="line">					bean.setClassName(className);</span><br><span class="line">					List&lt;Property&gt; propList = new ArrayList&lt;Property&gt;();</span><br><span class="line">					Field[] fields = forName.getDeclaredFields();</span><br><span class="line">					for(Field field : fields)&#123;</span><br><span class="line">						if(field.isAnnotationPresent(MyAutoWired.class))&#123;</span><br><span class="line">							Property prop = new Property();</span><br><span class="line">							MyAutoWired annotation2 = field.getAnnotation(MyAutoWired.class);</span><br><span class="line">							prop.setName(field.getName());</span><br><span class="line">							prop.setRef(annotation2.value());</span><br><span class="line">							propList.add(prop);</span><br><span class="line">						&#125;</span><br><span class="line">						if(field.isAnnotationPresent(MyValue.class))&#123;</span><br><span class="line">							Property prop = new Property();</span><br><span class="line">							MyValue annotation2 = field.getAnnotation(MyValue.class);</span><br><span class="line">							prop.setName(field.getName());</span><br><span class="line">							prop.setValue(annotation2.value());</span><br><span class="line">							propList.add(prop);</span><br><span class="line">						&#125;</span><br><span class="line">					&#125;</span><br><span class="line">					bean.setProps(propList);</span><br><span class="line">					map.put(value,bean);</span><br><span class="line">				&#125;</span><br><span class="line">			&#125; catch (ClassNotFoundException e) &#123;</span><br><span class="line">				e.printStackTrace();</span><br><span class="line">			&#125;</span><br><span class="line">        	</span><br><span class="line">        &#125;</span><br><span class="line">		return map;</span><br><span class="line">	&#125;</span><br><span class="line">	</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>写到这里还没有完，现在重点来了，有没有发现，上面这些类的类名或者属性上面多了三个这个东西，@MyAutoWired，@MyComponent，@MyValue，这就是我们的自定义注解，下面就看看这三个东西如何编写。 </p>
+<h3 id="自定义注解编写"><a href="#自定义注解编写" class="headerlink" title="自定义注解编写"></a>自定义注解编写</h3><p>……自定义注解其实就是告诉框架，需要识别的注解是哪些，当构建bean容器的时候，框架初始化时见到对应的注解去做对应的操作，MyComponent是类级别注解，MyAutowired、MyValue是属性级别注解，只能在对应区域进行使用！！！  </p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">package com.hk.annospringioc;</span><br><span class="line"></span><br><span class="line">import java.lang.annotation.ElementType;</span><br><span class="line">import java.lang.annotation.Retention;</span><br><span class="line">import java.lang.annotation.RetentionPolicy;</span><br><span class="line">import java.lang.annotation.Target;</span><br><span class="line"></span><br><span class="line">import org.dom4j.Element;</span><br><span class="line"></span><br><span class="line">@Retention(RetentionPolicy.RUNTIME)</span><br><span class="line">@Target(ElementType.FIELD)</span><br><span class="line">public @interface MyAutoWired &#123;</span><br><span class="line">	String value();</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">package com.hk.annospringioc;</span><br><span class="line"></span><br><span class="line">import java.lang.annotation.ElementType;</span><br><span class="line">import java.lang.annotation.Retention;</span><br><span class="line">import java.lang.annotation.RetentionPolicy;</span><br><span class="line">import java.lang.annotation.Target;</span><br><span class="line"></span><br><span class="line">import org.dom4j.Element;</span><br><span class="line"></span><br><span class="line">@Retention(RetentionPolicy.RUNTIME)</span><br><span class="line">@Target(ElementType.TYPE)</span><br><span class="line">public @interface MyComponent &#123;</span><br><span class="line">	String value();</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">package com.hk.annospringioc;</span><br><span class="line"></span><br><span class="line">import java.lang.annotation.ElementType;</span><br><span class="line">import java.lang.annotation.Retention;</span><br><span class="line">import java.lang.annotation.RetentionPolicy;</span><br><span class="line">import java.lang.annotation.Target;</span><br><span class="line"></span><br><span class="line">import org.dom4j.Element;</span><br><span class="line"></span><br><span class="line">@Retention(RetentionPolicy.RUNTIME)</span><br><span class="line">@Target(ElementType.FIELD)</span><br><span class="line">public @interface MyValue &#123;</span><br><span class="line">	String value();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>好了，到此整个基于注解的ioc实现方式代码就写完了，下面我们来运行一下看看结果</p>
+<h3 id="最后运行TestMain"><a href="#最后运行TestMain" class="headerlink" title="最后运行TestMain"></a>最后运行TestMain</h3><p>查看最终运行结果: 同样IOC容器内的实例也是单例的<br><img src="/2020/01/29/springioc-anno/2.jpg" alt="图p2"></p>
+<center>**运行结果**</center>
+
+<h1 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h1><p>……ok，写到这里我们就简单的实现了一个基于注解方式的IOC容器，原理其实也很简单，只需要你了解reflect以及java基础你都不用去了解xml相关的内容，本篇文章重点只是向大家介绍一个最基本的实现原理，理解这个原理对于以后的开发会有极大的帮助，所以现在你有稍微了解到我们在使用springboot开发过程中那些@Controller、@Service、@Component、@Autowired注解的含义了吗？下一篇文章我们就基于本篇的原理来自己实现一个简单的springmvc框架…谢谢！</p>
+
+          
+        
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+    
+      
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
     <link itemprop="mainEntityOfPage" href="http://stevenhoukai.github.io/2020/01/28/20200127springioc/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -1816,160 +1988,6 @@ ok搭建完成。
 
 
     
-      
-
-  
-
-  
-  
-  
-
-  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
-  
-  
-  
-  <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="http://stevenhoukai.github.io/2019/11/05/hello-world/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="name" content="史蒂芬猴">
-      <meta itemprop="description" content>
-      <meta itemprop="image" content="/upload/images/avatar.jpg">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="迷途小书童">
-    </span>
-
-    
-      <header class="post-header">
-
-        
-        
-          <h1 class="post-title" itemprop="name headline">
-                
-                <a class="post-title-link" href="/2019/11/05/hello-world/" itemprop="url">Hello World</a></h1>
-        
-
-        <div class="post-meta">
-          <span class="post-time">
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">发表于</span>
-              
-              <time title="创建于" itemprop="dateCreated datePublished" datetime="2019-11-05T12:54:16+08:00">
-                2019-11-05
-              </time>
-            
-
-            
-
-            
-          </span>
-
-          
-            <span class="post-category">
-            
-              <span class="post-meta-divider">|</span>
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-folder-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">分类于</span>
-              
-              
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/Hexo框架使用/" itemprop="url" rel="index">
-                    <span itemprop="name">Hexo框架使用</span>
-                  </a>
-                </span>
-
-                
-                
-              
-            </span>
-          
-
-          
-            
-          
-
-          
-          
-
-          
-
-          
-
-          
-
-        </div>
-      </header>
-    
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-      
-
-      
-        
-          
-            <p>Welcome to <a href="https://hexo.io/" target="_blank" rel="noopener">Hexo</a>! This is your very first post. Check <a href="https://hexo.io/docs/" target="_blank" rel="noopener">documentation</a> for more info. If you get any problems when using Hexo, you can find the answer in <a href="https://hexo.io/docs/troubleshooting.html" target="_blank" rel="noopener">troubleshooting</a> or you can ask me on <a href="https://github.com/hexojs/hexo/issues" target="_blank" rel="noopener">GitHub</a>.</p>
-<h2 id="Quick-Start"><a href="#Quick-Start" class="headerlink" title="Quick Start"></a>Quick Start</h2><h3 id="Create-a-new-post"><a href="#Create-a-new-post" class="headerlink" title="Create a new post"></a>Create a new post</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo new <span class="string">"My New Post"</span></span><br></pre></td></tr></table></figure>
-
-<p>More info: <a href="https://hexo.io/docs/writing.html" target="_blank" rel="noopener">Writing</a></p>
-<h3 id="Run-server"><a href="#Run-server" class="headerlink" title="Run server"></a>Run server</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo server</span><br></pre></td></tr></table></figure>
-
-<p>More info: <a href="https://hexo.io/docs/server.html" target="_blank" rel="noopener">Server</a></p>
-<h3 id="Generate-static-files"><a href="#Generate-static-files" class="headerlink" title="Generate static files"></a>Generate static files</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo generate</span><br></pre></td></tr></table></figure>
-
-<p>More info: <a href="https://hexo.io/docs/generating.html" target="_blank" rel="noopener">Generating</a></p>
-<h3 id="Deploy-to-remote-sites"><a href="#Deploy-to-remote-sites" class="headerlink" title="Deploy to remote sites"></a>Deploy to remote sites</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo deploy</span><br></pre></td></tr></table></figure>
-
-<p>More info: <a href="https://hexo.io/docs/deployment.html" target="_blank" rel="noopener">Deployment</a></p>
-
-          
-        
-      
-    </div>
-    
-    
-    
-
-    
-
-    
-
-    
-
-    <footer class="post-footer">
-      
-
-      
-
-      
-
-      
-      
-        <div class="post-eof"></div>
-      
-    </footer>
-  </div>
-  
-  
-  
-  </article>
-
-
-    
   </section>
 
   
@@ -2022,7 +2040,7 @@ ok搭建完成。
               
                 <a href="/archives/">
               
-                  <span class="site-state-item-count">46</span>
+                  <span class="site-state-item-count">47</span>
                   <span class="site-state-item-name">日志</span>
                 </a>
               </div>
@@ -2058,7 +2076,7 @@ ok搭建完成。
             <div class="links-of-author motion-element">
                 
                   <span class="links-of-author-item">
-                    <a href="https://github.com/stevenhoukai" target="_blank" title="GitHub">
+                    <a href="https://github.com/stevenhoukai/myblog" target="_blank" title="GitHub">
                       
                         <i class="fa fa-fw fa-github"></i>GitHub</a>
                   </span>
