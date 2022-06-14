@@ -68,7 +68,7 @@
 
 
 
-  <meta name="keywords" content="Pulsar,">
+  <meta name="keywords" content="Hexo, NexT">
 
 
 
@@ -79,18 +79,17 @@
 
 
 
-<meta name="description" content="前言前文对Pulsar的原理进行了详细且生动的介绍，相信大家对Pulsar是有了一定理解的，本文就在上文的基础上延伸，对Pulsar对比Kafka的一些优势以及实践方案进行介绍。Ok，那就让我们开始吧～ pulsar的存储支撑–Apache BookKeeperBK是什么BK的架构的核心概念BookieLedgerEntryEnsemble/write quorum/ack quorumBK的文件">
-<meta name="keywords" content="Pulsar">
-<meta property="og:type" content="article">
-<meta property="og:title" content="一文看懂Apache-Pulsar（下）-实践篇">
-<meta property="og:url" content="http://stevenhoukai.github.io/2022/05/09/20220608-kafkasum/index.html">
+<meta name="description" content="dora is my precious">
+<meta name="keywords" content="golang devops java">
+<meta property="og:type" content="website">
+<meta property="og:title" content="迷途小书童">
+<meta property="og:url" content="http://stevenhoukai.github.io/categories/微服务/index.html">
 <meta property="og:site_name" content="迷途小书童">
-<meta property="og:description" content="前言前文对Pulsar的原理进行了详细且生动的介绍，相信大家对Pulsar是有了一定理解的，本文就在上文的基础上延伸，对Pulsar对比Kafka的一些优势以及实践方案进行介绍。Ok，那就让我们开始吧～ pulsar的存储支撑–Apache BookKeeperBK是什么BK的架构的核心概念BookieLedgerEntryEnsemble/write quorum/ack quorumBK的文件">
+<meta property="og:description" content="dora is my precious">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:updated_time" content="2022-05-29T12:35:08.039Z">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="一文看懂Apache-Pulsar（下）-实践篇">
-<meta name="twitter:description" content="前言前文对Pulsar的原理进行了详细且生动的介绍，相信大家对Pulsar是有了一定理解的，本文就在上文的基础上延伸，对Pulsar对比Kafka的一些优势以及实践方案进行介绍。Ok，那就让我们开始吧～ pulsar的存储支撑–Apache BookKeeperBK是什么BK的架构的核心概念BookieLedgerEntryEnsemble/write quorum/ack quorumBK的文件">
+<meta name="twitter:title" content="迷途小书童">
+<meta name="twitter:description" content="dora is my precious">
 
 
 
@@ -120,13 +119,13 @@
 
 
 
-  <link rel="canonical" href="http://stevenhoukai.github.io/2022/05/09/20220608-kafkasum/">
+  <link rel="canonical" href="http://stevenhoukai.github.io/categories/微服务/">
 
 
 
 
 
-  <title>一文看懂Apache-Pulsar（下）-实践篇 | 迷途小书童</title>
+  <title>分类: 微服务 | 迷途小书童</title>
   
 
 
@@ -145,7 +144,7 @@
     
   
 
-  <div class="container sidebar-position-left page-post-detail">
+  <div class="container sidebar-position-left ">
     <div class="headband"></div>
 
     <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
@@ -281,178 +280,53 @@
           <div id="content" class="content">
             
 
-  <div id="posts" class="posts-expand">
-    
+  
+  
+  
+  <div class="post-block category">
 
-  
+    <div id="posts" class="posts-collapse">
+      <div class="collection-title">
+        <h1>微服务<small>分类</small>
+        </h1>
+      </div>
 
-  
-  
-  
+      
+        
 
   <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
-  
-  
-  
-  <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="http://stevenhoukai.github.io/2022/05/09/20220608-kafkasum/">
+    <header class="post-header">
 
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="name" content="史蒂芬猴">
-      <meta itemprop="description" content>
-      <meta itemprop="image" content="/upload/images/avatar.jpg">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="迷途小书童">
-    </span>
-
-    
-      <header class="post-header">
-
+      <h2 class="post-title">
         
+            <a class="post-title-link" href="/2022/05/09/20220509-ratelimit/" itemprop="url">
+              
+                <span itemprop="name">我是如何进行限流的</span>
+              
+            </a>
         
-          <h1 class="post-title" itemprop="name headline">一文看懂Apache-Pulsar（下）-实践篇</h1>
-        
+      </h2>
 
-        <div class="post-meta">
-          <span class="post-time">
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">发表于</span>
-              
-              <time title="创建于" itemprop="dateCreated datePublished" datetime="2022-05-09T00:00:01+08:00">
-                2022-05-09
-              </time>
-            
+      <div class="post-meta">
+        <time class="post-time" itemprop="dateCreated" datetime="2022-05-09T00:00:01+08:00" content="2022-05-09">
+          05-09
+        </time>
+      </div>
 
-            
-
-            
-          </span>
-
-          
-            <span class="post-category">
-            
-              <span class="post-meta-divider">|</span>
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-folder-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">分类于</span>
-              
-              
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/MQ/" itemprop="url" rel="index">
-                    <span itemprop="name">MQ</span>
-                  </a>
-                </span>
-
-                
-                
-              
-            </span>
-          
-
-          
-            
-          
-
-          
-          
-
-          
-            <span class="post-meta-divider">|</span>
-            <span class="page-pv"><i class="fa fa-file-o">阅读次数</i>
-            <span class="busuanzi-value" id="busuanzi_value_page_pv"></span>次
-            </span>
-          
-
-          
-
-          
-
-        </div>
-      </header>
-    
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-      
-
-      
-        <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>前文对Pulsar的原理进行了详细且生动的介绍，相信大家对Pulsar是有了一定理解的，本文就在上文的基础上延伸，对Pulsar对比Kafka的一些优势以及实践方案进行介绍。Ok，那就让我们开始吧～</p>
-<h2 id="pulsar的存储支撑–Apache-BookKeeper"><a href="#pulsar的存储支撑–Apache-BookKeeper" class="headerlink" title="pulsar的存储支撑–Apache BookKeeper"></a>pulsar的存储支撑–Apache BookKeeper</h2><h3 id="BK是什么"><a href="#BK是什么" class="headerlink" title="BK是什么"></a>BK是什么</h3><h3 id="BK的架构的核心概念"><a href="#BK的架构的核心概念" class="headerlink" title="BK的架构的核心概念"></a>BK的架构的核心概念</h3><h4 id="Bookie"><a href="#Bookie" class="headerlink" title="Bookie"></a>Bookie</h4><h4 id="Ledger"><a href="#Ledger" class="headerlink" title="Ledger"></a>Ledger</h4><h4 id="Entry"><a href="#Entry" class="headerlink" title="Entry"></a>Entry</h4><h4 id="Ensemble-write-quorum-ack-quorum"><a href="#Ensemble-write-quorum-ack-quorum" class="headerlink" title="Ensemble/write quorum/ack quorum"></a>Ensemble/write quorum/ack quorum</h4><h3 id="BK的文件组织"><a href="#BK的文件组织" class="headerlink" title="BK的文件组织"></a>BK的文件组织</h3><h3 id="读写流程"><a href="#读写流程" class="headerlink" title="读写流程"></a>读写流程</h3><h3 id="BK文件清理"><a href="#BK文件清理" class="headerlink" title="BK文件清理"></a>BK文件清理</h3><h4 id="Journal-文件清理"><a href="#Journal-文件清理" class="headerlink" title="Journal 文件清理"></a>Journal 文件清理</h4><h4 id="Entry-log-清理"><a href="#Entry-log-清理" class="headerlink" title="Entry log 清理"></a>Entry log 清理</h4><h3 id="BK的核心特性"><a href="#BK的核心特性" class="headerlink" title="BK的核心特性"></a>BK的核心特性</h3><h2 id="与Kafka的各项能力对比"><a href="#与Kafka的各项能力对比" class="headerlink" title="与Kafka的各项能力对比"></a>与Kafka的各项能力对比</h2><h3 id="是否支持云云原生设计"><a href="#是否支持云云原生设计" class="headerlink" title="是否支持云云原生设计"></a>是否支持云云原生设计</h3><h4 id="分级命名"><a href="#分级命名" class="headerlink" title="分级命名"></a>分级命名</h4><h4 id="多级流控"><a href="#多级流控" class="headerlink" title="多级流控"></a>多级流控</h4><h3 id="计算存储"><a href="#计算存储" class="headerlink" title="计算存储"></a>计算存储</h3><h4 id="Broker"><a href="#Broker" class="headerlink" title="Broker"></a>Broker</h4><h4 id="集群的动态扩展能力"><a href="#集群的动态扩展能力" class="headerlink" title="集群的动态扩展能力"></a>集群的动态扩展能力</h4><h3 id="分区、存储、消费"><a href="#分区、存储、消费" class="headerlink" title="分区、存储、消费"></a>分区、存储、消费</h3><h4 id="partition-存储"><a href="#partition-存储" class="headerlink" title="partition-存储"></a>partition-存储</h4><h4 id="partition-消费者"><a href="#partition-消费者" class="headerlink" title="partition-消费者"></a>partition-消费者</h4><h4 id="partition-顺序消息"><a href="#partition-顺序消息" class="headerlink" title="partition-顺序消息"></a>partition-顺序消息</h4><h4 id="消息分发"><a href="#消息分发" class="headerlink" title="消息分发"></a>消息分发</h4><h4 id="消息ACK"><a href="#消息ACK" class="headerlink" title="消息ACK"></a>消息ACK</h4><h3 id="元数据"><a href="#元数据" class="headerlink" title="元数据"></a>元数据</h3><h2 id="实践总结"><a href="#实践总结" class="headerlink" title="实践总结"></a>实践总结</h2><h3 id="生产端"><a href="#生产端" class="headerlink" title="生产端"></a>生产端</h3><h3 id="消费端"><a href="#消费端" class="headerlink" title="消费端"></a>消费端</h3><h4 id="如何设计高性能消费模型"><a href="#如何设计高性能消费模型" class="headerlink" title="如何设计高性能消费模型"></a>如何设计高性能消费模型</h4><h4 id="重复消费"><a href="#重复消费" class="headerlink" title="重复消费"></a>重复消费</h4><h4 id="消费失败时的处理方案"><a href="#消费失败时的处理方案" class="headerlink" title="消费失败时的处理方案"></a>消费失败时的处理方案</h4><h3 id="延迟消息原理与实现"><a href="#延迟消息原理与实现" class="headerlink" title="延迟消息原理与实现"></a>延迟消息原理与实现</h3><h4 id="使用场景"><a href="#使用场景" class="headerlink" title="使用场景"></a>使用场景</h4><h4 id="如何用pulsar进行延迟消息的投递"><a href="#如何用pulsar进行延迟消息的投递" class="headerlink" title="如何用pulsar进行延迟消息的投递"></a>如何用pulsar进行延迟消息的投递</h4><h4 id="pulsar实现延迟消息的原理"><a href="#pulsar实现延迟消息的原理" class="headerlink" title="pulsar实现延迟消息的原理"></a>pulsar实现延迟消息的原理</h4><h4 id="改进思路"><a href="#改进思路" class="headerlink" title="改进思路"></a>改进思路</h4>
-      
-    </div>
-    
-    
-    
-
-    
-
-    
-
-    
-
-    <footer class="post-footer">
-      
-        <div class="post-tags">
-          
-            <a href="/tags/Pulsar/" rel="tag"># Pulsar</a>
-          
-        </div>
-      
-
-      
-      
-      
-
-      
-        <div class="post-nav">
-          <div class="post-nav-next post-nav-item">
-            
-              <a href="/2022/04/15/20220415-pulsarall/" rel="next" title="一文看懂Apache-Pulsar（上）-原理篇">
-                <i class="fa fa-chevron-left"></i> 一文看懂Apache-Pulsar（上）-原理篇
-              </a>
-            
-          </div>
-
-          <span class="post-nav-divider"></span>
-
-          <div class="post-nav-prev post-nav-item">
-            
-              <a href="/2022/05/09/20220509-ratelimit/" rel="prev" title="一文看懂Apache-Pulsar（下）-实践篇">
-                一文看懂Apache-Pulsar（下）-实践篇 <i class="fa fa-chevron-right"></i>
-              </a>
-            
-          </div>
-        </div>
-      
-
-      
-      
-    </footer>
-  </div>
-  
-  
-  
+    </header>
   </article>
 
 
-
-    <div class="post-spread">
       
     </div>
+
   </div>
+  
+  
+  
+
+  
+
 
 
           </div>
@@ -460,15 +334,6 @@
 
 
           
-
-  
-    <div class="comments" id="comments">
-      <div id="lv-container" data-id="city" data-uid="MTAyMC81MjAzNC8yODUxNQ=="></div>
-    </div>
-
-  
-
-
 
         </div>
         
@@ -489,17 +354,8 @@
       
 
       
-        <ul class="sidebar-nav motion-element">
-          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
-            文章目录
-          </li>
-          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
-            站点概览
-          </li>
-        </ul>
-      
 
-      <section class="site-overview-wrap sidebar-panel">
+      <section class="site-overview-wrap sidebar-panel sidebar-panel-active">
         <div class="site-overview">
           <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
             
@@ -516,7 +372,7 @@
               
                 <a href="/archives/">
               
-                  <span class="site-state-item-count">49</span>
+                  <span class="site-state-item-count">48</span>
                   <span class="site-state-item-name">日志</span>
                 </a>
               </div>
@@ -527,7 +383,7 @@
               
               <div class="site-state-item site-state-categories">
                 <a href="/categories/index.html">
-                  <span class="site-state-item-count">25</span>
+                  <span class="site-state-item-count">26</span>
                   <span class="site-state-item-name">分类</span>
                 </a>
               </div>
@@ -538,7 +394,7 @@
               
               <div class="site-state-item site-state-tags">
                 <a href="/tags/index.html">
-                  <span class="site-state-item-count">37</span>
+                  <span class="site-state-item-count">38</span>
                   <span class="site-state-item-name">标签</span>
                 </a>
               </div>
@@ -571,22 +427,6 @@
         </div>
       </section>
 
-      
-      <!--noindex-->
-        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
-          <div class="post-toc">
-
-            
-              
-            
-
-            
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#前言"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#pulsar的存储支撑–Apache-BookKeeper"><span class="nav-number">2.</span> <span class="nav-text">pulsar的存储支撑–Apache BookKeeper</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#BK是什么"><span class="nav-number">2.1.</span> <span class="nav-text">BK是什么</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#BK的架构的核心概念"><span class="nav-number">2.2.</span> <span class="nav-text">BK的架构的核心概念</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#Bookie"><span class="nav-number">2.2.1.</span> <span class="nav-text">Bookie</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Ledger"><span class="nav-number">2.2.2.</span> <span class="nav-text">Ledger</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Entry"><span class="nav-number">2.2.3.</span> <span class="nav-text">Entry</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Ensemble-write-quorum-ack-quorum"><span class="nav-number">2.2.4.</span> <span class="nav-text">Ensemble/write quorum/ack quorum</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#BK的文件组织"><span class="nav-number">2.3.</span> <span class="nav-text">BK的文件组织</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#读写流程"><span class="nav-number">2.4.</span> <span class="nav-text">读写流程</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#BK文件清理"><span class="nav-number">2.5.</span> <span class="nav-text">BK文件清理</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#Journal-文件清理"><span class="nav-number">2.5.1.</span> <span class="nav-text">Journal 文件清理</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Entry-log-清理"><span class="nav-number">2.5.2.</span> <span class="nav-text">Entry log 清理</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#BK的核心特性"><span class="nav-number">2.6.</span> <span class="nav-text">BK的核心特性</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#与Kafka的各项能力对比"><span class="nav-number">3.</span> <span class="nav-text">与Kafka的各项能力对比</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#是否支持云云原生设计"><span class="nav-number">3.1.</span> <span class="nav-text">是否支持云云原生设计</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#分级命名"><span class="nav-number">3.1.1.</span> <span class="nav-text">分级命名</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#多级流控"><span class="nav-number">3.1.2.</span> <span class="nav-text">多级流控</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#计算存储"><span class="nav-number">3.2.</span> <span class="nav-text">计算存储</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#Broker"><span class="nav-number">3.2.1.</span> <span class="nav-text">Broker</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#集群的动态扩展能力"><span class="nav-number">3.2.2.</span> <span class="nav-text">集群的动态扩展能力</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#分区、存储、消费"><span class="nav-number">3.3.</span> <span class="nav-text">分区、存储、消费</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#partition-存储"><span class="nav-number">3.3.1.</span> <span class="nav-text">partition-存储</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#partition-消费者"><span class="nav-number">3.3.2.</span> <span class="nav-text">partition-消费者</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#partition-顺序消息"><span class="nav-number">3.3.3.</span> <span class="nav-text">partition-顺序消息</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#消息分发"><span class="nav-number">3.3.4.</span> <span class="nav-text">消息分发</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#消息ACK"><span class="nav-number">3.3.5.</span> <span class="nav-text">消息ACK</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#元数据"><span class="nav-number">3.4.</span> <span class="nav-text">元数据</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#实践总结"><span class="nav-number">4.</span> <span class="nav-text">实践总结</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#生产端"><span class="nav-number">4.1.</span> <span class="nav-text">生产端</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#消费端"><span class="nav-number">4.2.</span> <span class="nav-text">消费端</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#如何设计高性能消费模型"><span class="nav-number">4.2.1.</span> <span class="nav-text">如何设计高性能消费模型</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#重复消费"><span class="nav-number">4.2.2.</span> <span class="nav-text">重复消费</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#消费失败时的处理方案"><span class="nav-number">4.2.3.</span> <span class="nav-text">消费失败时的处理方案</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#延迟消息原理与实现"><span class="nav-number">4.3.</span> <span class="nav-text">延迟消息原理与实现</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#使用场景"><span class="nav-number">4.3.1.</span> <span class="nav-text">使用场景</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#如何用pulsar进行延迟消息的投递"><span class="nav-number">4.3.2.</span> <span class="nav-text">如何用pulsar进行延迟消息的投递</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#pulsar实现延迟消息的原理"><span class="nav-number">4.3.3.</span> <span class="nav-text">pulsar实现延迟消息的原理</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#改进思路"><span class="nav-number">4.3.4.</span> <span class="nav-text">改进思路</span></a></li></ol></li></ol></li></ol></div>
-            
-
-          </div>
-        </section>
-      <!--/noindex-->
       
 
       
@@ -753,10 +593,6 @@
   
 
   
-  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
-<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
-
-
 
   
 
@@ -785,17 +621,6 @@
 
 
 
-  
-    <script type="text/javascript">
-      (function(d, s) {
-        var j, e = d.getElementsByTagName(s)[0];
-        if (typeof LivereTower === 'function') { return; }
-        j = d.createElement(s);
-        j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
-        j.async = true;
-        e.parentNode.insertBefore(j, e);
-      })(document, 'script');
-    </script>
   
 
 
