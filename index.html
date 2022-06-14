@@ -337,6 +337,268 @@
           </span>
 
           
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          
+            <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>前文对Pulsar的原理进行了详细且生动的介绍，相信大家对Pulsar是有了一定理解的，本文就在上文的基础上延伸，对Pulsar对比Kafka的一些优势以及实践方案进行介绍。Ok，那就让我们开始吧～</p>
+<h2 id="pulsar的存储支撑–Apache-BookKeeper"><a href="#pulsar的存储支撑–Apache-BookKeeper" class="headerlink" title="pulsar的存储支撑–Apache BookKeeper"></a>pulsar的存储支撑–Apache BookKeeper</h2><h3 id="BK是什么"><a href="#BK是什么" class="headerlink" title="BK是什么"></a>BK是什么</h3><h3 id="BK的架构的核心概念"><a href="#BK的架构的核心概念" class="headerlink" title="BK的架构的核心概念"></a>BK的架构的核心概念</h3><h4 id="Bookie"><a href="#Bookie" class="headerlink" title="Bookie"></a>Bookie</h4><h4 id="Ledger"><a href="#Ledger" class="headerlink" title="Ledger"></a>Ledger</h4><h4 id="Entry"><a href="#Entry" class="headerlink" title="Entry"></a>Entry</h4><h4 id="Ensemble-write-quorum-ack-quorum"><a href="#Ensemble-write-quorum-ack-quorum" class="headerlink" title="Ensemble/write quorum/ack quorum"></a>Ensemble/write quorum/ack quorum</h4><h3 id="BK的文件组织"><a href="#BK的文件组织" class="headerlink" title="BK的文件组织"></a>BK的文件组织</h3><h3 id="读写流程"><a href="#读写流程" class="headerlink" title="读写流程"></a>读写流程</h3><h3 id="BK文件清理"><a href="#BK文件清理" class="headerlink" title="BK文件清理"></a>BK文件清理</h3><h4 id="Journal-文件清理"><a href="#Journal-文件清理" class="headerlink" title="Journal 文件清理"></a>Journal 文件清理</h4><h4 id="Entry-log-清理"><a href="#Entry-log-清理" class="headerlink" title="Entry log 清理"></a>Entry log 清理</h4><h3 id="BK的核心特性"><a href="#BK的核心特性" class="headerlink" title="BK的核心特性"></a>BK的核心特性</h3><h2 id="与Kafka的各项能力对比"><a href="#与Kafka的各项能力对比" class="headerlink" title="与Kafka的各项能力对比"></a>与Kafka的各项能力对比</h2><h3 id="是否支持云云原生设计"><a href="#是否支持云云原生设计" class="headerlink" title="是否支持云云原生设计"></a>是否支持云云原生设计</h3><h4 id="分级命名"><a href="#分级命名" class="headerlink" title="分级命名"></a>分级命名</h4><h4 id="多级流控"><a href="#多级流控" class="headerlink" title="多级流控"></a>多级流控</h4><h3 id="计算存储"><a href="#计算存储" class="headerlink" title="计算存储"></a>计算存储</h3><h4 id="Broker"><a href="#Broker" class="headerlink" title="Broker"></a>Broker</h4><h4 id="集群的动态扩展能力"><a href="#集群的动态扩展能力" class="headerlink" title="集群的动态扩展能力"></a>集群的动态扩展能力</h4><h3 id="分区、存储、消费"><a href="#分区、存储、消费" class="headerlink" title="分区、存储、消费"></a>分区、存储、消费</h3><h4 id="partition-存储"><a href="#partition-存储" class="headerlink" title="partition-存储"></a>partition-存储</h4><h4 id="partition-消费者"><a href="#partition-消费者" class="headerlink" title="partition-消费者"></a>partition-消费者</h4><h4 id="partition-顺序消息"><a href="#partition-顺序消息" class="headerlink" title="partition-顺序消息"></a>partition-顺序消息</h4><h4 id="消息分发"><a href="#消息分发" class="headerlink" title="消息分发"></a>消息分发</h4><h4 id="消息ACK"><a href="#消息ACK" class="headerlink" title="消息ACK"></a>消息ACK</h4><h3 id="元数据"><a href="#元数据" class="headerlink" title="元数据"></a>元数据</h3><h2 id="实践总结"><a href="#实践总结" class="headerlink" title="实践总结"></a>实践总结</h2><h3 id="生产端"><a href="#生产端" class="headerlink" title="生产端"></a>生产端</h3><h3 id="消费端"><a href="#消费端" class="headerlink" title="消费端"></a>消费端</h3><h4 id="如何设计高性能消费模型"><a href="#如何设计高性能消费模型" class="headerlink" title="如何设计高性能消费模型"></a>如何设计高性能消费模型</h4><h4 id="重复消费"><a href="#重复消费" class="headerlink" title="重复消费"></a>重复消费</h4><h4 id="消费失败时的处理方案"><a href="#消费失败时的处理方案" class="headerlink" title="消费失败时的处理方案"></a>消费失败时的处理方案</h4><h3 id="延迟消息原理与实现"><a href="#延迟消息原理与实现" class="headerlink" title="延迟消息原理与实现"></a>延迟消息原理与实现</h3><h4 id="使用场景"><a href="#使用场景" class="headerlink" title="使用场景"></a>使用场景</h4><h4 id="如何用pulsar进行延迟消息的投递"><a href="#如何用pulsar进行延迟消息的投递" class="headerlink" title="如何用pulsar进行延迟消息的投递"></a>如何用pulsar进行延迟消息的投递</h4><h4 id="pulsar实现延迟消息的原理"><a href="#pulsar实现延迟消息的原理" class="headerlink" title="pulsar实现延迟消息的原理"></a>pulsar实现延迟消息的原理</h4><h4 id="改进思路"><a href="#改进思路" class="headerlink" title="改进思路"></a>改进思路</h4>
+          
+        
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+    
+      
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://stevenhoukai.github.io/2022/05/09/20220509-ratelimit/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="史蒂芬猴">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/upload/images/avatar.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="迷途小书童">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+                
+                <a class="post-title-link" href="/2022/05/09/20220509-ratelimit/" itemprop="url">一文看懂Apache-Pulsar（下）-实践篇</a></h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2022-05-09T00:00:01+08:00">
+                2022-05-09
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/MQ/" itemprop="url" rel="index">
+                    <span itemprop="name">MQ</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          
+            <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>前文对Pulsar的原理进行了详细且生动的介绍，相信大家对Pulsar是有了一定理解的，本文就在上文的基础上延伸，对Pulsar对比Kafka的一些优势以及实践方案进行介绍。Ok，那就让我们开始吧～</p>
+<h2 id="pulsar的存储支撑–Apache-BookKeeper"><a href="#pulsar的存储支撑–Apache-BookKeeper" class="headerlink" title="pulsar的存储支撑–Apache BookKeeper"></a>pulsar的存储支撑–Apache BookKeeper</h2><h3 id="BK是什么"><a href="#BK是什么" class="headerlink" title="BK是什么"></a>BK是什么</h3><h3 id="BK的架构的核心概念"><a href="#BK的架构的核心概念" class="headerlink" title="BK的架构的核心概念"></a>BK的架构的核心概念</h3><h4 id="Bookie"><a href="#Bookie" class="headerlink" title="Bookie"></a>Bookie</h4><h4 id="Ledger"><a href="#Ledger" class="headerlink" title="Ledger"></a>Ledger</h4><h4 id="Entry"><a href="#Entry" class="headerlink" title="Entry"></a>Entry</h4><h4 id="Ensemble-write-quorum-ack-quorum"><a href="#Ensemble-write-quorum-ack-quorum" class="headerlink" title="Ensemble/write quorum/ack quorum"></a>Ensemble/write quorum/ack quorum</h4><h3 id="BK的文件组织"><a href="#BK的文件组织" class="headerlink" title="BK的文件组织"></a>BK的文件组织</h3><h3 id="读写流程"><a href="#读写流程" class="headerlink" title="读写流程"></a>读写流程</h3><h3 id="BK文件清理"><a href="#BK文件清理" class="headerlink" title="BK文件清理"></a>BK文件清理</h3><h4 id="Journal-文件清理"><a href="#Journal-文件清理" class="headerlink" title="Journal 文件清理"></a>Journal 文件清理</h4><h4 id="Entry-log-清理"><a href="#Entry-log-清理" class="headerlink" title="Entry log 清理"></a>Entry log 清理</h4><h3 id="BK的核心特性"><a href="#BK的核心特性" class="headerlink" title="BK的核心特性"></a>BK的核心特性</h3><h2 id="与Kafka的各项能力对比"><a href="#与Kafka的各项能力对比" class="headerlink" title="与Kafka的各项能力对比"></a>与Kafka的各项能力对比</h2><h3 id="是否支持云云原生设计"><a href="#是否支持云云原生设计" class="headerlink" title="是否支持云云原生设计"></a>是否支持云云原生设计</h3><h4 id="分级命名"><a href="#分级命名" class="headerlink" title="分级命名"></a>分级命名</h4><h4 id="多级流控"><a href="#多级流控" class="headerlink" title="多级流控"></a>多级流控</h4><h3 id="计算存储"><a href="#计算存储" class="headerlink" title="计算存储"></a>计算存储</h3><h4 id="Broker"><a href="#Broker" class="headerlink" title="Broker"></a>Broker</h4><h4 id="集群的动态扩展能力"><a href="#集群的动态扩展能力" class="headerlink" title="集群的动态扩展能力"></a>集群的动态扩展能力</h4><h3 id="分区、存储、消费"><a href="#分区、存储、消费" class="headerlink" title="分区、存储、消费"></a>分区、存储、消费</h3><h4 id="partition-存储"><a href="#partition-存储" class="headerlink" title="partition-存储"></a>partition-存储</h4><h4 id="partition-消费者"><a href="#partition-消费者" class="headerlink" title="partition-消费者"></a>partition-消费者</h4><h4 id="partition-顺序消息"><a href="#partition-顺序消息" class="headerlink" title="partition-顺序消息"></a>partition-顺序消息</h4><h4 id="消息分发"><a href="#消息分发" class="headerlink" title="消息分发"></a>消息分发</h4><h4 id="消息ACK"><a href="#消息ACK" class="headerlink" title="消息ACK"></a>消息ACK</h4><h3 id="元数据"><a href="#元数据" class="headerlink" title="元数据"></a>元数据</h3><h2 id="实践总结"><a href="#实践总结" class="headerlink" title="实践总结"></a>实践总结</h2><h3 id="生产端"><a href="#生产端" class="headerlink" title="生产端"></a>生产端</h3><h3 id="消费端"><a href="#消费端" class="headerlink" title="消费端"></a>消费端</h3><h4 id="如何设计高性能消费模型"><a href="#如何设计高性能消费模型" class="headerlink" title="如何设计高性能消费模型"></a>如何设计高性能消费模型</h4><h4 id="重复消费"><a href="#重复消费" class="headerlink" title="重复消费"></a>重复消费</h4><h4 id="消费失败时的处理方案"><a href="#消费失败时的处理方案" class="headerlink" title="消费失败时的处理方案"></a>消费失败时的处理方案</h4><h3 id="延迟消息原理与实现"><a href="#延迟消息原理与实现" class="headerlink" title="延迟消息原理与实现"></a>延迟消息原理与实现</h3><h4 id="使用场景"><a href="#使用场景" class="headerlink" title="使用场景"></a>使用场景</h4><h4 id="如何用pulsar进行延迟消息的投递"><a href="#如何用pulsar进行延迟消息的投递" class="headerlink" title="如何用pulsar进行延迟消息的投递"></a>如何用pulsar进行延迟消息的投递</h4><h4 id="pulsar实现延迟消息的原理"><a href="#pulsar实现延迟消息的原理" class="headerlink" title="pulsar实现延迟消息的原理"></a>pulsar实现延迟消息的原理</h4><h4 id="改进思路"><a href="#改进思路" class="headerlink" title="改进思路"></a>改进思路</h4>
+          
+        
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+    
+      
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://stevenhoukai.github.io/2022/05/09/20220608-kafkasum/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="史蒂芬猴">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/upload/images/avatar.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="迷途小书童">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+                
+                <a class="post-title-link" href="/2022/05/09/20220608-kafkasum/" itemprop="url">一文看懂Apache-Pulsar（下）-实践篇</a></h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2022-05-09T00:00:01+08:00">
+                2022-05-09
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
             <span class="post-category">
             
               <span class="post-meta-divider">|</span>
@@ -2085,376 +2347,6 @@
 
 
     
-      
-
-  
-
-  
-  
-  
-
-  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
-  
-  
-  
-  <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="http://stevenhoukai.github.io/2022/02/15/20220215-pulsar-storage/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="name" content="史蒂芬猴">
-      <meta itemprop="description" content>
-      <meta itemprop="image" content="/upload/images/avatar.jpg">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="迷途小书童">
-    </span>
-
-    
-      <header class="post-header">
-
-        
-        
-          <h1 class="post-title" itemprop="name headline">
-                
-                <a class="post-title-link" href="/2022/02/15/20220215-pulsar-storage/" itemprop="url">消息存储原理与 ID 规则</a></h1>
-        
-
-        <div class="post-meta">
-          <span class="post-time">
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">发表于</span>
-              
-              <time title="创建于" itemprop="dateCreated datePublished" datetime="2022-02-15T00:00:01+08:00">
-                2022-02-15
-              </time>
-            
-
-            
-
-            
-          </span>
-
-          
-            <span class="post-category">
-            
-              <span class="post-meta-divider">|</span>
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-folder-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">分类于</span>
-              
-              
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/pulsar/" itemprop="url" rel="index">
-                    <span itemprop="name">pulsar</span>
-                  </a>
-                </span>
-
-                
-                
-              
-            </span>
-          
-
-          
-            
-          
-
-          
-          
-
-          
-
-          
-
-          
-
-        </div>
-      </header>
-    
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-      
-
-      
-        
-          
-            <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>上一篇文章对Pulsar的topic和分区做了介绍，这一篇我们就来对消息存储原理和ID规则来进行一下介绍，在本篇介绍中可能会出现一些让你非常困惑的词汇。不过不要紧我都会一一来进行解释</p>
-<h2 id="消息-ID-生成规则"><a href="#消息-ID-生成规则" class="headerlink" title="消息 ID 生成规则"></a>消息 ID 生成规则</h2><p>在 Pulsar 中，每条消息都有属于的自己的唯一 ID（即 MessageID），MessageID 由四部分组成：<code>ledgerId:entryID:partition-index:batch-index</code>。其中：</p>
-<ul>
-<li>partition-index：指分区的编号，在非分区 topic 的时候为 -1。</li>
-<li>batch-index：在非批量消息的时候为 -1。</li>
-</ul>
-<p>消息 ID 的生成规则由 Pulsar 的消息存储机制决定，Pulsar 中消息存储原理图如下：</p>
-<img src="/2022/02/15/20220215-pulsar-storage/1.png" style="zoom: 50%;">
-
-<p>如上图所示，在 Pulsar中，一个 Topic 的每一个分区会对应一系列的 ledger，其中只有一个 ledger 处于 open 状态即可写状态，而每个 ledger 只会存储与之对应的分区下的消息。</p>
-<p>Pulsar 在存储消息时，会先找到当前分区使用的 ledger ，然后生成当前消息对应的 entry ID，entry ID 在同一个 ledger 内是递增的。每个 ledger 存在的时长或保存的 entry 个数超过阈值后会进行切换，新的消息会存储到同一个 partition 中的下一个 ledger 中。</p>
-<ul>
-<li>批量生产消息情况下，一个 entry 中可能包含多条消息。</li>
-<li>非批量生产的情况下，一个 entry 中包含一条消息（producer 端可以配置这个参数，默认是批量的）。</li>
-</ul>
-<p>Ledger 只是一个逻辑概念，是数据的一种逻辑组装维度，并没有对应的实体。而 bookie 只会按照 entry 维度进行写入、查找、获取。</p>
-<h2 id="分片机制详解：Legder-和-Entry"><a href="#分片机制详解：Legder-和-Entry" class="headerlink" title="分片机制详解：Legder 和 Entry"></a>分片机制详解：Legder 和 Entry</h2><p>Pulsar 中的消息数据以 ledger 的形式存储在 BookKeeper 集群的 bookie 存储节点上。Ledger 是一个只追加的数据结构，并且只有一个写入器，这个写入器负责多个 bookie 的写入。Ledger 的条目会被复制到多个 bookie 中，同时会写入相关的数据来保证数据的一致性。</p>
-<p>BookKeeper 需要保存的数据包括：</p>
-<ul>
-<li><strong>Journals</strong><ul>
-<li>journals 文件里存储了 BookKeeper 的事务日志，在任何针对 ledger 的更新发生前，都会先将这个更新的描述信息持久化到这个 journal 文件中。</li>
-<li>BookKeeper 提供有单独的 sync 线程根据当前 journal 文件的大小来作 journal 文件的 rolling。</li>
-</ul>
-</li>
-<li><strong>EntryLogFile</strong><ul>
-<li>存储真正数据的文件，来自不同 ledger 的 entry 数据先缓存在内存buffer中，然后批量flush到EntryLogFile中。</li>
-<li>默认情况下，所有ledger的数据都是聚合然后顺序写入到同一个EntryLog文件中，避免磁盘随机写。</li>
-</ul>
-</li>
-<li><strong>Index 文件</strong><ul>
-<li>所有 Ledger 的 entry 数据都写入相同的 EntryLog 文件中，为了加速数据读取，会作 ledgerId + entryId 到文件 offset 的映射，这个映射会缓存在内存中，称为 IndexCache。</li>
-<li>IndexCache 容量达到上限时，会被 sync 线程 flush 到磁盘中。</li>
-</ul>
-</li>
-</ul>
-<img src="/2022/02/15/20220215-pulsar-storage/2.png" style="zoom: 50%;">
-
-<p>刚开始看到这里的时候我是有点懵逼的，这都是些啥啊，但是后面仔细思考下，这个设计似乎和mysql的底层原理几乎一致，Journals相当于redolog，EntryLogFile+Index相当于bufferpool。还不明白那就接着看下面的介绍：</p>
-<p><strong>Entry 数据写入</strong></p>
-<ol>
-<li>数据首先会同时写入 Journal（写入 Journal 的数据会实时落到磁盘）和 Memtable（读写缓存）。</li>
-<li>写入 Memtable 之后，对写入请求进行响应。</li>
-<li>Memtable 写满之后，会 flush 到 Entry Logger 和 Index cache，Entry Logger 中保存数据，Index cache 中保存数据的索引信息，</li>
-<li>后台线程将 Entry Logger 和 Index cache 数据落到磁盘。</li>
-</ol>
-<p><strong>Entry 数据读取</strong></p>
-<ul>
-<li>Tailing read 请求：直接从 Memtable 中读取 Entry。</li>
-<li>Catch-up read（滞后消费）请求：先读取 Index信息，然后索引从 Entry Logger 文件读取 Entry。</li>
-</ul>
-<p><strong>数据一致性保证：LastLogMark</strong></p>
-<ul>
-<li>写入的 EntryLog 和 Index 都是先缓存在内存中，再根据一定的条件周期性的 flush 到磁盘，这就造成了从内存到持久化到磁盘的时间间隔，如果在这间隔内 BookKeeper 进程崩溃，在重启后，我们需要根据 journal 文件内容来恢复，这个 LastLogMark 就记录了从 journal 中什么位置开始恢复。</li>
-<li>它其实是存在内存中，当 IndexCache 被 flush 到磁盘后其值会被更新，LastLogMark 也会周期性持久化到磁盘文件，供 Bookkeeper 进程启动时读取来从 journal 中恢复。</li>
-<li>LastLogMark 一旦被持久化到磁盘，即意味着在其之前的 Index 和 EntryLog 都已经被持久化到了磁盘，那么 journal 在这 LastLogMark 之前的数据都可以被清除了。</li>
-</ul>
-<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><img src="/2022/02/15/20220215-pulsar-storage/5.jpg" style="zoom: 100%;">
-          
-        
-      
-    </div>
-    
-    
-    
-
-    
-
-    
-
-    
-
-    <footer class="post-footer">
-      
-
-      
-
-      
-
-      
-      
-        <div class="post-eof"></div>
-      
-    </footer>
-  </div>
-  
-  
-  
-  </article>
-
-
-    
-      
-
-  
-
-  
-  
-  
-
-  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
-  
-  
-  
-  <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="http://stevenhoukai.github.io/2022/02/14/20220214-pulsar-arch/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="name" content="史蒂芬猴">
-      <meta itemprop="description" content>
-      <meta itemprop="image" content="/upload/images/avatar.jpg">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="迷途小书童">
-    </span>
-
-    
-      <header class="post-header">
-
-        
-        
-          <h1 class="post-title" itemprop="name headline">
-                
-                <a class="post-title-link" href="/2022/02/14/20220214-pulsar-arch/" itemprop="url">Pulsar Topic 和分区</a></h1>
-        
-
-        <div class="post-meta">
-          <span class="post-time">
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">发表于</span>
-              
-              <time title="创建于" itemprop="dateCreated datePublished" datetime="2022-02-14T00:00:01+08:00">
-                2022-02-14
-              </time>
-            
-
-            
-
-            
-          </span>
-
-          
-            <span class="post-category">
-            
-              <span class="post-meta-divider">|</span>
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-folder-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">分类于</span>
-              
-              
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/pulsar/" itemprop="url" rel="index">
-                    <span itemprop="name">pulsar</span>
-                  </a>
-                </span>
-
-                
-                
-              
-            </span>
-          
-
-          
-            
-          
-
-          
-          
-
-          
-
-          
-
-          
-
-        </div>
-      </header>
-    
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-      
-
-      
-        
-          
-            <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>本人最近正在重构一个vdc（virus detect center）系统，为了将旧系统解耦我们将原系统拆分成了很多子系统，系统之间通过mq进行交互，在这之前本人对kafka已经是有些许了解，但是这次小组决定使用pulsar来替代kafka，那么究竟pulsar有什么好，它较kafka到底有什么优势，本人接下来的一个系列篇章就会对pulsar来进行介绍，同时也会讲解实际使用中的一些用法与问题，本系列文章的前提是假定大家对kafka都是一定了解的。</p>
-<h2 id="Apache-Pulsar-架构"><a href="#Apache-Pulsar-架构" class="headerlink" title="Apache Pulsar 架构"></a>Apache Pulsar 架构</h2><p>Apache Pulsar 是一个发布-订阅模型的消息系统，由 Broker、Apache BookKeeper、Producer、Consumer 等组件组成。我们知道传统mq的组成是没有Apache BookKeeper这一组件的，那么这个Apache BookKeeper究竟是何方神圣，后面我们会详细说一说</p>
-<p>先看一张整体的结构图：</p>
-<img src="/2022/02/14/20220214-pulsar-arch/1.png" style="zoom: 50%;">
-
-<ul>
-<li>Producer ： 消息的生产者，负责发布消息到 Topic。</li>
-<li>Consumer：消息的消费者，负责从 Topic 订阅消息。</li>
-<li>Broker：无状态服务层，负责接收和传递消息，集群负载均衡等工作，Broker 不会持久化保存元数据，因此可以快速的上、下线。</li>
-<li>Apache BookKeeper：有状态持久层，由一组 Bookie 存储节点组成，可以持久化地存储消息。</li>
-</ul>
-<p>了解kafka的朋友相信一眼就能看出一些异样，那就是kafka的存储其实就是放在broker上面的，也就是说存储与计算实际上是一体的，而从上图可知 Apache Pulsar 在架构设计上采用了计算与存储分离的模式，消息发布和订阅相关的计算逻辑在 Broker 中完成，数据存储在 Apache BookKeeper 集群的 Bookie 节点上。</p>
-<h2 id="Topic-与分区"><a href="#Topic-与分区" class="headerlink" title="Topic 与分区"></a>Topic 与分区</h2><p>Topic（主题）是某一种分类的名字，消息在 Topic 中可以被存储和发布。生产者往 Topic 中写消息，消费者从 Topic 中读消息。</p>
-<p>Pulsar 的 Topic 分为 Partitioned Topic 和 Non-Partitioned Topic 两类，Non-Partitioned Topic 可以理解为一个分区数为1的 Topic。实际上在 Pulsar 中，Topic 是一个虚拟的概念，创建一个3分区的 Topic，实际上是创建了3个“分区Topic”，发给这个 Topic 的消息会被发往这个 Topic 对应的多个 “分区Topic”。<br>例如：生产者发送消息给一个分区数为3，名为<code>my-topic</code>的 Topic，在数据流向上是均匀或者按一定规则（如果指定了key）发送给了 <code>my-topic-partition-0</code>、<code>my-topic-partition-1</code> 和 <code>my-topic-partition-2</code> 三个“分区 Topic”。</p>
-<p>分区 Topic 做数据持久化时，分区是逻辑上的概念，实际存储的单位是分片（Segment）的。</p>
-<p>如下图所示，分区 Topic1-Part2 的数据由N个 Segment 组成， 每个 Segment 均匀分布并存储在 Apache BookKeeper 群集中的多个 Bookie 节点中， 每个 Segment 具有3个副本。</p>
-<img src="/2022/02/14/20220214-pulsar-arch/2.png" style="zoom: 50%;">
-
-
-
-<h2 id="物理分区与逻辑分区"><a href="#物理分区与逻辑分区" class="headerlink" title="物理分区与逻辑分区"></a>物理分区与逻辑分区</h2><p>逻辑分区和物理分区对比如下：</p>
-<img src="/2022/02/14/20220214-pulsar-arch/3.png" style="zoom: 60%;">
-
-<p><strong>物理分区：</strong>计算与存储耦合，容错需要拷贝物理分区，扩容需要迁移物理分区来达到负载均衡。</p>
-<p><strong>逻辑分区</strong>：物理“分片”，计算层与存储层隔离，这种结构使得 Apache Pulsar 具备以下优点。</p>
-<ul>
-<li>Broker 和 Bookie 相互独立，方便实现独立的扩展以及独立的容错。</li>
-<li>Broker 无状态，便于快速上、下线，更加适合于云原生场景。</li>
-<li>分区存储不受限于单个节点存储容量。</li>
-<li>分区数据分布均匀，单个分区数据量突出不会使整个集群出现木桶效应。</li>
-<li>存储不足扩容时，能迅速利用新增节点平摊存储负载。</li>
-</ul>
-<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><img src="/2022/02/14/20220214-pulsar-arch/5.jpg" style="zoom: 100%;">
-          
-        
-      
-    </div>
-    
-    
-    
-
-    
-
-    
-
-    
-
-    <footer class="post-footer">
-      
-
-      
-
-      
-
-      
-      
-        <div class="post-eof"></div>
-      
-    </footer>
-  </div>
-  
-  
-  
-  </article>
-
-
-    
   </section>
 
   
@@ -2507,7 +2399,7 @@
               
                 <a href="/archives/">
               
-                  <span class="site-state-item-count">47</span>
+                  <span class="site-state-item-count">49</span>
                   <span class="site-state-item-name">日志</span>
                 </a>
               </div>
