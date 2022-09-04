@@ -83,7 +83,7 @@
 <meta name="keywords" content="golang devops java">
 <meta property="og:type" content="website">
 <meta property="og:title" content="迷途小书童">
-<meta property="og:url" content="http://stevenhoukai.github.io/tags/pulsar/index.html">
+<meta property="og:url" content="http://stevenhoukai.github.io/tags/Pulsar/index.html">
 <meta property="og:site_name" content="迷途小书童">
 <meta property="og:description" content="dora is my precious">
 <meta property="og:locale" content="zh-Hans">
@@ -119,13 +119,13 @@
 
 
 
-  <link rel="canonical" href="http://stevenhoukai.github.io/tags/pulsar/">
+  <link rel="canonical" href="http://stevenhoukai.github.io/tags/Pulsar/">
 
 
 
 
 
-  <title>标签: pulsar | 迷途小书童</title>
+  <title>标签: Pulsar | 迷途小书童</title>
   
 
 
@@ -287,7 +287,7 @@
 
     <div id="posts" class="posts-collapse">
       <div class="collection-title">
-        <h1>pulsar<small>标签</small>
+        <h1>Pulsar<small>标签</small>
         </h1>
       </div>
 
@@ -299,95 +299,17 @@
 
       <h2 class="post-title">
         
-            <a class="post-title-link" href="/2022/02/19/20220219-pulsar-sub/" itemprop="url">
+            <a class="post-title-link" href="/2022/04/15/20220415-pulsarall/" itemprop="url">
               
-                <span itemprop="name">Pulsar的订阅模式</span>
-              
-            </a>
-        
-      </h2>
-
-      <div class="post-meta">
-        <time class="post-time" itemprop="dateCreated" datetime="2022-02-19T00:00:01+08:00" content="2022-02-19">
-          02-19
-        </time>
-      </div>
-
-    </header>
-  </article>
-
-
-      
-        
-
-  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
-    <header class="post-header">
-
-      <h2 class="post-title">
-        
-            <a class="post-title-link" href="/2022/02/16/20220216-pulsar-replicate/" itemprop="url">
-              
-                <span itemprop="name">消息副本与存储机制</span>
+                <span itemprop="name">一文看懂Apache-Pulsar（上）-原理篇</span>
               
             </a>
         
       </h2>
 
       <div class="post-meta">
-        <time class="post-time" itemprop="dateCreated" datetime="2022-02-16T00:00:01+08:00" content="2022-02-16">
-          02-16
-        </time>
-      </div>
-
-    </header>
-  </article>
-
-
-      
-        
-
-  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
-    <header class="post-header">
-
-      <h2 class="post-title">
-        
-            <a class="post-title-link" href="/2022/02/15/20220215-pulsar-storage/" itemprop="url">
-              
-                <span itemprop="name">消息存储原理与 ID 规则</span>
-              
-            </a>
-        
-      </h2>
-
-      <div class="post-meta">
-        <time class="post-time" itemprop="dateCreated" datetime="2022-02-15T00:00:01+08:00" content="2022-02-15">
-          02-15
-        </time>
-      </div>
-
-    </header>
-  </article>
-
-
-      
-        
-
-  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
-    <header class="post-header">
-
-      <h2 class="post-title">
-        
-            <a class="post-title-link" href="/2022/02/14/20220214-pulsar-arch/" itemprop="url">
-              
-                <span itemprop="name">Pulsar Topic 和分区</span>
-              
-            </a>
-        
-      </h2>
-
-      <div class="post-meta">
-        <time class="post-time" itemprop="dateCreated" datetime="2022-02-14T00:00:01+08:00" content="2022-02-14">
-          02-14
+        <time class="post-time" itemprop="dateCreated" datetime="2022-04-15T00:00:01+08:00" content="2022-04-15">
+          04-15
         </time>
       </div>
 
@@ -449,7 +371,7 @@
               
                 <a href="/archives/">
               
-                  <span class="site-state-item-count">48</span>
+                  <span class="site-state-item-count">49</span>
                   <span class="site-state-item-name">日志</span>
                 </a>
               </div>
@@ -460,7 +382,7 @@
               
               <div class="site-state-item site-state-categories">
                 <a href="/categories/index.html">
-                  <span class="site-state-item-count">26</span>
+                  <span class="site-state-item-count">27</span>
                   <span class="site-state-item-name">分类</span>
                 </a>
               </div>
@@ -471,7 +393,7 @@
               
               <div class="site-state-item site-state-tags">
                 <a href="/tags/index.html">
-                  <span class="site-state-item-count">38</span>
+                  <span class="site-state-item-count">39</span>
                   <span class="site-state-item-name">标签</span>
                 </a>
               </div>
@@ -972,6 +894,86 @@
               resultItems.sort(function (resultLeft, resultRight) {
                 if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
                   return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>
+           return resultRight.searchTextCount - resultLeft.searchTextCount;
                 } else if (resultLeft.hitCount !== resultRight.hitCount) {
                   return resultRight.hitCount - resultLeft.hitCount;
                 } else {

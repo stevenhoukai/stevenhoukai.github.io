@@ -295,6 +295,157 @@
   
   
   <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://stevenhoukai.github.io/2021/08/19/20210819-redisScan/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="史蒂芬猴">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/upload/images/avatar.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="迷途小书童">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+                
+                <a class="post-title-link" href="/2021/08/19/20210819-redisScan/" itemprop="url">获取Redis中同一前缀key踩坑记录</a></h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2021-08-19T00:00:01+08:00">
+                2021-08-19
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/golang踩坑记录/" itemprop="url" rel="index">
+                    <span itemprop="name">golang踩坑记录</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          
+            <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a><strong>前言</strong></h2><p>之前有一个订单购买后用户生效保护期的需求，根据当时的需求本人是将key设置好自定义前缀规则，并设置了过期时间然后统一放在了redis上面，后来需求变动，所有的保护期过期之后需要留档处理，这时候就需要把之前设置的同一前缀的保护期数据在过期之前全部转移到数据库留档，就需要将之前设置的所有保护期相关数据全部获取出来。这时的kv大概已经有了300w条左右了。</p>
+<p>这里就有两个方案了keys * 和 scan</p>
+<p>keys *这个虽然可以实现目的但是最好还是不要使用，因为如果线上数据过大，就会导致单线程的redis阻塞，长时间无法处理后续请求，然后你就等着被捶吧。</p>
+<p>scan可以理解是keys <em>的分批次执行，简单来说就是会有一个游标记录一次扫描的结束位置，然后拿着这个游标作为下一次扫描的起始位置，反复执行，每次执行数据量不大而且每次执行时间也足够短，直到扫描完整个redis库，全程不会造成redis的无响应状况，但是需要声明一点，*</em>这个scan操作是会出现重复key值的<strong>，所以需要业务侧做好去重处理哈。本文的重点！</strong>为什么说这个scan会出现重复值，又为什么这个scan是不会漏值的？**下面就来说说本人的理解。</p>
+<h2 id="实际使用"><a href="#实际使用" class="headerlink" title="实际使用"></a>实际使用</h2><p>下面是本人在项目中的一些用法,代码实现功能就是将自己需要的一些kv值遍历出来放进mysql进行存储，由于线上数据量较大，整个过程大约持续了30分钟，但是redis服务全程无异常状况，完美达到目的。</p>
+<h3 id="核心代码示例"><a href="#核心代码示例" class="headerlink" title="核心代码示例"></a>核心代码示例</h3><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br></pre></td><td class="code"><pre><span class="line">rcnn := redis.Connection()</span><br><span class="line">begin := time.Now().Unix()</span><br><span class="line">firstStrs, cursor := rcnn.Scan(<span class="number">0</span>, <span class="string">"xxxxx_service_xxxxx*"</span>, <span class="number">1000</span>).Val()</span><br><span class="line">fmt.Println(time.Now().Unix() - begin)</span><br><span class="line"><span class="keyword">for</span> _, value := <span class="keyword">range</span> firstStrs &#123;</span><br><span class="line">    key := value</span><br><span class="line">    keyValue := rcnn.Get(key).Val()</span><br><span class="line">    ttlSeconds := <span class="keyword">int64</span>(rcnn.TTL(key).Val().Seconds())</span><br><span class="line">    tnow := time.Now().Unix()</span><br><span class="line">    memberId, _ := strconv.Atoi((strings.Split(key, <span class="string">"&amp;"</span>)[<span class="number">1</span>]))</span><br><span class="line">    orderId := strings.Split(keyValue, <span class="string">"&amp;"</span>)[<span class="number">0</span>]</span><br><span class="line">    pPeriod := &amp;protectperiod.ProtectPeriod&#123;</span><br><span class="line">        MemberId:  <span class="keyword">int64</span>(memberId),</span><br><span class="line">        OrderId:   orderId,</span><br><span class="line">        Content:   keyValue,</span><br><span class="line">        CreatedAt: tnow + ttlSeconds - <span class="number">3628800</span>,</span><br><span class="line">        ExpiredAt: tnow + ttlSeconds,</span><br><span class="line">        Status:    <span class="string">"0"</span>,</span><br><span class="line">        Source:    <span class="string">"redis"</span>,</span><br><span class="line">    &#125;</span><br><span class="line">    cErr := pPeriod.CreateNewRecord()</span><br><span class="line">    <span class="keyword">if</span> cErr != <span class="literal">nil</span> &#123;</span><br><span class="line">        fmt.Println(cErr)</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">for</span> cursor != <span class="number">0</span> &#123;</span><br><span class="line">    cbegin := time.Now().Unix()</span><br><span class="line">    strs, nextCursor := rcnn.Scan(cursor, <span class="string">"xxxxx_service_xxxxx*"</span>, <span class="number">1000</span>).Val()</span><br><span class="line">    fmt.Println(time.Now().Unix() - cbegin)</span><br><span class="line">    <span class="keyword">for</span> _, value := <span class="keyword">range</span> strs &#123;</span><br><span class="line">        key := value</span><br><span class="line">        keyValue := rcnn.Get(key).Val()</span><br><span class="line">        ttlSeconds := <span class="keyword">int64</span>(rcnn.TTL(key).Val().Seconds())</span><br><span class="line">        tnow := time.Now().Unix()</span><br><span class="line">        memberId, _ := strconv.Atoi((strings.Split(key, <span class="string">"&amp;"</span>)[<span class="number">1</span>]))</span><br><span class="line">        orderId := strings.Split(keyValue, <span class="string">"&amp;"</span>)[<span class="number">0</span>]</span><br><span class="line">        pPeriod := &amp;protectperiod.ProtectPeriod&#123;</span><br><span class="line">            MemberId:  <span class="keyword">int64</span>(memberId),</span><br><span class="line">            OrderId:   orderId,</span><br><span class="line">            Content:   keyValue,</span><br><span class="line">            CreatedAt: tnow + ttlSeconds - <span class="number">3628800</span>,</span><br><span class="line">            ExpiredAt: tnow + ttlSeconds,</span><br><span class="line">            Status:    <span class="string">"0"</span>,</span><br><span class="line">            Source:    <span class="string">"redis"</span>,</span><br><span class="line">        &#125;</span><br><span class="line">        cErr := pPeriod.CreateNewRecord()</span><br><span class="line">        <span class="keyword">if</span> cErr != <span class="literal">nil</span> &#123;</span><br><span class="line">            fmt.Println(cErr)</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    cursor = nextCursor</span><br><span class="line">&#125;</span><br><span class="line">fmt.Println(<span class="string">"all Done"</span>)</span><br></pre></td></tr></table></figure>
+
+<h2 id="原理"><a href="#原理" class="headerlink" title="原理"></a><strong>原理</strong></h2><p>好了，在前言中有说到<strong>为什么说这个scan会出现重复值，又为什么这个scan是安全不会漏值的？</strong> 在讨论这个问题之前，我们需要先了解什么是Rehash，学过java的都知道hashmap，当hashmap中的槽不够用的时候就会在每一个槽产生过长的链表导致效率低下等问题，在hash冲突严重的时候，hashmap就会进行扩容，然后把原来的kv值转移到新的扩容的好hashmap中去，这个过程其实就是rehash。其实在redis中这一过程准确点的叫法是渐进式rehash，点此处了解什么是<a href="https://stevenhoukai.github.io/2021/08/24/20210824-redisRehash/"><strong>渐进式rehash</strong></a>, 了解完上述概念之后，我们现在再来看看<a href="https://stevenhoukai.github.io/2021/08/25/20210825-redisScanExplain/"><strong>scan命令为什么是安全不漏值而且可能会出现重复值</strong></a>的。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a><strong>总结</strong></h2><p>如果遇到线上redis需要获取大批量的kv值，用scan不会错。切记客户端一定要做好去重处理！！！</p>
+<p><img src="/2021/08/19/20210819-redisScan/6.jpg" alt></p>
+
+          
+        
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+    
+      
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
     <link itemprop="mainEntityOfPage" href="http://stevenhoukai.github.io/2021/08/16/20210816-gapGolangFor/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -1806,220 +1957,6 @@
 
 
     
-      
-
-  
-
-  
-  
-  
-
-  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
-  
-  
-  
-  <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="http://stevenhoukai.github.io/2020/11/21/20201121-ms1的副本/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="name" content="史蒂芬猴">
-      <meta itemprop="description" content>
-      <meta itemprop="image" content="/upload/images/avatar.jpg">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="迷途小书童">
-    </span>
-
-    
-      <header class="post-header">
-
-        
-        
-          <h1 class="post-title" itemprop="name headline">
-                
-                <a class="post-title-link" href="/2020/11/21/20201121-ms1的副本/" itemprop="url">xx后台开发面试总结</a></h1>
-        
-
-        <div class="post-meta">
-          <span class="post-time">
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">发表于</span>
-              
-              <time title="创建于" itemprop="dateCreated datePublished" datetime="2020-11-21T00:00:01+08:00">
-                2020-11-21
-              </time>
-            
-
-            
-
-            
-          </span>
-
-          
-            <span class="post-category">
-            
-              <span class="post-meta-divider">|</span>
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-folder-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">分类于</span>
-              
-              
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/面试/" itemprop="url" rel="index">
-                    <span itemprop="name">面试</span>
-                  </a>
-                </span>
-
-                
-                
-              
-            </span>
-          
-
-          
-            
-          
-
-          
-          
-
-          
-
-          
-
-          
-
-        </div>
-      </header>
-    
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-      
-
-      
-        
-          
-            <h2 id="XX-后台开发工程师-接受Java转Go"><a href="#XX-后台开发工程师-接受Java转Go" class="headerlink" title="XX 后台开发工程师(接受Java转Go)"></a><strong>XX 后台开发工程师(接受Java转Go)</strong></h2><p>以下经历来源自个人好友谢晓峰</p>
-<ul>
-<li><h3 id="一面-技术leader面-50分钟（20201019）"><a href="#一面-技术leader面-50分钟（20201019）" class="headerlink" title="一面  技术leader面  50分钟（20201019）"></a>一面  技术leader面  50分钟（20201019）</h3></li>
-</ul>
-<ol>
-<li><p>都是项目介绍，工作做了些啥 ？ </p>
-</li>
-<li><p>索引的实现原理，为什么要用b树实现索引 ？</p>
-</li>
-<li><p>数据库相关原理 bufferpool redolog undolog changebuffer等等执行一条insert语句，数据库擎层面是怎么做的 ？  </p>
-</li>
-<li><p>数据库主从原理 ？</p>
-</li>
-<li><p>redis集群原理 rediscluster  </p>
-</li>
-<li><p>redis主从原理 sentinel机制 ？</p>
-</li>
-<li><p>https原理是什么 ？</p>
-</li>
-<li><p>情景: 敏感词过滤  14w的敏感词要做么做 ？</p>
-</li>
-<li><p>网络安全相关 xss csrf sql注入等 ？</p>
-</li>
-<li><p>linux命令 wc如何使用问题 ？</p>
-</li>
-<li><p>消息队列的选型对比kafka rabbitmq rocketmq ？</p>
-<p>只记得这么多问题了……</p>
-</li>
-</ol>
-<p>​       面完后十分钟立刻通知二面，三少爷感觉回答问题都是游刃有余除了两个细节不太好， linux命令这块确实不熟悉，只是在知道命令层面，具体的参数写法都是需要baidu的那种，一般的top free df du iostat vmstat都是会的，也知道日志查看相关的命令，再细致点怎么统计就得靠度娘了。本次面试是xx会议语音面试</p>
-<ul>
-<li><h3 id="二面-总监面-50分钟-20201022"><a href="#二面-总监面-50分钟-20201022" class="headerlink" title="二面 总监面  50分钟(20201022)"></a>二面 总监面  50分钟(20201022)</h3></li>
-</ul>
-<ol>
-<li>平时工作内容 最大挑战  ？</li>
-<li>所在公司的职级  ？</li>
-<li>年薪多少 ？</li>
-<li>怎么学习，为什么要学习springcloud，讲讲springcloud的组件和核心原理  ？</li>
-<li>这里工作强度等问题  ？</li>
-<li>然后就是工作内容的询问等  ？</li>
-</ol>
-<p>​       本次面试是xx会议视频（我单方的视频是看不到面试官的）面试，这一点三少爷觉得并不太好，因为只有三少爷开了视频，嘿嘿，尽人事听天命吧，学习每天还是得继续的。</p>
-<ul>
-<li><h3 id="三面-HR经理面试-60分钟-20201027"><a href="#三面-HR经理面试-60分钟-20201027" class="headerlink" title="三面 HR经理面试 60分钟(20201027)"></a>三面 HR经理面试 60分钟(20201027)</h3></li>
-</ul>
-<p>​       最难的一个面试，大概就是谈价和谈职级吧，所以说大厂经验才是谈资，像三少爷这种传统企业去互联网的真真儿没有什么话语权，怎么说呢，其实就是行业的问题，技术本身并不矛盾，缺乏的是行业经验，比如你ERP经验对于互联网来说并无任何光环加成，反过来也一样，每一个行业都有很多精英，多向身边比你优秀的人多多学习吧。</p>
-<ul>
-<li><h3 id="四面-HR经理复面-20分钟-20201102"><a href="#四面-HR经理复面-20分钟-20201102" class="headerlink" title="四面 HR经理复面 20分钟(20201102)"></a>四面 HR经理复面 20分钟(20201102)</h3></li>
-</ul>
-<p>​       其实就是确定薪资和职级以及公司福利的介绍等等，基本就是确定offer走审批流程阶段了，其实这个阶段并不安全，没有邮件的offer都是会存在未知因素的，最终被顶掉的例子也是比比皆是，希望三少爷努力了这么久不会中彩吧！</p>
-<ul>
-<li><h3 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h3></li>
-</ul>
-<p>​       感受：历时一个多月，终于拿到offer，三少爷还是满怀喜悦的，毕竟努力得到了认可。整体面试下来总体感受还是不错的，面试进度也推进的很快，虽然最后offer在薪酬审批过程中被卡了很久，但总算是有惊无险。技术方面问的东西偏底层，需要平时大量的积累，关键是跟面试官聊的来很重要，业务方面考察平时解决问题的思路以及学习方法和学习深度等。后面可能就从Java转向Golang了，于少爷而言具有挑战但难度不大，毕竟少爷可是看了大量jdk源码的人呐，加油吧！</p>
-<ul>
-<li><h3 id="复习学习计划"><a href="#复习学习计划" class="headerlink" title="复习学习计划"></a>复习学习计划</h3></li>
-</ul>
-<ol>
-<li><p>操作系统  </p>
-</li>
-<li><p>计算机组成原理  </p>
-</li>
-<li><p>计算机网络  </p>
-</li>
-<li><p>数据结构与算法  </p>
-</li>
-<li><p>linux</p>
-</li>
-<li><p>golang</p>
-<p>最后来一波鸡血吧，学习走起~</p>
-</li>
-</ol>
-<p><img src="/2020/11/21/20201121-ms1的副本/timg.jpg" alt="图p1"></p>
-
-          
-        
-      
-    </div>
-    
-    
-    
-
-    
-
-    
-
-    
-
-    <footer class="post-footer">
-      
-
-      
-
-      
-
-      
-      
-        <div class="post-eof"></div>
-      
-    </footer>
-  </div>
-  
-  
-  
-  </article>
-
-
-    
   </section>
 
   
@@ -2072,7 +2009,7 @@
               
                 <a href="/archives/">
               
-                  <span class="site-state-item-count">48</span>
+                  <span class="site-state-item-count">49</span>
                   <span class="site-state-item-name">日志</span>
                 </a>
               </div>
@@ -2083,7 +2020,7 @@
               
               <div class="site-state-item site-state-categories">
                 <a href="/categories/index.html">
-                  <span class="site-state-item-count">26</span>
+                  <span class="site-state-item-count">27</span>
                   <span class="site-state-item-name">分类</span>
                 </a>
               </div>
@@ -2094,7 +2031,7 @@
               
               <div class="site-state-item site-state-tags">
                 <a href="/tags/index.html">
-                  <span class="site-state-item-count">38</span>
+                  <span class="site-state-item-count">39</span>
                   <span class="site-state-item-name">标签</span>
                 </a>
               </div>

@@ -1,0 +1,1226 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next muse use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="服务限流,">
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="前言以前做ERP系统，QPS这个概念离我着实有些遥远，毕竟ERP系统主要还是公司内部特定业务的一些使用，QPS并不会很高，也就不会出现流量洪峰把服务打跪的情况，但是目前本人在做的系统QPS已经接近百万级别，如何防止流量高峰把服务打挂就是要关注的重点了，当然防止服务雪崩其实有很多方法，比如Lb、Cache、扩容等等，但是以上这些操作其实都离不开一个主题那就是资源，如果不考虑资源问题这些都是很好的方法">
+<meta name="keywords" content="服务限流">
+<meta property="og:type" content="article">
+<meta property="og:title" content="我是如何进行限流的">
+<meta property="og:url" content="http://stevenhoukai.github.io/2022/09/05/20220905-ratelimit/index.html">
+<meta property="og:site_name" content="迷途小书童">
+<meta property="og:description" content="前言以前做ERP系统，QPS这个概念离我着实有些遥远，毕竟ERP系统主要还是公司内部特定业务的一些使用，QPS并不会很高，也就不会出现流量洪峰把服务打跪的情况，但是目前本人在做的系统QPS已经接近百万级别，如何防止流量高峰把服务打挂就是要关注的重点了，当然防止服务雪崩其实有很多方法，比如Lb、Cache、扩容等等，但是以上这些操作其实都离不开一个主题那就是资源，如果不考虑资源问题这些都是很好的方法">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://stevenhoukai.github.io/2022/09/05/20220905-ratelimit/2.jpg">
+<meta property="og:image" content="http://stevenhoukai.github.io/2022/09/05/20220905-ratelimit/3.jpg">
+<meta property="og:image" content="http://stevenhoukai.github.io/2022/09/05/20220905-ratelimit/4.jpg">
+<meta property="og:image" content="http://stevenhoukai.github.io/2022/09/05/20220905-ratelimit/5.jpg">
+<meta property="og:image" content="http://stevenhoukai.github.io/2022/09/05/20220905-ratelimit/6.jpg">
+<meta property="og:image" content="http://stevenhoukai.github.io/2022/09/05/20220905-ratelimit/20.jpeg">
+<meta property="og:updated_time" content="2022-09-04T04:30:54.892Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="我是如何进行限流的">
+<meta name="twitter:description" content="前言以前做ERP系统，QPS这个概念离我着实有些遥远，毕竟ERP系统主要还是公司内部特定业务的一些使用，QPS并不会很高，也就不会出现流量洪峰把服务打跪的情况，但是目前本人在做的系统QPS已经接近百万级别，如何防止流量高峰把服务打挂就是要关注的重点了，当然防止服务雪崩其实有很多方法，比如Lb、Cache、扩容等等，但是以上这些操作其实都离不开一个主题那就是资源，如果不考虑资源问题这些都是很好的方法">
+<meta name="twitter:image" content="http://stevenhoukai.github.io/2022/09/05/20220905-ratelimit/2.jpg">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Muse',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://stevenhoukai.github.io/2022/09/05/20220905-ratelimit/">
+
+
+
+
+
+  <title>我是如何进行限流的 | 迷途小书童</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">迷途小书童</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">读过几年书，尘世间一枚不起眼的小书童</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br>
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br>
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br>
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off" placeholder="搜索..." spellcheck="false" type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://stevenhoukai.github.io/2022/09/05/20220905-ratelimit/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="史蒂芬猴">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/upload/images/avatar.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="迷途小书童">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">我是如何进行限流的</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2022-09-05T00:00:01+08:00">
+                2022-09-05
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/微服务/" itemprop="url" rel="index">
+                    <span itemprop="name">微服务</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+            <span class="post-meta-divider">|</span>
+            <span class="page-pv"><i class="fa fa-file-o">阅读次数</i>
+            <span class="busuanzi-value" id="busuanzi_value_page_pv"></span>次
+            </span>
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>以前做ERP系统，QPS这个概念离我着实有些遥远，毕竟ERP系统主要还是公司内部特定业务的一些使用，QPS并不会很高，也就不会出现流量洪峰把服务打跪的情况，但是目前本人在做的系统QPS已经接近百万级别，如何防止流量高峰把服务打挂就是要关注的重点了，当然防止服务雪崩其实有很多方法，比如Lb、Cache、扩容等等，但是以上这些操作其实都离不开一个主题那就是资源，如果不考虑资源问题这些都是很好的方法，但是如果当我们的资源已经匮乏了，这时就需要下面这种保护服务的方法了— 《限流器》,限流是微服务中必不缺少的一个环节，可以很好的起到保护下游服务，防止服务过载等作用。当然限流从功能上来说也分两种，一种是框架层的限流，像springcloud中的histrix亦或者我现在使用的polaris等等，框架层限流通过半开、全开、熔断的方式进行实现，另外一种就是今天我们要讨论的业务限流，接下来就介绍下本人在项目实战中是如何进行限流的，其实使用非常简单，但我们要知其然还要知其所以然～</p>
+<h2 id="概念"><a href="#概念" class="headerlink" title="概念"></a>概念</h2><p>从目前市面上的主流限流方式来看，大致可以分为漏桶和令牌桶两种限流方式，下面先对这两类限流算法进行一下简单介绍。</p>
+<h3 id="漏桶"><a href="#漏桶" class="headerlink" title="漏桶"></a>漏桶</h3><p>什么是漏桶了？举个通俗点的例子吧，本人开个一间澡堂子，澡堂子有一个等待大厅可以容纳10个人，晚上6点来了8个人洗澡，这时候我会安排这8个人在等待大厅等候，然后每隔一分钟就放一个人进去洗澡，当我放了3个人进去后，这时等待大厅还有5个人，此时又来了6个人要洗澡，但是现在等待大厅最多能容纳5个人，那多出来的那个人咋办？两个选择要么等着要么就先行离开待会再来，这样其实就是一个简易的漏桶系统了；<br>其实总结下来漏桶原则就是以任意速率接受请求，然后以恒定速率放行请求，如下图所示：</p>
+<img src="/2022/09/05/20220905-ratelimit/2.jpg" style="zoom: 100%;">
+
+<p><strong>优点：无法击垮服务、能很好的保证服务的健康；</strong><br><strong>缺点：因为当流出速度固定，大规模持续突发量，无法多余处理，浪费网络带宽；</strong></p>
+<h3 id="令牌桶"><a href="#令牌桶" class="headerlink" title="令牌桶"></a>令牌桶</h3><p>那什么是令牌桶了？还是上面的澡堂子场景，晚上六点来了100号大汉来洗澡，那本人就站在门口接待并且每隔1分钟放10个大汉进去等待大厅，进入大厅等待的大汉自行决定要不要立刻去洗澡，可以全部人一次性全部进去洗澡，也可以慢慢悠悠坐会儿再清洗，而我则根据等待大厅的实际空位情况进行人员放行。如此便是一个简易的令牌桶系统了；<br>其实总结下来令牌桶就是以恒定速率接受请求，然后以任意速率放行请求，当然上限就是桶大小，如下图：</p>
+<img src="/2022/09/05/20220905-ratelimit/3.jpg" style="zoom: 100%;">
+
+<p><strong>优点：支持大的并发，有效利用网络带宽，可合理处理流量激增的场景；</strong><br><strong>缺点：如果设计不合理在流量突增情况下限流效果不明显，还是有可能出现压垮服务的情况（下面会解释这种情况）；</strong></p>
+<h2 id="令牌桶的原理"><a href="#令牌桶的原理" class="headerlink" title="令牌桶的原理"></a>令牌桶的原理</h2><p>其实上面两种算法孰优孰劣，这里我不发表评论，因为我一贯的思想是没有最有的算法只有最优的选择，我们需要根据实际的场景进行最佳的选择，因为本人的项目是需要支持大的并发以及一些流量突增场景的，所以就选择了令牌桶算法；</p>
+<p>一般在网上搜索令牌桶的时候，都会有一张这样的原理图：</p>
+<img src="/2022/09/05/20220905-ratelimit/4.jpg" style="zoom: 100%;">
+
+<p>通常看到这张图，我的第一反应是需要两个核心组件 : 一个 定时器 和两个 阻塞队列。定时器 恒定速率往令牌桶（阻塞队列2） 中放 token。用户侧请求则阻塞在阻塞队列1中排队从令牌桶（阻塞队列2）中获取token。这么做也是该图的直观反应，但是这样做不禁效率低下而且过滤复杂，不仅要维护一个 定时器 和 两个 阻塞队列，而且还耗费了一些不必要的内存。<br>如果我们是按照每秒往令牌桶中放token就会出现上面说到的缺点，假设我们的服务最大处理能力是150QPS，现在设置的限流器是每秒放置100个token进入令牌桶，这样看来服务会很安全，但是实际上了？来看下面的这种情况 :<br><img src="/2022/09/05/20220905-ratelimit/5.jpg" style="zoom: 100%;"></p>
+<p>如果突然有200个请求从第一秒的后0.5秒打过来，此时这200个请求毫无疑问都是会打到后端服务的，这时已经远远超过了后端服务的负载上限了，结果可想而知。</p>
+<p>那怎样才能规避这样的问题了？不应担心，Golang 的 <code>timer/rate</code>使用的lazyload的方式就合理规避了上述风险，没有计时器没有阻塞队列，直到每次消费之前才根据时间差更新 token 数目，仅仅是通过计数的方式。</p>
+<h3 id="token-的生成和消费"><a href="#token-的生成和消费" class="headerlink" title="token 的生成和消费"></a>token 的生成和消费</h3><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// NewLimiter returns a new Limiter that allows events up to rate r and permits</span></span><br><span class="line"><span class="comment">// bursts of at most b tokens.</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">NewLimiter</span><span class="params">(r Limit, b <span class="keyword">int</span>)</span> *<span class="title">Limiter</span></span> &#123;</span><br><span class="line">​    <span class="keyword">return</span> &amp;Limiter&#123;</span><br><span class="line">​        limit: r,</span><br><span class="line">​        burst: b,</span><br><span class="line">​    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>在 <code>time/rate</code> 中，<code>NewLimiter</code> 的第一个参数就是速率 Limit，表示一秒钟可以产生多少 token，这里强调一下，1秒产生的token只是一个概念，并不是真正的按照1秒进行生产，不然就会有上面描述的临界时间节点的问题。<br>这里换算一下，就可以知道生产一个 token 的实际时间间隔是多少了，根据这个生成单个token的时间间隔，就可以得到以下的两个核心数据：<br><strong>1. 生成 N 个新的 token 一共需要多久。</strong><code>durationFromtokens</code>。<br><strong>2. 给定一段时长，这段时间一共可以生成多少个 token。</strong><code>tokensFromDuration</code>。</p>
+<p>好了，有了以上的两个值后，接下来的流程就比较明朗了：</p>
+<ul>
+<li>计算从上次取 token 的时间到当前时刻，期间一共新产生了多少 token：<br>只在取 token 之前生成新的 token，也就意味着每次取 token 的间隔，实际上也是生成 token 的间隔。我们可以利用 <code>tokensFromDuration</code>, 轻易的算出这段时间一共产生 token 的数目。<br>那么，当前 token 数目 = 新产生的 token 数目 + 之前剩余的 token 数目 - 要消费的 token 数目。</li>
+<li>如果消费后剩余 token 数目大于零，说明此时 token 桶内仍不为空，此时 token 充足，无需调用侧等待。<br>如果 token 数目小于零，则需等待一段时间。<br>那么这个时候，我们可以利用 <code>durationFromtokens</code> 将当前负值的 token 数转化为需要等待的时间。</li>
+<li>将需要等待的时间等相关结果返回给调用方。</li>
+<li>根据实际的需要等待时间决定是否放弃该请求。</li>
+</ul>
+<p>可以看出，其实整个过程就是利用了 <strong>token 数可以和时间相互转化</strong> 的原理。而如果 token 数为负，则需要等待相应时间即可。</p>
+<p><strong>注意</strong> 如果当获取token时，令牌桶中的 token 数目已经为负值了，依然可以按照上述流程进行消费。随着负值越来越小，等待的时间将会越来越长。当然，读写共享内存的行为为了保证线程安全，更新令牌桶相关数据时都用了 mutex 加锁。</p>
+<p>举一个实际例子来看下token桶是如何运转的吧：</p>
+<ol>
+<li>初始化后，桶内 token 数为 5, 此时 A 线程请求 4 个 token。那么此时桶内 token 是充足的，因此 A 线程不需要等待，直接获取token。且此时桶内 token 数变为 1。</li>
+<li>同时，B 线程请求 5 个 token，此时桶内 token 数为 1，所以此时 B 线程需要等待 -1 + 5 = 4 个 token 的时间，且此时桶内 token 数变为 -4。</li>
+<li>最后是C线程也在此时请求1个token，此时桶内的token数为-4，所以此时C线程需要等待 4 + 1 = 5个token的事件，且此时桶内的token数变为 -5。后面的情况就以此类推了，是不是很简单。</li>
+</ol>
+<p>通常在实际的常用手法中有两个比较重要的方法就是Allow和Wait两个：</p>
+<ul>
+<li>Allow ：只需判断需要等待的时间是否为 0 即可，如果大于 0 说明需要等待，则会<strong>立即</strong>返回 False，反之<strong>立即</strong>返回 True。</li>
+<li>Wait ：需要根据<code>t := time.NewTimer(delay)</code>，等待对应的时间，如果等待里时间没ctx没有超时则ok，饭制则fail。</li>
+</ul>
+<h3 id="float-精度问题"><a href="#float-精度问题" class="headerlink" title="float 精度问题"></a>float 精度问题</h3><p>这其实是一个语言的数值问题，并非是限流器的设计问题，就是在 token 和时间的相互转化函数 <code>durationFromtokens</code> 和 <code>tokensFromDuration</code> 中，会涉及到 float64 的乘除运算。但凡遇到 float 的乘除，丢失精度问题就如吃饭喝水般常见。</p>
+<p> Golang 在这里也踩了坑，以下是 <code>tokensFromDuration</code> 最初的实现版本</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(limit Limit)</span> <span class="title">tokensFromDuration</span><span class="params">(d time.Duration)</span> <span class="title">float64</span></span> &#123;</span><br><span class="line">	<span class="keyword">return</span> d.Seconds() * <span class="keyword">float64</span>(limit)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这个操作看起来一点问题都没：每秒生成的 token 数乘于秒数。<br>然而，这里的问题在于，<code>d.Seconds()</code> 已经是小数了。两个小数相乘，会带来精度的损失。</p>
+<p>修改后新的版本如下：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(limit Limit)</span> <span class="title">tokensFromDuration</span><span class="params">(d time.Duration)</span> <span class="title">float64</span></span> &#123;</span><br><span class="line">	sec := <span class="keyword">float64</span>(d/time.Second) * <span class="keyword">float64</span>(limit)</span><br><span class="line">	nsec := <span class="keyword">float64</span>(d%time.Second) * <span class="keyword">float64</span>(limit)</span><br><span class="line">	<span class="keyword">return</span> sec + nsec/<span class="number">1e9</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><code>time.Duration</code> 是 <code>int64</code> 的别名，代表纳秒。分别求出秒的整数部分和小数部分，进行相乘后再相加，这样可以得到最精确的精度。</p>
+<h3 id="数值溢出问题"><a href="#数值溢出问题" class="headerlink" title="数值溢出问题"></a>数值溢出问题</h3><p>回到上面的实现，计算从当前时间到上次取 token 的时刻，期间一共新产生了多少 token，同时也可得出当前的 token 是多少。</p>
+<p>老实说，对于这个需求我的第一实现思路是：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// gapTime 表示过去的时间差</span></span><br><span class="line">gapTime := now.Sub(limit.last)</span><br><span class="line"><span class="comment">// gapTokens 表示这段时间一共新产生了多少 token</span></span><br><span class="line">gapTokens = tokensFromDuration(now.Sub(limit.last))</span><br><span class="line"></span><br><span class="line">nowTokens := limit.tokens + gapTokens</span><br><span class="line"><span class="keyword">if</span>(nowTokens &gt; limit.burst)&#123;</span><br><span class="line">	nowTokens = limit.burst</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><code>limit.tokens</code> 表示当前剩余的 token数，<code>limit.last</code> 是上次取 token 的时间。<code>limit.burst</code> 是 token 桶的固定容量。<br>使用 tokensFromDuration 计算出距上次获取token后的时间间隔内新生成了多少 token，累加起来后，不超过桶的固定容量即可。</p>
+<p>这个方法乍一看确实挑不出什么毛病，但它是不是真的没什么问题了？先来看一下在 <code>time/rate</code> 里面是怎么做的吧，如下：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">maxElapsed := lim.limit.durationFromtokens(<span class="keyword">float64</span>(lim.burst) - lim.tokens)</span><br><span class="line">elapsed := now.Sub(last)</span><br><span class="line"><span class="keyword">if</span> elapsed &gt; maxElapsed &#123;</span><br><span class="line">	elapsed = maxElapsed</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">delta := lim.limit.tokensFromDuration(elapsed)</span><br><span class="line"></span><br><span class="line">tokens := lim.tokens + delta</span><br><span class="line"><span class="keyword">if</span> burst := <span class="keyword">float64</span>(lim.burst); tokens &gt; burst &#123;</span><br><span class="line">	tokens = burst</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>发现没与上面我的实现思路是有不一样的，它并没有直接使用 <code>now.Sub(lim.last)</code> 来计算这个时间差内应该生产的token数，而是<br>用了 <code>lim.limit.durationFromtokens(float64(lim.burst) - lim.tokens)</code>做兜底，计算把桶填满的时间 maxElapsed。<br>取 elapsed 和 maxElapsed 二者的最小值。这里的实现着实有些惊讶，但好像又在情理之中；</p>
+<p>现在回过头来再思考一下，对于我的设计思路，如果直接使用<code>now.Sub(lim.last)</code>这个值，当now的值非常大或者last的值非常小的时候，这个间隔时间就会变得异常的大 ，如果 <code>lim.limit</code> 也被设置的非常大后，直接将二者相乘，<strong>计算结果有可能就会溢出。</strong>当然如果你一定要说<code>lim.limit.durationFromtokens(float64(lim.burst) - lim.tokens)</code>这个值也有可能非常大也没毛病，不反驳-_-!!!。</p>
+<p>总结，<code>time/rate</code> 就是使用了lim.limit.durationFromtokens(float64(lim.burst) - lim.tokens)来规避了数值溢出的问题。</p>
+<h2 id="使用"><a href="#使用" class="headerlink" title="使用"></a>使用</h2><p>使用相对就比较简单了，通常在项目初始化时会构建一个limiter放入内存中</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">registerGconfig</span><span class="params">(gConfig *Config)</span></span> &#123;</span><br><span class="line">	GConfig = gConfig</span><br><span class="line">	tempObtainURLLimiter := rate.NewLimiter(rate.Limit(gConfig.ObtainURLTokenPerSecond),</span><br><span class="line">		gConfig.ObtainURLTokenPerSecond)</span><br><span class="line">	ObtainURLLimiter = tempObtainURLLimiter</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>然后再业务函数中直接使用即可</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> err := g.ObtainURLLimiter.Wait(ctx); err != <span class="literal">nil</span> &#123;</span><br><span class="line">		metrics.Counter(<span class="string">"ObtainDownloadURLWaitErrCount"</span>).Incr()</span><br><span class="line">		log.InfoContextf(ctx, <span class="string">"Vdc_Operation | DoObtainDownloadURL | LimiterWaitErr:[%+v]"</span>, err)</span><br><span class="line">		servererr.ErrRspObtainDownloadURL(rsp, servererr.NewWithMsg(servererr.ErrDoObtainDownloadURL,             err.Error()))</span><br><span class="line">		<span class="keyword">return</span> <span class="literal">nil</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>最后为了更动态的控制速率，我们会引入服务配置平台，通过长链接和watch机制实现，在配置平台调整速率后下发配置，服务就会自动更新一个新的limiter放入内存中，这样我们就可以根据实时服务负载监控动态的对限流速率进行调整了。</p>
+<p>来看一张使用了限流器的服务吞吐量监控图，会发现服务在流量高峰的吞吐量都是非常平稳的～ : </p>
+<img src="/2022/09/05/20220905-ratelimit/6.jpg" style="zoom: 100%;">
+
+
+
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>令牌桶是非常适合互联网突发式请求场景的，请求 token 时并不是像漏桶一样严格的限制为固定的速率，而是使用一个完整的桶容量作为缓冲。只要桶中还有 token，请求就可以一直进行，也就可以处理相当于整个桶容量的流量高峰。但是当流量激增到一定程度后，就会按照设置的token放置速率进行处理，通常情况下我们会将桶容量和速率调整为同一个数值。</p>
+<img src="/2022/09/05/20220905-ratelimit/20.jpeg" style="zoom: 100%;">
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/服务限流/" rel="tag"># 服务限流</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2022/08/21/20220608-kafkasum/" rel="next" title="三地方案总结">
+                <i class="fa fa-chevron-left"></i> 三地方案总结
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+    <div class="comments" id="comments">
+      <div id="lv-container" data-id="city" data-uid="MTAyMC81MjAzNC8yODUxNQ=="></div>
+    </div>
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image" src="/upload/images/avatar.jpg" alt="史蒂芬猴">
+            
+              <p class="site-author-name" itemprop="name">史蒂芬猴</p>
+              <p class="site-description motion-element" itemprop="description">dora is my precious</p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">49</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">27</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">39</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+
+          
+            <div class="links-of-author motion-element">
+                
+                  <span class="links-of-author-item">
+                    <a href="https://github.com/stevenhoukai/myblog" target="_blank" title="GitHub">
+                      
+                        <i class="fa fa-fw fa-github"></i>GitHub</a>
+                  </span>
+                
+            </div>
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#前言"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#概念"><span class="nav-number">2.</span> <span class="nav-text">概念</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#漏桶"><span class="nav-number">2.1.</span> <span class="nav-text">漏桶</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#令牌桶"><span class="nav-number">2.2.</span> <span class="nav-text">令牌桶</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#令牌桶的原理"><span class="nav-number">3.</span> <span class="nav-text">令牌桶的原理</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#token-的生成和消费"><span class="nav-number">3.1.</span> <span class="nav-text">token 的生成和消费</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#float-精度问题"><span class="nav-number">3.2.</span> <span class="nav-text">float 精度问题</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#数值溢出问题"><span class="nav-number">3.3.</span> <span class="nav-text">数值溢出问题</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#使用"><span class="nav-number">4.</span> <span class="nav-text">使用</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#总结"><span class="nav-number">5.</span> <span class="nav-text">总结</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2022</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">史蒂芬猴</span>
+
+  
+</div>
+
+
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Muse</a> v5.1.4</div>
+
+
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="site-uv">
+      <i class="fa fa-user">访客数</i>
+      <span class="busuanzi-value" id="busuanzi_value_site_uv"></span>
+      人
+    </span>
+  
+
+  
+    <span class="site-pv">
+      <i class="fa fa-eye">总访问量</i>
+      <span class="busuanzi-value" id="busuanzi_value_site_pv"></span>
+      次
+    </span>
+  
+</div>
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+  
+  
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/three/three.min.js"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/three/canvas_sphere.min.js"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+    <script type="text/javascript">
+      (function(d, s) {
+        var j, e = d.getElementsByTagName(s)[0];
+        if (typeof LivereTower === 'function') { return; }
+        j = d.createElement(s);
+        j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+        j.async = true;
+        e.parentNode.insertBefore(j, e);
+      })(document, 'script');
+    </script>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>
