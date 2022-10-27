@@ -461,6 +461,7 @@
 
 
 <h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>令牌桶是非常适合互联网突发式请求场景的，请求 token 时并不是像漏桶一样严格的限制为固定的速率，而是使用一个完整的桶容量作为缓冲。只要桶中还有 token，请求就可以一直进行，也就可以处理相当于整个桶容量的流量高峰。但是当流量激增到一定程度后，就会按照设置的token放置速率进行处理，通常情况下我们会将桶容量和速率调整为同一个数值。</p>
+<p>我的博客即将同步至腾讯云开发者社区，邀请大家一同入驻：<a href="https://cloud.tencent.com/developer/support-plan?invite_code=1x761d0b26y42" target="_blank" rel="noopener">https://cloud.tencent.com/developer/support-plan?invite_code=1x761d0b26y42</a></p>
 <img src="/2022/09/05/20220905-ratelimit/20.jpeg" style="zoom: 100%;">
           
         
