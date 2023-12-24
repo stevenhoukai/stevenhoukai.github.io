@@ -1,6 +1,68 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
+    <title>一文看懂Apache-Pulsar（下）-实践篇</title>
+    <url>/2023/12/12/20231220-pulsarall-2/</url>
+    <content><![CDATA[<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>上一篇文章介绍了Pulsar的相关理论知识，今天就来总结下实践过程中Pulsar的相关注意事项吧</p>
+<h2 id="Pulsar小总结"><a href="#Pulsar小总结" class="headerlink" title="Pulsar小总结"></a>Pulsar小总结</h2><h3 id="基础架构"><a href="#基础架构" class="headerlink" title="基础架构"></a>基础架构</h3><p>Apache Pulsar 当然也是一款MQ，它是Pub/Sub型的消息系统，但是从架构设计上来说与前文介绍的kafka是完全不同的，Pulsar在结构上将计算与存储完全分离。先看下图来初步认识下Pulsar的整体架构：</p>
+<p>首先来总结一下Pulsar较其他消息队列的优势，为什么在众多MQ当中，我们选择了Pulsar：</p>
+<p>1、Pulsar支持多租户，按Namespace进行级别进行资源隔离，搭建公司级集群更加方便；<br>2、计算与存储隔离，无状态broker可以更好的动态扩所容，天赋云原生；<br>3、消费模式同时支持流模式（kafka）和队列模式（rabbitmq），选择性更强；<br>4、读写分离，支持百万级topic(tail-read And catch-up-read)，更低的端到端时延；<br>5、无Rebalance；<br>6、支持消息空洞，处理并发消费模式更加便捷；</p>
+<p>先来回顾一下上文中的两个核心概念 ：订阅模式 与 Ack模式<br><img src="/2023/12/12/20231220-pulsarall-2/1.jpg" style="zoom: 100%;"></p>
+<center>Pulsar消费订阅模式</center>
+
+
+<p>–<br><img src="/2023/12/12/20231220-pulsarall-2/2.jpg" style="zoom: 100%;"></p>
+<center>消费Ack模式</center>
+
+<p>接下来对每一种模式进行细说：</p>
+<p>第一种 - 独占模式（Exclusive）<br>一个 Subscription 只能与一个 Consumer 关联，只有这个 Consumer 可以接收到 Topic 的全部消息，如果该 Consumer 出现故障了就会停止消费。<br>Exclusive 订阅模式下，同一个 Subscription 里只有一个 Consumer 能消费 Topic，如果多个 Consumer 订阅则会报错，，也就是说一个消费者处理主题的所有分区，适用于全局有序且对性能要求不高的消费场景，如下图所示：<br><img src="/2023/12/12/20231220-pulsarall-2/3.jpg" style="zoom: 100%;"></p>
+<center>图2 - Exclusive消费订阅模式</center>
+
+<p>这个是Consumer B启动时会报错，只有ConsumerA能收到消息。</p>
+<p>注意：Pulsar默认的订阅类型为 Exclusive。</p>
+<p>第二种 - 灾备模式（Failover）<br>当存在多个 consumer 时，将会按字典顺序排序，第一个 consumer 被初始化为唯一接受消息的消费者。当第一个 consumer 断开时，所有的消息（未被确认和后续进入的）将会被分发给队列中的下一个 consumer。说到这里其实会有一个误区，常常会认为该模式是上述Exclusive模式上增加了一个backup机制，其实不然，这两个模式并无任何关联，请听分解：</p>
+<p>Failover订阅模式，可以允许多个消费者附加到一个订阅上。消费者的队列分配策略根据主题类型有所区别：</p>
+<p>如果是分区主题(一个主题拥有多个队列的主题)，Broker服务端会根据消费者优先级和消费者名称字典顺序进行排序，然后Broker会将主题中的分区平均分配给高优先级的消费者，低优先级消费者会成为分区的备消费者。<br>如果是非分区主题，Broker按照消费者订阅主题的顺序选择主消费者，其他的成为备消费者。<br>非分区主题的订阅示例说明如下：<br><img src="/2023/12/12/20231220-pulsarall-2/4.jpg" style="zoom: 100%;"></p>
+<center>图3 - Failover消费订阅模式 - 单分区</center>
+
+
+<p>对于分区主题的订阅图解说明如下：</p>
+<img src="/2023/12/12/20231220-pulsarall-2/5.jpg" style="zoom: 100%;">
+<center>图4 - Failover消费订阅模式 - 多分区</center>
+
+
+<p>所以你能看到这种消费模式接近于kafka的消费模式，并且有了backup机制，并且还没有rebalance！为什么没有rebalance？因为无状态broker端做了hash映射，已推送但是没有ack数据按原hash方式，新来数据按新hash方式；</p>
+<p>第三种 - 共享模式（Shared）<br>消息通过 round robin 轮询机制（也可以自定义）分发给不同的消费者，并且每个消息仅会被分发给一个消费者。当消费者断开连接，所有被发送给他，但没有被确认的消息将被重新安排，分发给其它存活的消费者。</p>
+<p>在Shared订阅模式下，多个消费者可以附加到同一个订阅，消息以循环分发的方式轮流发送给各个消费者，并且任何给定的消息只会传递给一个消费者，当一个消费者断开连接时，所有发送给它并未被确认的消息将重新调度，再发送给其他消费者。</p>
+<p>Shared模式的订阅图解如下所示：</p>
+<img src="/2023/12/12/20231220-pulsarall-2/6.jpg" style="zoom: 100%;">
+<center>图5 - Shared消费订阅模式</center>
+
+
+
+<p>上图中的ConsumerA、ConsumerB、ConsumerC都会参与消息消费。</p>
+<p>Shared模式与Failover模式的主要差别是Shared模式并不和消费者绑定队列，即Shared模式将所有分区的消息当成一个整体来看，</p>
+<p>使用Shared模式需要的几个注意事项：</p>
+<p>无法保证消息的顺序性<br>Shared模式不能使用累积确认机制。<br>这种模式的最大缺点是不能启用累积确认机制，消息确认效率会降低，但其优势也比较明显，在解决单个队列积压方面，能充分所有消费者的处理能力。我们的VDC引擎调度就是按照该模式构建一个支持优先级的调度中心。</p>
+<p>第四种 - KEY 共享模式（Key_Shared）<br>在Key_Shared模式中，多个消费者可以附加到同一个订阅。具有相同Key的消息会分发给同一个消费者。</p>
+<p>Key_Shared模式的消息分发机制如下所示：</p>
+<img src="/2023/12/12/20231220-pulsarall-2/7.jpg" style="zoom: 100%;">
+<center>图6 - Key_Shared消费订阅模式</center>
+
+<p>Pulsar提供了Sticky（粘性）、Auto-split Hash Range（自动分割哈希范围）、Auto-split Consistent Hashing（自动分割一致性哈希）这三种选择算法。</p>
+<p>选择消费者的基本过程如下所示：<br><img src="/2023/12/12/20231220-pulsarall-2/8.jpg" style="zoom: 100%;"></p>
+<p>将分片Key传递到一个哈希函数，生成一个哈希值<br>将Key的哈希值传入到对应的分片算法中，从而选择出一个消费者。<br>注意：<br>Key_Shared 本身在使用上存在一定的限制条件，由于其工程实现复杂度较高，在社区版本迭代中，不断有对 Key_Shared 的功能进行改进以及优化，整体稳定性相较 Exclusive,Failover 和 Shared 这三种订阅类型偏弱。如果上述三种订阅类型能满足业务需要，可以优先选用上述三种订阅类型。<br>专业集群可以保证相同 KEY 的消息按顺序投递；虚拟集群无法保障消息投递顺序。<br>当一个新的消费者加入或者一个消费者退出时，分配算法都将会重新计算消息到消费者的映射(选择)。</p>
+<p>接下来分别介绍这三种分配算法底层的工作机制。</p>
+<p>订阅模式如何选择<br>平时的工作当中，一般正常情况下选择Shared模式即可，每一个Consumer都会消费同一个Partition中的数据，每一条消息只会发送给一个Consumer，例如VDC的调度数据消费就是采用的这种模式，这种模式下消息是无序的，Consumer可以利用协程池进行消息的并发出，然后对批量消息进行单条数据的进行Ack即可，因为Broker上的Cursor会记录每一个consumer在该partition上的消费进度以及消息空洞信息，对失败数据会进行重发；<br>如果需要让相同 Key 的消息分给同一个消费者，或者说是需要保证消息的顺序性，这个时候 Shared 订阅模式无法满足需求了。有两种方式可供选择：Key_Shared订阅模式 或者 通过多分区主题 + Failover 订阅模式实现，如果同时满足Key 数量多且每个 Key 的消息分布相对均匀并且消费处理速度快，无消息堆积两种条件，那么就推荐使用Key_shared模式，如果上述两个条件一个不满足，则推荐使用【多分区主题 + Failover 订阅】<br>如果对顺序要求严格并且对性能要求不高，也可以选用Exclusive模式， 在这种模式下需要定期对服务做好严格的健康检查；</p>
+<img src="/2023/12/12/20231220-pulsarall-2/20.jpeg" style="zoom: 100%;">]]></content>
+      <categories>
+        <category>MQ</category>
+      </categories>
+      <tags>
+        <tag>Pulsar</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>我是如何进行限流的</title>
     <url>/2022/09/05/20220905-ratelimit/</url>
     <content><![CDATA[<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>以前做ERP系统，QPS这个概念离我着实有些遥远，毕竟ERP系统主要还是公司内部特定业务的一些使用，QPS并不会很高，也就不会出现流量洪峰把服务打跪的情况，但是目前本人在做的系统QPS已经接近百万级别，如何防止流量高峰把服务打挂就是要关注的重点了，当然防止服务雪崩其实有很多方法，比如Lb、Cache、扩容等等，但是以上这些操作其实都离不开一个主题那就是资源，如果不考虑资源问题这些都是很好的方法，但是如果当我们的资源已经匮乏了，这时就需要下面这种保护服务的方法了— 《限流器》,限流是微服务中必不缺少的一个环节，可以很好的起到保护下游服务，防止服务过载等作用。当然限流从功能上来说也分两种，一种是框架层的限流，像springcloud中的histrix亦或者我现在使用的polaris等等，框架层限流通过半开、全开、熔断的方式进行实现，另外一种就是今天我们要讨论的业务限流，接下来就介绍下本人在项目实战中是如何进行限流的，其实使用非常简单，但我们要知其然还要知其所以然～</p>
@@ -303,7 +365,7 @@
 <img src="/2022/04/15/20220415-pulsarall/22.png" style="zoom: 60%;">
 
 <p>我们可在broker.conf中，通过配置项managedLedgerUnackedRangesOpenCacheSetEnabled=true来开启使用优化版的RangeSet实现。所以，如果整个集群的subscription数比较多，游标对象的数据量是不容小视的。来回顾一下Pulsar的实现方式，MetaDataStore中只保存了游标的索引信息，即记录了游标的具体数据是存储在bk上的哪个Ledger中。真正的游标数据会通过上面介绍的CursorLedger写入到Bookkeeper中持久化。整个游标对象会被写入到一个Entry中，其Pb的定义如下：</p>
-<figure class="highlight protobuf"><table><tr><td class="code"><pre><span class="line"><span class="class"><span class="keyword">message</span> <span class="title">PositionInfo</span> </span>&#123;   </span><br><span class="line">  <span class="keyword">required</span> <span class="built_in">int64</span> ledgerId = <span class="number">1</span>;   </span><br><span class="line">  <span class="keyword">required</span> <span class="built_in">int64</span> entryId = <span class="number">2</span>;   </span><br><span class="line">  <span class="keyword">repeated</span> MessageRange individualDeletedMessages = <span class="number">3</span>;   </span><br><span class="line">  <span class="keyword">repeated</span> LongProperty properties = <span class="number">4</span>;   </span><br><span class="line">  <span class="keyword">repeated</span> BatchedEntryDeletionIndexInfo batchedEntryDeletionIndexInfo = <span class="number">5</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<figure class="highlight protobuf"><table><tr><td class="code"><pre><span class="line">message PositionInfo &#123;   </span><br><span class="line">  required int64 ledgerId = 1;   </span><br><span class="line">  required int64 entryId = 2;   </span><br><span class="line">  repeated MessageRange individualDeletedMessages = 3;   </span><br><span class="line">  repeated LongProperty properties = 4;   </span><br><span class="line">  repeated BatchedEntryDeletionIndexInfo batchedEntryDeletionIndexInfo = 5;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
 <p>看到这里，其实Batch消息中单条消息确认的实现也清晰了，BatchDeletedIndexes是一个ConcurrentSkipListMap，Key为一个Position对象，对象里面包含了LedgerId和EntryId。Value是一个BitSet，记录了这个Batch里面哪些消息已经被确认。batchedEntryDeletionIndexInfo会和单条消息的空洞一起放在同一个对象（PositionInfo）中，最后持久化到Bookkeeper。</p>
 <p>空洞数据如果写入Bookkeeper失败了，Pulsar还会尝试往ZooKeeper中保存，和索引信息一起保存。但是ZooKeeper毕竟不是专业的存储媒介所以并不会保存所有的数据，而是努力的保存一小部分，尽可能的让客户端不出现重复消费。我们可以通过broker.conf中的配置项来决定最多持久化多少数据到ZooKeeper，配置项名为：managedLedgerMaxUnackedRangesToPersistInZooKeeper，默认值是1000，最后提一点就是如果在实际的使用场景中有对幂等性强要求的还是建议在消费端做好校验。</p>
@@ -2135,49 +2197,6 @@ ok搭建完成。
       </tags>
   </entry>
   <entry>
-    <title>Quartz---2、项目Quartz定时任务使用</title>
-    <url>/2019/11/15/20191116-quartz-use/</url>
-    <content><![CDATA[<h1 id="界面说明"><a href="#界面说明" class="headerlink" title="界面说明"></a>界面说明</h1><p>注意如果项目启动报错:<br>需要执行以下语句安装必须包</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">npm install --save react-cron-builder</span><br></pre></td></tr></table></figure>
-
-<p>项目目前只采用一个任务组：ICBC  </p>
-<h3 id="1、界面展示"><a href="#1、界面展示" class="headerlink" title="1、界面展示"></a>1、界面展示</h3><p><img src="/2019/11/15/20191116-quartz-use/1.jpg" alt="图p1"></p>
-<center>**图p1**</center>
-后台任务管理界面在系统设置里面，界面上能监控任务的实时状态
-
-<h1 id="功能说明"><a href="#功能说明" class="headerlink" title="功能说明"></a>功能说明</h1><p>目前后台任务节点包含以下功能</p>
-<h3 id="1、查询全部任务"><a href="#1、查询全部任务" class="headerlink" title="1、查询全部任务"></a>1、查询全部任务</h3><p><img src="/2019/11/15/20191116-quartz-use/3.jpg" alt="图p3"></p>
-<center>**图p2**</center>  
-
-<h3 id="2、查询运行中任务"><a href="#2、查询运行中任务" class="headerlink" title="2、查询运行中任务"></a>2、查询运行中任务</h3><p>可以查询正在处于运行的任务   </p>
-<h3 id="3、新建Simple任务"><a href="#3、新建Simple任务" class="headerlink" title="3、新建Simple任务"></a>3、新建Simple任务</h3><p><img src="/2019/11/15/20191116-quartz-use/2.jpg" alt="图p3"></p>
-<center>**图p3**</center>  
-
-<h3 id="4、新建Cron任务"><a href="#4、新建Cron任务" class="headerlink" title="4、新建Cron任务"></a>4、新建Cron任务</h3><p>同上，只是jobtime换成的Cron表达式,关于Cron表达式,可以参考上一篇<br><a href="https://stevenhoukai.github.io/2019/11/15/20191115-quartz/">Cron表达式介绍</a>! </p>
-<h3 id="5、修改任务"><a href="#5、修改任务" class="headerlink" title="5、修改任务"></a>5、修改任务</h3><p>可以动态的修改任务的执行计划等</p>
-<h3 id="6、暂停任务"><a href="#6、暂停任务" class="headerlink" title="6、暂停任务"></a>6、暂停任务</h3><p>可以停止正在运行中的任务</p>
-<h3 id="7、继续任务"><a href="#7、继续任务" class="headerlink" title="7、继续任务"></a>7、继续任务</h3><p>可以重启启动已经暂停的任务  </p>
-<h3 id="8、立即运行一次任务"><a href="#8、立即运行一次任务" class="headerlink" title="8、立即运行一次任务"></a>8、立即运行一次任务</h3><p>内存copy一份job进行独立运行</p>
-<h3 id="9、删除任务"><a href="#9、删除任务" class="headerlink" title="9、删除任务"></a>9、删除任务</h3><p>手动删除不需要的job</p>
-<h1 id="开发说明"><a href="#开发说明" class="headerlink" title="开发说明"></a>开发说明</h1><p>目前整个台任务采取独立jar包的方式，支持集群部署(集群服务器时间必须保持一致)，随机负载均衡策略。<br>开发具体的自定job如下图:</p>
-<p><img src="/2019/11/15/20191116-quartz-use/5.jpg" alt="图p4"></p>
-<center>**图p4**</center>
-
-<p><img src="/2019/11/15/20191116-quartz-use/4.jpg" alt="图p5"></p>
-<center>**图p5**</center>
-
-<p>自定义job类按照如图方式必须继承QuartzJobBean,并且重写executeInternal方法，在方法中添加业务代码即可，注意自定义job类上的注解要保留，目前业务代码的事务还在测试中，非数据库交互定时任务可以正常使用</p>
-]]></content>
-      <categories>
-        <category>Quartz</category>
-      </categories>
-      <tags>
-        <tag>springboot</tag>
-        <tag>springcloud</tag>
-        <tag>quartz</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>Quartz---1、Cron表达式</title>
     <url>/2019/11/15/20191115-quartz/</url>
     <content><![CDATA[<h2 id="CronTrigger"><a href="#CronTrigger" class="headerlink" title="CronTrigger"></a>CronTrigger</h2><p>借用网上的一篇Cron表达式说明<br>CronTriggers往往比SimpleTrigger更有用，如果您需要基于日历的概念，而非SimpleTrigger完全指定的时间间隔，复发的发射工作的时间表。<br>CronTrigger，你可以指定触发的时间表如“每星期五中午”，或“每个工作日9:30时”，甚至“每5分钟一班9:00和10:00逢星期一上午，星期三星期五“。<br>即便如此，SimpleTrigger一样，CronTrigger拥有的startTime指定的时间表时生效，指定的时间表时，应停止（可选）结束时间。</p>
@@ -2246,6 +2265,49 @@ ok搭建完成。
 在26分、29分、33分执行一次：0 26,29,33 * * * ?
 
 每天的0点、13点、18点、21点都执行一次：0 0 0,13,18,21 * * ?</code></pre>]]></content>
+      <categories>
+        <category>Quartz</category>
+      </categories>
+      <tags>
+        <tag>springboot</tag>
+        <tag>springcloud</tag>
+        <tag>quartz</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Quartz---2、项目Quartz定时任务使用</title>
+    <url>/2019/11/15/20191116-quartz-use/</url>
+    <content><![CDATA[<h1 id="界面说明"><a href="#界面说明" class="headerlink" title="界面说明"></a>界面说明</h1><p>注意如果项目启动报错:<br>需要执行以下语句安装必须包</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">npm install --save react-cron-builder</span><br></pre></td></tr></table></figure>
+
+<p>项目目前只采用一个任务组：ICBC  </p>
+<h3 id="1、界面展示"><a href="#1、界面展示" class="headerlink" title="1、界面展示"></a>1、界面展示</h3><p><img src="/2019/11/15/20191116-quartz-use/1.jpg" alt="图p1"></p>
+<center>**图p1**</center>
+后台任务管理界面在系统设置里面，界面上能监控任务的实时状态
+
+<h1 id="功能说明"><a href="#功能说明" class="headerlink" title="功能说明"></a>功能说明</h1><p>目前后台任务节点包含以下功能</p>
+<h3 id="1、查询全部任务"><a href="#1、查询全部任务" class="headerlink" title="1、查询全部任务"></a>1、查询全部任务</h3><p><img src="/2019/11/15/20191116-quartz-use/3.jpg" alt="图p3"></p>
+<center>**图p2**</center>  
+
+<h3 id="2、查询运行中任务"><a href="#2、查询运行中任务" class="headerlink" title="2、查询运行中任务"></a>2、查询运行中任务</h3><p>可以查询正在处于运行的任务   </p>
+<h3 id="3、新建Simple任务"><a href="#3、新建Simple任务" class="headerlink" title="3、新建Simple任务"></a>3、新建Simple任务</h3><p><img src="/2019/11/15/20191116-quartz-use/2.jpg" alt="图p3"></p>
+<center>**图p3**</center>  
+
+<h3 id="4、新建Cron任务"><a href="#4、新建Cron任务" class="headerlink" title="4、新建Cron任务"></a>4、新建Cron任务</h3><p>同上，只是jobtime换成的Cron表达式,关于Cron表达式,可以参考上一篇<br><a href="https://stevenhoukai.github.io/2019/11/15/20191115-quartz/">Cron表达式介绍</a>! </p>
+<h3 id="5、修改任务"><a href="#5、修改任务" class="headerlink" title="5、修改任务"></a>5、修改任务</h3><p>可以动态的修改任务的执行计划等</p>
+<h3 id="6、暂停任务"><a href="#6、暂停任务" class="headerlink" title="6、暂停任务"></a>6、暂停任务</h3><p>可以停止正在运行中的任务</p>
+<h3 id="7、继续任务"><a href="#7、继续任务" class="headerlink" title="7、继续任务"></a>7、继续任务</h3><p>可以重启启动已经暂停的任务  </p>
+<h3 id="8、立即运行一次任务"><a href="#8、立即运行一次任务" class="headerlink" title="8、立即运行一次任务"></a>8、立即运行一次任务</h3><p>内存copy一份job进行独立运行</p>
+<h3 id="9、删除任务"><a href="#9、删除任务" class="headerlink" title="9、删除任务"></a>9、删除任务</h3><p>手动删除不需要的job</p>
+<h1 id="开发说明"><a href="#开发说明" class="headerlink" title="开发说明"></a>开发说明</h1><p>目前整个台任务采取独立jar包的方式，支持集群部署(集群服务器时间必须保持一致)，随机负载均衡策略。<br>开发具体的自定job如下图:</p>
+<p><img src="/2019/11/15/20191116-quartz-use/5.jpg" alt="图p4"></p>
+<center>**图p4**</center>
+
+<p><img src="/2019/11/15/20191116-quartz-use/4.jpg" alt="图p5"></p>
+<center>**图p5**</center>
+
+<p>自定义job类按照如图方式必须继承QuartzJobBean,并且重写executeInternal方法，在方法中添加业务代码即可，注意自定义job类上的注解要保留，目前业务代码的事务还在测试中，非数据库交互定时任务可以正常使用</p>
+]]></content>
       <categories>
         <category>Quartz</category>
       </categories>
@@ -2376,8 +2438,8 @@ ok搭建完成。
         <category>环境笔记篇</category>
       </categories>
       <tags>
-        <tag>jdk</tag>
         <tag>linux</tag>
+        <tag>jdk</tag>
       </tags>
   </entry>
   <entry>
@@ -2417,8 +2479,8 @@ ok搭建完成。
         <category>环境笔记篇</category>
       </categories>
       <tags>
-        <tag>linux</tag>
         <tag>redis</tag>
+        <tag>linux</tag>
         <tag>shell</tag>
       </tags>
   </entry>

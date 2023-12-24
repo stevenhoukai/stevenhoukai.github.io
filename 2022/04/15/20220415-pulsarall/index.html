@@ -615,7 +615,7 @@
 <img src="/2022/04/15/20220415-pulsarall/22.png" style="zoom: 60%;">
 
 <p>我们可在broker.conf中，通过配置项managedLedgerUnackedRangesOpenCacheSetEnabled=true来开启使用优化版的RangeSet实现。所以，如果整个集群的subscription数比较多，游标对象的数据量是不容小视的。来回顾一下Pulsar的实现方式，MetaDataStore中只保存了游标的索引信息，即记录了游标的具体数据是存储在bk上的哪个Ledger中。真正的游标数据会通过上面介绍的CursorLedger写入到Bookkeeper中持久化。整个游标对象会被写入到一个Entry中，其Pb的定义如下：</p>
-<figure class="highlight protobuf"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">message</span> <span class="title">PositionInfo</span> </span>&#123;   </span><br><span class="line">  <span class="keyword">required</span> <span class="built_in">int64</span> ledgerId = <span class="number">1</span>;   </span><br><span class="line">  <span class="keyword">required</span> <span class="built_in">int64</span> entryId = <span class="number">2</span>;   </span><br><span class="line">  <span class="keyword">repeated</span> MessageRange individualDeletedMessages = <span class="number">3</span>;   </span><br><span class="line">  <span class="keyword">repeated</span> LongProperty properties = <span class="number">4</span>;   </span><br><span class="line">  <span class="keyword">repeated</span> BatchedEntryDeletionIndexInfo batchedEntryDeletionIndexInfo = <span class="number">5</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<figure class="highlight protobuf"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">message PositionInfo &#123;   </span><br><span class="line">  required int64 ledgerId = 1;   </span><br><span class="line">  required int64 entryId = 2;   </span><br><span class="line">  repeated MessageRange individualDeletedMessages = 3;   </span><br><span class="line">  repeated LongProperty properties = 4;   </span><br><span class="line">  repeated BatchedEntryDeletionIndexInfo batchedEntryDeletionIndexInfo = 5;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
 <p>看到这里，其实Batch消息中单条消息确认的实现也清晰了，BatchDeletedIndexes是一个ConcurrentSkipListMap，Key为一个Position对象，对象里面包含了LedgerId和EntryId。Value是一个BitSet，记录了这个Batch里面哪些消息已经被确认。batchedEntryDeletionIndexInfo会和单条消息的空洞一起放在同一个对象（PositionInfo）中，最后持久化到Bookkeeper。</p>
 <p>空洞数据如果写入Bookkeeper失败了，Pulsar还会尝试往ZooKeeper中保存，和索引信息一起保存。但是ZooKeeper毕竟不是专业的存储媒介所以并不会保存所有的数据，而是努力的保存一小部分，尽可能的让客户端不出现重复消费。我们可以通过broker.conf中的配置项来决定最多持久化多少数据到ZooKeeper，配置项名为：managedLedgerMaxUnackedRangesToPersistInZooKeeper，默认值是1000，最后提一点就是如果在实际的使用场景中有对幂等性强要求的还是建议在消费端做好校验。</p>
@@ -762,7 +762,7 @@
               
                 <a href="/archives/">
               
-                  <span class="site-state-item-count">48</span>
+                  <span class="site-state-item-count">49</span>
                   <span class="site-state-item-name">日志</span>
                 </a>
               </div>
@@ -784,7 +784,7 @@
               
               <div class="site-state-item site-state-tags">
                 <a href="/tags/index.html">
-                  <span class="site-state-item-count">39</span>
+                  <span class="site-state-item-count">38</span>
                   <span class="site-state-item-name">标签</span>
                 </a>
               </div>
@@ -847,7 +847,7 @@
 
     <footer id="footer" class="footer">
       <div class="footer-inner">
-        <div class="copyright">&copy; <span itemprop="copyrightYear">2022</span>
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2023</span>
   <span class="with-love">
     <i class="fa fa-user"></i>
   </span>
